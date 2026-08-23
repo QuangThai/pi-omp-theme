@@ -26,7 +26,7 @@ export interface WelcomeSession {
 }
 
 export interface WelcomeData {
-	/** Name shown in the top border, e.g. `pi-omp-theme v0.2.0`. */
+	/** Version shown in the top border, e.g. `v1.0.0`. */
 	readonly label: string;
 	readonly title: string;
 	readonly model?: string | undefined;

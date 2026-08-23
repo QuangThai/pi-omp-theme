@@ -1,4 +1,4 @@
-// extension-src/pi-omp-theme/shared/render-budget.ts
+// extension-src/omp-theme/shared/render-budget.ts
 import {
   truncateToWidth as tuiTruncateToWidth,
   visibleWidth as tuiVisibleWidth,
@@ -293,7 +293,7 @@ function boxedResultRenderBudget(rawLineBudget = DEFAULT_COLLAPSED_RENDER_LINES)
   return { headLines, tailLines, maxRenderedLines };
 }
 
-// extension-src/pi-omp-theme/shared/ansi.ts
+// extension-src/omp-theme/shared/ansi.ts
 function isFinal(byte) {
   return byte >= "@" && byte <= "~";
 }
@@ -495,11 +495,11 @@ function fgHex(theme, hex, text) {
   return `${escapes.prefix}${text}${escapes.suffix}`;
 }
 
-// extension-src/pi-omp-theme/shared/box.ts
+// extension-src/omp-theme/shared/box.ts
 import { homedir as homedir2 } from "os";
 import { relative, resolve as resolve2 } from "path";
 
-// extension-src/pi-omp-theme/shared/elapsed.ts
+// extension-src/omp-theme/shared/elapsed.ts
 var ELAPSED_KEY = "__elapsedMs";
 function formatElapsedMs(ms) {
   if (typeof ms !== "number" || !Number.isFinite(ms)) return "";
@@ -513,7 +513,7 @@ function getElapsedMs(result) {
   return typeof elapsed === "number" && Number.isFinite(elapsed) ? elapsed : void 0;
 }
 
-// extension-src/pi-omp-theme/shared/theme-extras.ts
+// extension-src/omp-theme/shared/theme-extras.ts
 import { existsSync, readdirSync, readFileSync } from "fs";
 import { homedir } from "os";
 import { dirname, join, resolve } from "path";
@@ -709,7 +709,7 @@ function getThemeExtra(_theme, key) {
   return resolveThemeExtraValue(key, THEME_EXTRA_DEFAULTS[key] ?? "");
 }
 
-// extension-src/pi-omp-theme/shared/box.ts
+// extension-src/omp-theme/shared/box.ts
 function shortenPath(path) {
   const home = homedir2();
   if (path.startsWith(home)) return `~${path.slice(home.length)}`;
@@ -1286,7 +1286,7 @@ function selectRenderLines(text, maxLines, tail = false) {
   return { lines: selected, omitted: Math.max(0, lineCount - selected.length) };
 }
 
-// extension-src/pi-omp-theme/features/tools/boxed/output-tree.ts
+// extension-src/omp-theme/features/tools/boxed/output-tree.ts
 var TREE_INDENT = "  ";
 var TREE_CHILD_INDENT = "  ";
 var OUTPUT_TREE_HEAD_LIMIT = 6;
@@ -1512,7 +1512,7 @@ function pluralForm(noun, count) {
   return /(s|x|z|ch|sh)$/i.test(noun) ? `${noun}es` : `${noun}s`;
 }
 
-// extension-src/pi-omp-theme/features/tools/boxed/session-config.ts
+// extension-src/omp-theme/features/tools/boxed/session-config.ts
 var sessionToolsConfig = {
   maxCollapsedLines: 10,
   maxExpandedLines: 50,
@@ -1580,7 +1580,7 @@ function stopAllElapsedTickers() {
   tickerStates.clear();
 }
 
-// extension-src/pi-omp-theme/features/tools/boxed/batch.ts
+// extension-src/omp-theme/features/tools/boxed/batch.ts
 var BATCHABLE_TOOL_NAMES = /* @__PURE__ */ new Set(["read", "ls", "find"]);
 function isBatchableTool(toolName) {
   if (!getToolsRenderConfig().batchQuietCalls) return false;
@@ -1879,7 +1879,7 @@ function emptyBatchResult() {
   };
 }
 
-// extension-src/pi-omp-theme/features/tools/boxed/turn-summary.ts
+// extension-src/omp-theme/features/tools/boxed/turn-summary.ts
 var MUTATING_TOOLS = /* @__PURE__ */ new Set(["edit", "write", "quick_edit", "substitute_edit", "target_edit"]);
 function isMutatingTool(toolName) {
   return MUTATING_TOOLS.has(toolName);
@@ -2098,10 +2098,10 @@ function emptyTurnResult() {
   };
 }
 
-// extension-src/pi-omp-theme/features/tools/boxed/bash.ts
+// extension-src/omp-theme/features/tools/boxed/bash.ts
 import { highlightCode as highlightCode2 } from "@earendil-works/pi-coding-agent";
 
-// extension-src/pi-omp-theme/features/tools/boxed/command-shape.ts
+// extension-src/omp-theme/features/tools/boxed/command-shape.ts
 var BASH_PREFIX_COMMANDS = /* @__PURE__ */ new Set(["sudo", "env", "time", "nice", "nohup", "command", "stdbuf", "ionice", "watch"]);
 var BASH_SHELL_META_CHARS = /* @__PURE__ */ new Set(["<", ">", "(", ")", "`"]);
 function tokenizeCommandLine(line) {
@@ -2189,7 +2189,7 @@ function parseSimpleBashCommand(command, options = {}) {
   return { tokens: rest, ...cdDir !== void 0 ? { cdDir } : {} };
 }
 
-// extension-src/pi-omp-theme/features/tools/boxed/gh.ts
+// extension-src/omp-theme/features/tools/boxed/gh.ts
 var GH_REPO_VALUE_FLAGS = /* @__PURE__ */ new Set(["-R", "--repo"]);
 function stripRepoFlags(args) {
   const out = [];
@@ -2907,10 +2907,10 @@ function renderGhRunJobResult(theme, parsed, options, context) {
   );
 }
 
-// extension-src/pi-omp-theme/features/tools/boxed/git.ts
+// extension-src/omp-theme/features/tools/boxed/git.ts
 import { getLanguageFromPath } from "@earendil-works/pi-coding-agent";
 
-// extension-src/pi-omp-theme/shared/split-diff.ts
+// extension-src/omp-theme/shared/split-diff.ts
 import { highlightCode } from "@earendil-works/pi-coding-agent";
 var ESC2 = "\x1B";
 var BG_ANSI_PATTERN = new RegExp(`${ESC2}\\[(?:4\\d|10\\d|48;5;\\d{1,3}|48;2;\\d{1,3};\\d{1,3};\\d{1,3}|49)m`, "g");
@@ -3647,7 +3647,7 @@ var AdaptiveDiffComponent = class {
   }
 };
 
-// extension-src/pi-omp-theme/features/tools/boxed/git.ts
+// extension-src/omp-theme/features/tools/boxed/git.ts
 var GIT_SHORT_STATUS_FLAGS = /* @__PURE__ */ new Set(["-s", "--short", "--porcelain"]);
 var GIT_DIFF_FORMAT_REJECT = /* @__PURE__ */ new Set([
   "-p",
@@ -5019,7 +5019,7 @@ function renderGitDiffResult(theme, parsed, options, context) {
   };
 }
 
-// extension-src/pi-omp-theme/features/tools/boxed/shared.ts
+// extension-src/omp-theme/features/tools/boxed/shared.ts
 function pendingFlag(context) {
   return Boolean(context.isPartial);
 }
@@ -5088,7 +5088,7 @@ function clearFooterState(context) {
   clearCompactBoxedFooter(context.state);
 }
 
-// extension-src/pi-omp-theme/features/tools/boxed/bash.ts
+// extension-src/omp-theme/features/tools/boxed/bash.ts
 var MAX_LINE_CHARS = 2e3;
 var ESC3 = "\x1B";
 var BASH_TOOL_NOTICE_PATTERN = /^\[Showing (?:last|lines)\b.*\. Full output: .+\]$/;
@@ -5764,7 +5764,7 @@ var bashTool = {
   }
 };
 
-// extension-src/pi-omp-theme/features/tools/boxed/edit.ts
+// extension-src/omp-theme/features/tools/boxed/edit.ts
 import { getLanguageFromPath as getLanguageFromPath2 } from "@earendil-works/pi-coding-agent";
 var MAX_HIGHLIGHT_DIFF_CHARS = 12e3;
 var MAX_HIGHLIGHT_DIFF_ROWS = 120;
@@ -5854,7 +5854,7 @@ var editTool = {
   }
 };
 
-// extension-src/pi-omp-theme/features/tools/boxed/fallback.ts
+// extension-src/omp-theme/features/tools/boxed/fallback.ts
 var MAX_FALLBACK_PREVIEW_LINES = 10;
 function renderFallbackCall(toolName, args, theme, context) {
   noteExecutionStart(context);
@@ -5926,7 +5926,7 @@ function formatBoxedFooterWithElapsed(theme, elapsedMs, output) {
   return parts.join(theme.fg("dim", " \xB7 "));
 }
 
-// extension-src/pi-omp-theme/features/tools/boxed/find.ts
+// extension-src/omp-theme/features/tools/boxed/find.ts
 var FIND_META = Object.freeze({
   toolName: "find",
   label: "Find",
@@ -5970,7 +5970,7 @@ var findTool = {
   }
 };
 
-// extension-src/pi-omp-theme/features/tools/boxed/grep.ts
+// extension-src/omp-theme/features/tools/boxed/grep.ts
 var GREP_HEAD_LIMIT = 6;
 var GREP_ERROR_LINES = 2;
 var grepPanels = /* @__PURE__ */ new Map();
@@ -6085,7 +6085,7 @@ var grepTool = {
   }
 };
 
-// extension-src/pi-omp-theme/features/tools/boxed/ls.ts
+// extension-src/omp-theme/features/tools/boxed/ls.ts
 var LIST_META = Object.freeze({
   toolName: "ls",
   label: "List",
@@ -6122,7 +6122,7 @@ var lsTool = {
   }
 };
 
-// extension-src/pi-omp-theme/features/tools/boxed/quick-edit.ts
+// extension-src/omp-theme/features/tools/boxed/quick-edit.ts
 import { getLanguageFromPath as getLanguageFromPath3 } from "@earendil-works/pi-coding-agent";
 var MAX_HIGHLIGHT_DIFF_CHARS2 = 12e3;
 var MAX_HIGHLIGHT_DIFF_ROWS2 = 120;
@@ -6286,7 +6286,7 @@ function quickEditTool(config) {
   };
 }
 
-// extension-src/pi-omp-theme/features/tools/boxed/read.ts
+// extension-src/omp-theme/features/tools/boxed/read.ts
 var READ_META = Object.freeze({
   toolName: "read",
   label: "Read"
@@ -6315,7 +6315,7 @@ var readTool = {
   }
 };
 
-// extension-src/pi-omp-theme/features/tools/boxed/write.ts
+// extension-src/omp-theme/features/tools/boxed/write.ts
 var WRITE_EXPAND_HINT = "Ctrl+O for more";
 var EMPTY_WRITE_RESULT = Object.freeze({
   invalidate() {
@@ -6394,7 +6394,7 @@ var writeTool = {
   }
 };
 
-// extension-src/pi-omp-theme/features/tools/boxed/index.ts
+// extension-src/omp-theme/features/tools/boxed/index.ts
 function quickEditToolFor(toolName) {
   const config = getQuickEditToolConfig(toolName);
   if (!config) throw new Error(`missing quick-edit config for ${toolName}`);
@@ -6445,7 +6445,7 @@ function renderBoxedToolResult2(toolName, result, options, theme, context) {
   return renderFallbackResult(toolName, result, options, theme, context);
 }
 
-// extension-src/pi-omp-theme/features/tools/index.ts
+// extension-src/omp-theme/features/tools/index.ts
 function hideBatchMember(instance) {
   instance.hideComponent = true;
 }
@@ -6790,10 +6790,10 @@ function createToolDecorationOwner(snapshot = {}) {
   });
 }
 
-// extension-src/pi-omp-theme/features/working-indicator/index.ts
+// extension-src/omp-theme/features/working-indicator/index.ts
 import { keyText } from "@earendil-works/pi-coding-agent";
 
-// extension-src/pi-omp-theme/shared/shimmer.ts
+// extension-src/omp-theme/shared/shimmer.ts
 var SPEED_CELLS_PER_S = 30;
 var CLASSIC_PADDING = 10;
 var CLASSIC_BAND_HALF_WIDTH = 6;
@@ -6926,7 +6926,7 @@ function createSegmentedShimmer(segments, mode) {
   };
 }
 
-// extension-src/pi-omp-theme/features/working-indicator/index.ts
+// extension-src/omp-theme/features/working-indicator/index.ts
 var STATUS_FRAMES = ["\u28FE", "\u28FD", "\u28FB", "\u28BF", "\u287F", "\u28DF", "\u28EF", "\u28F7"];
 var FRAME_INTERVAL_MS = 80;
 var ASCII_FRAMES = ["|", "/", "-", "\\"];
@@ -7013,7 +7013,7 @@ function disposeWorkingShimmer() {
   shimmer = void 0;
 }
 
-// extension-src/pi-omp-theme/domain/config-diagnostics.ts
+// extension-src/omp-theme/domain/config-diagnostics.ts
 function boundedDiagnostics(items, limit = 32) {
   const seen = /* @__PURE__ */ new Set();
   const result = [];
@@ -7027,7 +7027,7 @@ function boundedDiagnostics(items, limit = 32) {
   return Object.freeze(result);
 }
 
-// extension-src/pi-omp-theme/domain/config-presets.ts
+// extension-src/omp-theme/domain/config-presets.ts
 var CONFIG_PRESETS = Object.freeze({
   default: Object.freeze({
     startup: { mode: "compact" }
@@ -7114,10 +7114,10 @@ function presetConfig(name) {
   return CONFIG_PRESETS[typeof name === "string" && name in CONFIG_PRESETS ? name : "default"];
 }
 
-// extension-src/pi-omp-theme/domain/config-types.ts
+// extension-src/omp-theme/domain/config-types.ts
 var PI_OMP_THEME_SCHEMA_VERSION = 1;
 
-// extension-src/pi-omp-theme/domain/status-presets.ts
+// extension-src/omp-theme/domain/status-presets.ts
 var STATUS_PRESETS = Object.freeze({
   default: Object.freeze({
     left: ["path", "git", "context_bar", "cost"],
@@ -7179,7 +7179,7 @@ function normalizeStatusLayout(preset, input) {
   return Object.freeze({ left: dedupe(left), right: dedupe(right), secondary: dedupe(secondary) });
 }
 
-// extension-src/pi-omp-theme/domain/config-normalization.ts
+// extension-src/omp-theme/domain/config-normalization.ts
 var DEFAULT_CONFIG = Object.freeze({
   schemaVersion: PI_OMP_THEME_SCHEMA_VERSION,
   enabled: true,
@@ -7737,7 +7737,7 @@ function resolveConfigDetailed(sources) {
   return { config: normalizeConfig(merged), diagnostics: boundedDiagnostics(diagnostics), sources: sourceMap };
 }
 
-// extension-src/pi-omp-theme/domain/config-migrations.ts
+// extension-src/omp-theme/domain/config-migrations.ts
 function record(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -7780,7 +7780,7 @@ function migrateConfig(input, source = "config") {
   return { config: { ...input }, readOnly: false, diagnostics: [] };
 }
 
-// extension-src/pi-omp-theme/app/config-storage.ts
+// extension-src/omp-theme/app/config-storage.ts
 async function readScopedConfig(port, path, selectedNamespace = "piOmpTheme") {
   try {
     const parsed = JSON.parse(await port.read(path));
@@ -7849,7 +7849,7 @@ async function writeScopedConfig(port, path, value, selectedNamespace = "piOmpTh
   }
 }
 
-// extension-src/pi-omp-theme/app/command-service.ts
+// extension-src/omp-theme/app/command-service.ts
 var surfaces = /* @__PURE__ */ new Set(["status", "editor", "startup", "messages", "tools"]);
 var presets = ENUMS.preset ?? [];
 var styles = ENUMS["editor.style"] ?? [];
@@ -8059,12 +8059,12 @@ async function executePiOmpThemeCommand(args, host, app, storage) {
   } else host.ui.notify("invalid pi-omp-theme command or value", "warning");
 }
 
-// extension-src/pi-omp-theme/app/commands.ts
+// extension-src/omp-theme/app/commands.ts
 function runCommand(args, host, app, storage) {
   return executePiOmpThemeCommand(args, host, app, storage);
 }
 
-// extension-src/pi-omp-theme/pi/config-host.ts
+// extension-src/omp-theme/pi/config-host.ts
 import { mkdir, readFile, rename, unlink, writeFile } from "fs/promises";
 import { dirname as dirname2, join as join2 } from "path";
 import { CONFIG_DIR_NAME, getAgentDir } from "@earendil-works/pi-coding-agent";
@@ -8104,7 +8104,7 @@ function defaultStoragePaths(cwd, overrides = {}) {
   };
 }
 
-// extension-src/pi-omp-theme/pi/commands.ts
+// extension-src/omp-theme/pi/commands.ts
 function registerPiOmpThemeCommand(pi, app) {
   pi.registerCommand("pi-omp-theme", {
     description: "Configure pi-omp-theme for this session",
@@ -8118,10 +8118,10 @@ function registerPiOmpThemeCommand(pi, app) {
   });
 }
 
-// extension-src/pi-omp-theme/pi/session-coordinator.ts
+// extension-src/omp-theme/pi/session-coordinator.ts
 import { matchesKey } from "@earendil-works/pi-tui";
 
-// extension-src/pi-omp-theme/app/doctor.ts
+// extension-src/omp-theme/app/doctor.ts
 function createDoctor(state) {
   return Object.freeze({
     config: Object.freeze({
@@ -8150,7 +8150,7 @@ function createDoctor(state) {
   });
 }
 
-// extension-src/pi-omp-theme/domain/config-diff.ts
+// extension-src/omp-theme/domain/config-diff.ts
 function diffConfig(previous, next) {
   const changed = [];
   const impacts = /* @__PURE__ */ new Set();
@@ -8173,7 +8173,7 @@ function diffConfig(previous, next) {
   return Object.freeze({ changed: Object.freeze(changed), impacts: Object.freeze([...impacts]) });
 }
 
-// extension-src/pi-omp-theme/domain/status.ts
+// extension-src/omp-theme/domain/status.ts
 function segment(id, priority, render, essential = false) {
   return { id, defaultPriority: priority, essential, overflow: essential ? "primary" : "secondary", render };
 }
@@ -8421,10 +8421,10 @@ function contextPercent(value) {
   return percent === void 0 ? void 0 : Math.max(0, Math.min(100, percent));
 }
 
-// extension-src/pi-omp-theme/features/editor/index.ts
+// extension-src/omp-theme/features/editor/index.ts
 import { CustomEditor } from "@earendil-works/pi-coding-agent";
 
-// extension-src/pi-omp-theme/domain/status-renderer.ts
+// extension-src/omp-theme/domain/status-renderer.ts
 function uniqueLayout(layout) {
   const seen = /* @__PURE__ */ new Set();
   const dedupe = (items) => items.filter((id) => {
@@ -8520,7 +8520,7 @@ function resolveStatusSeparator(style, theme) {
   return theme.apply("separator", style);
 }
 
-// extension-src/pi-omp-theme/domain/theme.ts
+// extension-src/omp-theme/domain/theme.ts
 var SEMANTIC_COLORS = {
   surface: "",
   surfaceRaised: "",
@@ -8703,7 +8703,7 @@ function resolveTheme(active, config, env = {}) {
   };
 }
 
-// extension-src/pi-omp-theme/features/editor/index.ts
+// extension-src/omp-theme/features/editor/index.ts
 var widthOf2 = safeVisibleWidth;
 function formatTokenCount(value) {
   if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
@@ -8860,7 +8860,8 @@ var StyledEditor = class extends CustomEditor {
       const border = this.borderFor();
       const kind2 = this.frameKind(style);
       const renderWidth2 = width - (kind2 === "rounded" ? 2 : 0);
-      const sideColor = kind2 === "rounded" ? this.borderColorFor() : void 0;
+      const status = kind2 === "rounded" ? this.borderStatus(renderWidth2, width) : void 0;
+      const sideColor = kind2 === "rounded" ? status && !this.isBashMode() ? (glyph) => this.statusTheme.apply("separator", glyph) : this.borderColorFor() : void 0;
       const wrap = (line) => kind2 === "rounded" && sideColor ? `${sideColor("\u2502")}${line}${sideColor("\u2502")}` : line;
       const bashHidden2 = this.bashHiddenCount();
       const renderedBody2 = body2.map((line, index) => {
@@ -8873,7 +8874,6 @@ var StyledEditor = class extends CustomEditor {
       );
       if (kind2 === "rounded") {
         const inner = Math.max(0, width - 2);
-        const status = this.borderStatus(inner, width);
         const quiet = (glyph) => this.statusTheme.apply("separator", glyph);
         const top = status ? `${quiet("\u256D")}${status}${quiet("\u256E")}` : border(`\u256D${"\u2500".repeat(inner)}\u256E`);
         const rows = [...renderedBody2, ...dropdownLines];
@@ -9238,7 +9238,79 @@ function installEditor(options) {
   };
 }
 
-// extension-src/pi-omp-theme/features/startup/logo.ts
+// package.json
+var package_default = {
+  name: "@nguyenquangthai/pi-omp-theme",
+  version: "1.0.0",
+  description: "An OMP-inspired visual theme and TUI presentation extension for Pi.",
+  license: "MIT",
+  author: "Nguyen Quang Thai",
+  type: "module",
+  repository: {
+    type: "git",
+    url: "git+https://github.com/QuangThai/pi-omp-theme.git"
+  },
+  homepage: "https://github.com/QuangThai/pi-omp-theme#readme",
+  bugs: {
+    url: "https://github.com/QuangThai/pi-omp-theme/issues"
+  },
+  keywords: [
+    "pi-package",
+    "pi",
+    "pi-coding-agent",
+    "omp",
+    "extension",
+    "tui",
+    "theme"
+  ],
+  pi: {
+    extensions: [
+      "./dist/extensions/pi-omp-theme.js"
+    ],
+    themes: [
+      "./themes"
+    ]
+  },
+  files: [
+    "dist/**/*.js",
+    "themes",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  scripts: {
+    typecheck: "tsc --noEmit",
+    depcruise: "depcruise extension-src/omp-theme --config dependency-cruiser.config.cjs",
+    build: "tsup",
+    "package:smoke": "node scripts/package-smoke.mjs",
+    dev: "tsup --watch",
+    check: "npm run typecheck && npm run depcruise && npm run build && npm run package:smoke",
+    prepack: "npm run check"
+  },
+  peerDependencies: {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*"
+  },
+  devDependencies: {
+    "@earendil-works/pi-coding-agent": "^0.84.0",
+    "@earendil-works/pi-tui": "^0.84.0",
+    "@types/node": "^24.0.0",
+    "dependency-cruiser": "^17.4.3",
+    tsup: "^8.5.0",
+    typescript: "^5.8.3"
+  },
+  engines: {
+    node: ">=22.0.0"
+  },
+  overrides: {
+    esbuild: "^0.28.1"
+  },
+  publishConfig: {
+    access: "public"
+  }
+};
+
+// extension-src/omp-theme/features/startup/logo.ts
 var PI_LOGO_LINES = [
   "\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557",
   "\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2551",
@@ -9349,7 +9421,7 @@ function compactLogoHeader(resolved, details, width) {
   return [details[0], details[2]].map((detail) => fitAnsiWidth(detail, safeWidth));
 }
 
-// extension-src/pi-omp-theme/features/startup/welcome.ts
+// extension-src/omp-theme/features/startup/welcome.ts
 var WELCOME_PROVIDER_SLOTS = 4;
 var WELCOME_SESSION_SLOTS = 4;
 var WELCOME_MIN_WIDTH = 64;
@@ -9451,7 +9523,7 @@ function renderWelcome(theme, data, width) {
   return lines;
 }
 
-// extension-src/pi-omp-theme/features/startup/index.ts
+// extension-src/omp-theme/features/startup/index.ts
 function activeThemeFromPi(theme) {
   if (!theme || typeof theme !== "object") return {};
   const candidate = theme;
@@ -9663,7 +9735,7 @@ function styledLines(theme, config, snapshot, overlay, width) {
   const card = renderWelcome(
     resolved,
     {
-      label: "pi-omp-theme",
+      label: `v${package_default.version}`,
       title: "Welcome back!",
       model: snapshot.model,
       provider: snapshot.startupProvider,
@@ -9883,7 +9955,7 @@ function installStartup(options) {
   return installation;
 }
 
-// extension-src/pi-omp-theme/features/status-line/index.ts
+// extension-src/omp-theme/features/status-line/index.ts
 var PRIMARY_WIDGET_KEY = "pi-omp-theme.status.primary";
 var SECONDARY_WIDGET_KEY = "pi-omp-theme.status.secondary";
 var ownership = /* @__PURE__ */ new WeakMap();
@@ -10137,7 +10209,7 @@ function installStatusLine(options) {
   return installation;
 }
 
-// extension-src/pi-omp-theme/shared/disposable-store.ts
+// extension-src/omp-theme/shared/disposable-store.ts
 var DisposableStore = class {
   items = [];
   disposed = false;
@@ -10163,7 +10235,7 @@ var DisposableStore = class {
   }
 };
 
-// extension-src/pi-omp-theme/app/providers.ts
+// extension-src/omp-theme/app/providers.ts
 import { execFile } from "child_process";
 import { promisify } from "util";
 var execFileAsync = promisify(execFile);
@@ -10391,7 +10463,7 @@ var InMemoryContextProvider = class {
   }
 };
 
-// extension-src/pi-omp-theme/app/render-scheduler.ts
+// extension-src/omp-theme/app/render-scheduler.ts
 var RenderScheduler = class {
   constructor(host, generation2, isCurrent = (current) => current === this.generation) {
     this.host = host;
@@ -10439,7 +10511,7 @@ var RenderScheduler = class {
   }
 };
 
-// extension-src/pi-omp-theme/app/snapshot.ts
+// extension-src/omp-theme/app/snapshot.ts
 function createSnapshot(generation2, revision = 0, values = {}) {
   return Object.freeze({ generation: generation2, revision, ...values });
 }
@@ -10448,7 +10520,7 @@ function replaceSnapshot(current, generation2, values) {
   return createSnapshot(generation2, current.revision + 1, values);
 }
 
-// extension-src/pi-omp-theme/app/runtime.ts
+// extension-src/omp-theme/app/runtime.ts
 function createPiOmpThemeRuntime(host, generation2, requestRender = () => {
 }) {
   let disposed = false;
@@ -10765,7 +10837,7 @@ var PiOmpThemeRuntimeController = class {
   }
 };
 
-// extension-src/pi-omp-theme/app/index.ts
+// extension-src/omp-theme/app/index.ts
 function countWords2(text) {
   return text.match(/[\p{L}\p{N}_]+/gu)?.length ?? 0;
 }
@@ -10985,11 +11057,11 @@ function createPiOmpThemeApp(initialConfig, reloadPort, onConfigChange) {
   };
 }
 
-// extension-src/pi-omp-theme/features/messages/special-blocks.ts
+// extension-src/omp-theme/features/messages/special-blocks.ts
 import { keyText as keyText2 } from "@earendil-works/pi-coding-agent";
 import { Markdown } from "@earendil-works/pi-tui";
 
-// extension-src/pi-omp-theme/features/messages/boxed-block.ts
+// extension-src/omp-theme/features/messages/boxed-block.ts
 function formatMessageBlockTitle(theme, kind, title, icon = "\u2794") {
   const rawTitle = title ? `${icon} ${kind} \xB7 ${title}` : `${icon} ${kind}`;
   const coloredTitle = theme.fg("accent", rawTitle);
@@ -11026,7 +11098,7 @@ function renderBoxedMessageBlock(theme, options) {
   };
 }
 
-// extension-src/pi-omp-theme/features/messages/special-blocks.ts
+// extension-src/omp-theme/features/messages/special-blocks.ts
 var cachedTheme;
 function setSpecialBlockTheme(theme) {
   cachedTheme = theme;
@@ -11227,7 +11299,7 @@ function renderSpecialMessageBlock(subtype, original, thisArg, args) {
   }
 }
 
-// extension-src/pi-omp-theme/pi/recent-sessions.ts
+// extension-src/omp-theme/pi/recent-sessions.ts
 import { readdirSync as readdirSync2, readFileSync as readFileSync2, statSync } from "fs";
 import { dirname as dirname3, join as join3 } from "path";
 var SCAN_LIMIT = 6;
@@ -11294,7 +11366,7 @@ function readRecentSessions(sessionFile, limit, nowMs = Date.now()) {
   }
 }
 
-// extension-src/pi-omp-theme/features/tools/bash-execution.ts
+// extension-src/omp-theme/features/tools/bash-execution.ts
 var cachedTheme2;
 function setBashExecutionTheme(theme) {
   cachedTheme2 = theme;
@@ -11353,7 +11425,7 @@ function renderBashExecutionBox(instance, args) {
   }
 }
 
-// extension-src/pi-omp-theme/domain/config-authorization.ts
+// extension-src/omp-theme/domain/config-authorization.ts
 function isTierCAuthorized(input) {
   if (!input.coreFlag || !input.surfaceFlag || !input.config.enabled) return false;
   if (input.surface === "tools") return input.config.tools.enabled;
@@ -11363,7 +11435,7 @@ function isTierCAuthorized(input) {
   return input.config.messages.enabled;
 }
 
-// extension-src/pi-omp-theme/pi/compatibility-probe.ts
+// extension-src/omp-theme/pi/compatibility-probe.ts
 import { readFileSync as readFileSync3 } from "fs";
 import { dirname as dirname4, join as join4 } from "path";
 import { fileURLToPath as fileURLToPath2 } from "url";
@@ -11378,7 +11450,7 @@ import {
   ToolExecutionComponent
 } from "@earendil-works/pi-coding-agent";
 
-// extension-src/pi-omp-theme/features/messages/index.ts
+// extension-src/omp-theme/features/messages/index.ts
 var OSC133_ZONE_START = "\x1B]133;A\x07";
 var OSC133_ZONE_END = "\x1B]133;B\x07";
 var OSC133_ZONE_FINAL = "\x1B]133;C\x07";
@@ -11569,7 +11641,7 @@ function decorateMessageUpdate(original, instance, args, snapshot = {
   return result;
 }
 
-// extension-src/pi-omp-theme/features/messages/markdown-highlight-cache.ts
+// extension-src/omp-theme/features/messages/markdown-highlight-cache.ts
 var MAX_ENTRIES = 256;
 var cache = /* @__PURE__ */ new Map();
 var cachedFor;
@@ -11603,7 +11675,7 @@ function withCachedHighlight(theme) {
   return { ...candidate, highlightCode: memoize(native.bind(candidate), native) };
 }
 
-// extension-src/pi-omp-theme/pi/compatibility-registry.ts
+// extension-src/omp-theme/pi/compatibility-registry.ts
 var recordsByOwner = /* @__PURE__ */ new WeakMap();
 var generation = 0;
 var registryTestHooks = {};
@@ -11819,7 +11891,7 @@ function installDelegatingPatch(options) {
   }
 }
 
-// extension-src/pi-omp-theme/pi/compatibility-probe.ts
+// extension-src/omp-theme/pi/compatibility-probe.ts
 var SUPPORTED_VERSION_RANGE = ">=0.83.0 <0.85.0";
 var SUPPORTED_PI_VERSIONS = Object.freeze([
   "0.83.0",
@@ -12353,7 +12425,7 @@ function disposePiCompatibilityProbe(report) {
   };
 }
 
-// extension-src/pi-omp-theme/pi/compatibility-coordinator.ts
+// extension-src/omp-theme/pi/compatibility-coordinator.ts
 function createCompatibilityCoordinator(dispose = disposePiCompatibilityProbe) {
   let report;
   let cleanupPending = false;
@@ -12488,7 +12560,7 @@ function createCompatibilityCoordinator(dispose = disposePiCompatibilityProbe) {
   };
 }
 
-// extension-src/pi-omp-theme/pi/config-session.ts
+// extension-src/omp-theme/pi/config-session.ts
 function sessionOverrides(_pi) {
   return {};
 }
@@ -12544,7 +12616,7 @@ function createConfigSourceAdapter(pi, port, paths) {
   };
 }
 
-// extension-src/pi-omp-theme/pi/operational-state.ts
+// extension-src/omp-theme/pi/operational-state.ts
 function buildOperationalState(config, authorization, compatibility, installationState, productCorePatchGate) {
   return {
     compatibility: {
@@ -12565,7 +12637,7 @@ function buildOperationalState(config, authorization, compatibility, installatio
   };
 }
 
-// extension-src/pi-omp-theme/pi/startup-resources.ts
+// extension-src/omp-theme/pi/startup-resources.ts
 var CORE_TOOL_SOURCE_LABEL = "core";
 function stripKnownExtension(name) {
   return name.replace(/\.(?:mjs|cjs|js|jsx|ts|tsx)$/i, "");
@@ -12611,7 +12683,7 @@ function collectToolDetails(activeNames, tools) {
   return details.length > 0 ? details : void 0;
 }
 
-// extension-src/pi-omp-theme/pi/session-coordinator.ts
+// extension-src/omp-theme/pi/session-coordinator.ts
 var THINKING_CYCLE = ["off", "minimal", "low", "medium", "high", "xhigh", "max"];
 function createPiOmpThemeSessionCoordinator(pi, hooks = {}) {
   const filePort = hooks.filePort ?? createPiConfigFilePort();
@@ -12825,7 +12897,7 @@ function createPiOmpThemeSessionCoordinator(pi, hooks = {}) {
   };
 }
 
-// extension-src/pi-omp-theme/pi/session-usage.ts
+// extension-src/omp-theme/pi/session-usage.ts
 function usageFromSession(session) {
   const totals = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0 };
   let sawUsage = false;
@@ -12860,7 +12932,7 @@ function addUsage(totals, usage) {
   totals.cost += usage.cost.total;
 }
 
-// extension-src/pi-omp-theme/pi/index.ts
+// extension-src/omp-theme/pi/index.ts
 function usagePatch(ctx) {
   const usage = usageFromSession(ctx.sessionManager);
   return usage ? { usage } : {};

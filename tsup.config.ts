@@ -2,7 +2,7 @@ import { defineConfig } from "tsup";
 
 export default defineConfig({
 	entry: {
-		"pi-omp-theme": "extension-src/pi-omp-theme/pi/index.ts",
+		"pi-omp-theme": "extension-src/omp-theme/pi/index.ts",
 	},
 	format: ["esm"],
 	dts: false,

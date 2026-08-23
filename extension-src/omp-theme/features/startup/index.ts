@@ -1,4 +1,5 @@
 import type { Component, OverlayHandle, OverlayOptions } from "@earendil-works/pi-tui";
+import packageMetadata from "../../../../package.json";
 import type { NormalizedPiOmpThemeConfig } from "../../domain/config-types.js";
 import type { StatusSnapshot } from "../../domain/status.js";
 import { type ActiveTheme, type ResolvedTheme, resolveTheme } from "../../domain/theme.js";
@@ -341,7 +342,7 @@ function styledLines(
 	const card = renderWelcome(
 		resolved,
 		{
-			label: "pi-omp-theme",
+			label: `v${packageMetadata.version}`,
 			title: "Welcome back!",
 			model: snapshot.model,
 			provider: snapshot.startupProvider,

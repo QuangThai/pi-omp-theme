@@ -39,7 +39,7 @@
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "depcruise": "depcruise extension-src/pi-omp-theme --config dependency-cruiser.config.cjs",
+    "depcruise": "depcruise extension-src/omp-theme --config dependency-cruiser.config.cjs",
     "build": "tsup",
     "package:smoke": "node scripts/package-smoke.mjs",
     "dev": "tsup --watch",

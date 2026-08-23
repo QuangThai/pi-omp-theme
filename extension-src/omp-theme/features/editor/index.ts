@@ -266,7 +266,13 @@ export class StyledEditor extends CustomEditor implements EditorComponent {
 			const border = this.borderFor();
 			const kind = this.frameKind(style);
 			const renderWidth = width - (kind === "rounded" ? 2 : 0);
-			const sideColor = kind === "rounded" ? this.borderColorFor() : undefined;
+			const status = kind === "rounded" ? this.borderStatus(renderWidth, width) : undefined;
+			const sideColor =
+				kind === "rounded"
+					? status && !this.isBashMode()
+						? (glyph: string) => this.statusTheme.apply("separator", glyph)
+						: this.borderColorFor()
+					: undefined;
 			const wrap = (line: string) =>
 				kind === "rounded" && sideColor ? `${sideColor("│")}${line}${sideColor("│")}` : line;
 			const bashHidden = this.bashHiddenCount();
@@ -292,7 +298,6 @@ export class StyledEditor extends CustomEditor implements EditorComponent {
 				// bar only). Rebuilding a plain frame here dropped the status and grew
 				// a bottom rule the shape does not have.
 				const inner = Math.max(0, width - 2);
-				const status = this.borderStatus(inner, width);
 				const quiet = (glyph: string) => this.statusTheme.apply("separator", glyph);
 				const top = status ? `${quiet("╭")}${status}${quiet("╮")}` : border(`╭${"─".repeat(inner)}╮`);
 				const rows = [...renderedBody, ...dropdownLines];

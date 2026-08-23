@@ -9238,77 +9238,8 @@ function installEditor(options) {
   };
 }
 
-// package.json
-var package_default = {
-  name: "@nguyenquangthai/pi-omp-theme",
-  version: "1.0.0",
-  description: "An OMP-inspired visual theme and TUI presentation extension for Pi.",
-  license: "MIT",
-  author: "Nguyen Quang Thai",
-  type: "module",
-  repository: {
-    type: "git",
-    url: "git+https://github.com/QuangThai/pi-omp-theme.git"
-  },
-  homepage: "https://github.com/QuangThai/pi-omp-theme#readme",
-  bugs: {
-    url: "https://github.com/QuangThai/pi-omp-theme/issues"
-  },
-  keywords: [
-    "pi-package",
-    "pi",
-    "pi-coding-agent",
-    "omp",
-    "extension",
-    "tui",
-    "theme"
-  ],
-  pi: {
-    extensions: [
-      "./dist/extensions/pi-omp-theme.js"
-    ],
-    themes: [
-      "./themes"
-    ]
-  },
-  files: [
-    "dist/**/*.js",
-    "themes",
-    "README.md",
-    "CHANGELOG.md",
-    "LICENSE"
-  ],
-  scripts: {
-    typecheck: "tsc --noEmit",
-    depcruise: "depcruise extension-src/omp-theme --config dependency-cruiser.config.cjs",
-    build: "tsup",
-    "package:smoke": "node scripts/package-smoke.mjs",
-    dev: "tsup --watch",
-    check: "npm run typecheck && npm run depcruise && npm run build && npm run package:smoke",
-    prepack: "npm run check"
-  },
-  peerDependencies: {
-    "@earendil-works/pi-coding-agent": "*",
-    "@earendil-works/pi-tui": "*"
-  },
-  devDependencies: {
-    "@earendil-works/pi-coding-agent": "^0.84.0",
-    "@earendil-works/pi-tui": "^0.84.0",
-    "@types/node": "^24.0.0",
-    "dependency-cruiser": "^17.4.3",
-    tsup: "^8.5.0",
-    typescript: "^5.8.3"
-  },
-  engines: {
-    node: ">=22.0.0"
-  },
-  overrides: {
-    esbuild: "^0.28.1"
-  },
-  publishConfig: {
-    access: "public"
-  }
-};
+// extension-src/omp-theme/features/startup/index.ts
+import { VERSION as PI_VERSION } from "@earendil-works/pi-coding-agent";
 
 // extension-src/omp-theme/features/startup/logo.ts
 var PI_LOGO_LINES = [
@@ -9735,7 +9666,7 @@ function styledLines(theme, config, snapshot, overlay, width) {
   const card = renderWelcome(
     resolved,
     {
-      label: `v${package_default.version}`,
+      label: `v${PI_VERSION}`,
       title: "Welcome back!",
       model: snapshot.model,
       provider: snapshot.startupProvider,

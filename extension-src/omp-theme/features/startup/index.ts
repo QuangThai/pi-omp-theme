@@ -1,5 +1,5 @@
+import { VERSION as PI_VERSION } from "@earendil-works/pi-coding-agent";
 import type { Component, OverlayHandle, OverlayOptions } from "@earendil-works/pi-tui";
-import packageMetadata from "../../../../package.json";
 import type { NormalizedPiOmpThemeConfig } from "../../domain/config-types.js";
 import type { StatusSnapshot } from "../../domain/status.js";
 import { type ActiveTheme, type ResolvedTheme, resolveTheme } from "../../domain/theme.js";
@@ -342,7 +342,7 @@ function styledLines(
 	const card = renderWelcome(
 		resolved,
 		{
-			label: `v${packageMetadata.version}`,
+			label: `v${PI_VERSION}`,
 			title: "Welcome back!",
 			model: snapshot.model,
 			provider: snapshot.startupProvider,

@@ -3,7 +3,9 @@
 [![npm](https://img.shields.io/npm/v/@nguyenquangthai/pi-omp-theme)](https://www.npmjs.com/package/@nguyenquangthai/pi-omp-theme)
 [![license](https://img.shields.io/npm/l/@nguyenquangthai/pi-omp-theme)](LICENSE)
 
-An OMP-inspired visual theme and TUI presentation extension for [Pi](https://github.com/earendil-works/pi-mono). It combines Titanium dark/light themes with a coordinated startup view, status line, editor, messages, and tool rendering.
+An OMP-inspired visual theme and TUI presentation extension for [Pi](https://pi.dev). It combines Titanium dark/light themes with a coordinated startup view, status line, editor, messages, and tool rendering.
+
+![pi-omp-theme preview](https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/gallery-preview.png)
 
 ## Features
 
@@ -16,13 +18,42 @@ An OMP-inspired visual theme and TUI presentation extension for [Pi](https://git
 
 ## Requirements
 
-- Node.js 22 or newer.
+- Node.js 22.19 or newer.
 - Pi 0.83.x or 0.84.x for the recorded compatibility identities. Unmatched patched surfaces fall back to Pi's native rendering.
 
 ## Install
 
+Use Pi's package manager so the extension and themes are registered correctly:
+
 ```bash
 pi install npm:@nguyenquangthai/pi-omp-theme
+```
+
+Running `npm install` alone downloads the package but does not register it with Pi.
+
+### Verify installation
+
+```bash
+pi list
+pi -p "/pi-omp-theme doctor"
+```
+
+`pi list` should include `npm:@nguyenquangthai/pi-omp-theme`. The doctor command reports the active preset, Pi compatibility identity, theme, and surface fallbacks.
+
+### Update
+
+```bash
+pi update npm:@nguyenquangthai/pi-omp-theme
+# Or update every installed Pi package:
+pi update --extensions
+```
+
+Version-pinned installs such as `npm:@nguyenquangthai/pi-omp-theme@1.0.1` remain pinned until explicitly changed.
+
+### Uninstall
+
+```bash
+pi remove npm:@nguyenquangthai/pi-omp-theme
 ```
 
 ## Defaults
@@ -121,6 +152,8 @@ npm run check
 ```
 
 `npm run check` is also enforced by the npm `prepack` hook.
+
+Releases are published manually to avoid CI billing. The complete maintainer checklist is documented in the [release guide](https://github.com/QuangThai/pi-omp-theme/blob/main/docs/releasing.md).
 
 ## License
 

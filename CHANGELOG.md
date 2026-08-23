@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here.
 
+## [1.0.1] - 2026-08-23
+
+### Changed
+
+- The welcome card now reports the active Pi coding agent version instead of the extension package version.
+- Added Pi gallery preview metadata and a 16:9 package image for `pi.dev/packages`.
+- Expanded installation verification, update, uninstall, security, and release documentation.
+- Hardened package-smoke coverage for gallery metadata, engine compatibility, manifest integrity, and npm artifact contents.
+
 ## [1.0.0] - 2026-08-23
 
 ### Added

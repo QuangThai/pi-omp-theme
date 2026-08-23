@@ -26,7 +26,7 @@ export interface WelcomeSession {
 }
 
 export interface WelcomeData {
-	/** Version shown in the top border, e.g. `v1.0.0`. */
+	/** Active Pi coding agent version shown in the top border, e.g. `v0.84.2`. */
 	readonly label: string;
 	readonly title: string;
 	readonly model?: string | undefined;

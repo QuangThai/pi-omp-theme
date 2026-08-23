@@ -6,9 +6,10 @@ import { pathToFileURL } from "node:url";
 
 const expected = {
   name: "@nguyenquangthai/pi-omp-theme",
-  version: "1.0.0",
+  version: "1.0.1",
   entry: "./dist/extensions/pi-omp-theme.js",
   repository: "git+https://github.com/QuangThai/pi-omp-theme.git",
+  image: "https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/gallery-preview.png",
 };
 
 const manifest = JSON.parse(readFileSync("package.json", "utf8"));
@@ -16,8 +17,18 @@ assert.equal(manifest.name, expected.name);
 assert.equal(manifest.version, expected.version);
 assert.equal(manifest.repository?.url, expected.repository);
 assert.equal(manifest.publishConfig?.access, "public");
+assert.equal(manifest.publishConfig?.registry, "https://registry.npmjs.org/");
+assert.equal(manifest.engines?.node, ">=22.19.0");
+assert.ok(manifest.keywords?.includes("pi-package"), "package must remain discoverable on pi.dev/packages");
 assert.deepEqual(manifest.pi?.extensions, [expected.entry]);
+assert.deepEqual(manifest.pi?.themes, ["./themes"]);
+assert.equal(manifest.pi?.image, expected.image);
 assert.ok(existsSync(expected.entry), `missing compiled extension: ${expected.entry}`);
+
+const lock = JSON.parse(readFileSync("package-lock.json", "utf8"));
+assert.equal(lock.version, expected.version);
+assert.equal(lock.packages?.[""]?.version, expected.version);
+assert.equal(lock.packages?.[""]?.engines?.node, manifest.engines.node);
 
 const extension = await import(`${pathToFileURL(resolve(expected.entry)).href}?smoke=${Date.now()}`);
 assert.equal(typeof extension.default, "function", "compiled extension must export a default factory");

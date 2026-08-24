@@ -21,7 +21,7 @@ export interface CompatibilityRecord {
 	originalDescriptor?: PropertyDescriptor;
 	installedIdentity?: unknown;
 	piVersion: string;
-	versionRange: string;
+	compatibilityBasis: string;
 	shape: CompatibilityShape;
 	diagnostic?: string | undefined;
 	generation: number;
@@ -82,7 +82,7 @@ function skippedRecord(options: {
 	target: object;
 	method: PropertyKey;
 	piVersion: string;
-	versionRange: string;
+	compatibilityBasis: string;
 	shape: CompatibilityShape;
 	diagnostic: string;
 	generation: number;
@@ -213,7 +213,7 @@ function activeConflict(
 			target: existing.target,
 			method: existing.method,
 			piVersion: existing.piVersion,
-			versionRange: existing.versionRange,
+			compatibilityBasis: existing.compatibilityBasis,
 			shape: "conflict",
 			diagnostic: reason,
 			generation,
@@ -228,7 +228,7 @@ export function installDelegatingPatch(options: {
 	target: object;
 	method: PropertyKey;
 	piVersion: string;
-	versionRange: string;
+	compatibilityBasis: string;
 	shape: boolean;
 	generation: number;
 	expectedIdentity?: unknown;
@@ -264,7 +264,7 @@ export function installDelegatingPatch(options: {
 		...(originalDescriptor ? { originalDescriptor } : {}),
 		installedIdentity: installed,
 		piVersion: options.piVersion,
-		versionRange: options.versionRange,
+		compatibilityBasis: options.compatibilityBasis,
 		shape: "installed",
 		diagnostic: options.diagnostic,
 		generation: options.generation,

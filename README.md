@@ -19,7 +19,7 @@ An OMP-inspired visual theme and TUI presentation extension for [Pi](https://pi.
 ## Requirements
 
 - Node.js 22.19 or newer.
-- Pi 0.83.x or 0.84.x for the recorded compatibility identities. Unmatched patched surfaces fall back to Pi's native rendering.
+- Pi 0.83.x or newer. Compatibility patches are probed against the live Pi runtime per surface; unrecognized identities fall back to Pi's native rendering.
 
 ## Install
 
@@ -47,7 +47,7 @@ npm ci && npm run build
 pi install /path/to/pi-omp-theme
 ```
 
-The compiled entry is `dist/extensions/pi-omp-theme.ts` on purpose. Pi loads extensions through jiti, which tries a native `import()` for ESM `.js` entries first and only applies its host aliases (`@earendil-works/*` → the running Pi's own modules) when that native import fails. A `.js` entry next to a checkout's `node_modules/@earendil-works/pi-coding-agent` therefore binds the extension to a second copy of Pi and every message/tool decoration silently misses the TUI. jiti always transpiles `.ts`, so the `.ts` entry keeps the binding correct wherever the package lives. If the doctor ever reports `hostBinding.status: "foreign"`, the extension was loaded outside Pi's loader; reinstall with `pi install npm:@nguyenquangthai/pi-omp-theme` or rebuild the checkout.
+The compiled entry is `dist/extensions/pi-omp-theme.ts` on purpose. Pi loads extensions through jiti, which applies the host aliases (`@earendil-works/*` → the running Pi's own modules) while loading the `.ts` entry. A `.js` entry next to a checkout's `node_modules/@earendil-works/pi-coding-agent` can bind the extension to a second copy of Pi and make message/tool decoration silently miss the TUI. Pi 0.84.3+ runs its Node CLI/RPC entrypoints from a bundled runtime and exposes those host modules virtually; the package detects that loader path instead of comparing it with the modular package entry. If the doctor ever reports `hostBinding.status: "foreign"`, the extension was loaded outside Pi's loader; reinstall with `pi install npm:@nguyenquangthai/pi-omp-theme` or rebuild the checkout.
 
 The first launch after a rebuild transpiles the bundle once (a few seconds); jiti caches the result for later launches.
 

@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { dirname, isAbsolute, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { AssistantMessageComponent } from "@earendil-works/pi-coding-agent";
 
@@ -72,6 +72,17 @@ function piPackageEntry(root: string, readFile: (path: string) => string): strin
 	}
 }
 
+/**
+ * Pi 0.84.3+ runs the Node CLI/RPC entrypoints from `dist/bundle`. In that mode
+ * the extension loader exposes the host package through jiti virtual modules, so
+ * importing the package's public `dist/index.js` here would intentionally load a
+ * second, modular copy and produce a false "foreign" result.
+ */
+function isBundledPiHostEntry(hostPackage: string, hostScript: string): boolean {
+	const segments = relative(hostPackage, hostScript).split(/[\\/]+/).filter(Boolean);
+	return segments[0]?.toLowerCase() === "dist" && segments[1]?.toLowerCase() === "bundle";
+}
+
 export interface HostBindingProbeOptions {
 	/** The script Node started with (`process.argv[1]`); undefined means "not a Node script". */
 	argv1?: string | undefined;
@@ -82,6 +93,8 @@ export interface HostBindingProbeOptions {
 	importModule?: (path: string) => Promise<Record<string, unknown>>;
 	/** The class this extension imported; compared by identity with the host's export. */
 	extensionAssistantMessageComponent?: unknown;
+	/** Test seam for Pi's bundled Node/RPC runtime, which exposes virtual host modules. */
+	bundledHostRuntime?: boolean;
 }
 
 export async function probeHostBinding(options: HostBindingProbeOptions = {}): Promise<HostBinding> {
@@ -107,9 +120,21 @@ export async function probeHostBinding(options: HostBindingProbeOptions = {}): P
 	if (typeof argv1 !== "string" || argv1.length === 0 || !isAbsolute(argv1)) {
 		return { status: "unknown", ...withExtension, reason: "host entry script is not an absolute path" };
 	}
-	const hostPackage = findPiPackageRoot(dirname(resolve(argv1)), readFile);
+	const hostScript = resolve(argv1);
+	const hostPackage = findPiPackageRoot(dirname(hostScript), readFile);
 	if (!hostPackage) {
 		return { status: "unknown", ...withExtension, reason: "host entry script is not inside a Pi package" };
+	}
+	const bundledHostRuntime =
+		options.bundledHostRuntime ??
+		(process.env.PI_CODING_AGENT === "true" || process.env.AI_AGENT === "pi");
+	if (bundledHostRuntime && typeof ours === "function" && isBundledPiHostEntry(hostPackage, hostScript)) {
+		return {
+			status: "bound",
+			hostPackage,
+			...withExtension,
+			reason: "extension shares Pi's bundled runtime modules through the loader",
+		};
 	}
 	const hostEntry = piPackageEntry(hostPackage, readFile);
 	if (!hostEntry) {

@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
 	AssistantMessageComponent,
@@ -36,29 +36,21 @@ import {
  * changes the identity degrades that single surface to its native fallback while
  * every other surface continues.
  */
-export const SUPPORTED_VERSION_RANGE = ">=0.83.0 <0.85.0";
-export const SUPPORTED_PI_VERSIONS: readonly string[] = Object.freeze([
-	"0.83.0",
-	"0.84.0",
-	"0.84.1",
-	"0.84.2",
-]);
+/** Compatibility is decided from the live native identities, not a Pi version allowlist. */
+export const COMPATIBILITY_BASIS = "runtime-identity" as const;
 
 /** A recorded native identity for one certified surface. */
 export interface KnownNativeIdentity {
 	readonly name: string;
 	readonly arity: number;
 	readonly fingerprint: string;
-	/** Pi versions known to carry this exact identity (informational only). */
-	readonly versions: readonly string[];
 }
 
 /**
  * Registry of recorded native identities per surface. A surface matches when the
  * runtime function has the same name, arity, and source fingerprint as one of its
- * identities; the `versions` list only documents where that identity was observed.
- * A matching name/arity/hash is evidence of the shipped native method, not a
- * cryptographic proof: code loaded before this module could spoof the same
+ * identities. A matching name/arity/hash is evidence of the shipped native method,
+ * not a cryptographic proof: code loaded before this module could spoof the same
  * function source. Unrecorded identities therefore fall back natively per surface.
  */
 export const KNOWN_NATIVE_IDENTITIES: Readonly<Record<string, readonly KnownNativeIdentity[]>> = Object.freeze({
@@ -67,9 +59,6 @@ export const KNOWN_NATIVE_IDENTITIES: Readonly<Record<string, readonly KnownNati
 			name: "getMarkdownThemeWithSettings",
 			arity: 0,
 			fingerprint: "5f63d168",
-			// Byte-identical across the whole supported range: verified against the
-			// published 0.83.0, 0.84.0, 0.84.1 and 0.84.2 builds.
-			versions: Object.freeze(["0.83.0", "0.84.0", "0.84.1", "0.84.2"]),
 		}),
 	]),
 	"native-assistant-message:render": Object.freeze([
@@ -77,7 +66,6 @@ export const KNOWN_NATIVE_IDENTITIES: Readonly<Record<string, readonly KnownNati
 			name: "render",
 			arity: 1,
 			fingerprint: "2a39243f",
-			versions: Object.freeze(["0.83.0", "0.84.0", "0.84.1", "0.84.2"]),
 		}),
 	]),
 	"native-assistant-message:updateContent": Object.freeze([
@@ -85,16 +73,13 @@ export const KNOWN_NATIVE_IDENTITIES: Readonly<Record<string, readonly KnownNati
 			name: "updateContent",
 			arity: 1,
 			fingerprint: "4a2f15ff",
-			versions: Object.freeze(["0.83.0"]),
 		}),
-		// 0.84.0 adds an `isStreaming` default parameter and per-part markdown
-		// transforms; default parameters do not count toward Function.length, so
-		// the arity stays 1 while the source fingerprint changes.
+		// This identity records the later implementation shape; default parameters
+		// do not count toward Function.length, so the arity remains 1.
 		Object.freeze({
 			name: "updateContent",
 			arity: 1,
 			fingerprint: "d2114491",
-			versions: Object.freeze(["0.84.0", "0.84.1", "0.84.2"]),
 		}),
 	]),
 	"native-compaction-message:updateDisplay": Object.freeze([
@@ -102,7 +87,6 @@ export const KNOWN_NATIVE_IDENTITIES: Readonly<Record<string, readonly KnownNati
 			name: "updateDisplay",
 			arity: 0,
 			fingerprint: "f8c44e78",
-			versions: Object.freeze(["0.83.0", "0.84.0", "0.84.1", "0.84.2"]),
 		}),
 	]),
 	"native-branch-message:updateDisplay": Object.freeze([
@@ -110,7 +94,6 @@ export const KNOWN_NATIVE_IDENTITIES: Readonly<Record<string, readonly KnownNati
 			name: "updateDisplay",
 			arity: 0,
 			fingerprint: "415d57b7",
-			versions: Object.freeze(["0.83.0", "0.84.0", "0.84.1", "0.84.2"]),
 		}),
 	]),
 	"native-skill-message:updateDisplay": Object.freeze([
@@ -118,7 +101,6 @@ export const KNOWN_NATIVE_IDENTITIES: Readonly<Record<string, readonly KnownNati
 			name: "updateDisplay",
 			arity: 0,
 			fingerprint: "48099ea6",
-			versions: Object.freeze(["0.83.0", "0.84.0", "0.84.1", "0.84.2"]),
 		}),
 	]),
 	"native-custom-message:rebuild": Object.freeze([
@@ -126,7 +108,6 @@ export const KNOWN_NATIVE_IDENTITIES: Readonly<Record<string, readonly KnownNati
 			name: "rebuild",
 			arity: 0,
 			fingerprint: "76ae2e3a",
-			versions: Object.freeze(["0.83.0", "0.84.0", "0.84.1", "0.84.2"]),
 		}),
 	]),
 	"tool-call-renderer:getCallRenderer": Object.freeze([
@@ -134,7 +115,6 @@ export const KNOWN_NATIVE_IDENTITIES: Readonly<Record<string, readonly KnownNati
 			name: "getCallRenderer",
 			arity: 0,
 			fingerprint: "951ea0e0",
-			versions: Object.freeze(["0.83.0", "0.84.0", "0.84.1", "0.84.2"]),
 		}),
 	]),
 	"tool-result-renderer:getResultRenderer": Object.freeze([
@@ -142,7 +122,6 @@ export const KNOWN_NATIVE_IDENTITIES: Readonly<Record<string, readonly KnownNati
 			name: "getResultRenderer",
 			arity: 0,
 			fingerprint: "8a25cd71",
-			versions: Object.freeze(["0.83.0", "0.84.0", "0.84.1", "0.84.2"]),
 		}),
 	]),
 	"native-bash-execution:render": Object.freeze([
@@ -154,7 +133,6 @@ export const KNOWN_NATIVE_IDENTITIES: Readonly<Record<string, readonly KnownNati
 			name: "BashExecutionComponent",
 			arity: 2,
 			fingerprint: "a5b5abca",
-			versions: Object.freeze(["0.83.0", "0.84.0", "0.84.1", "0.84.2"]),
 		}),
 	]),
 });
@@ -182,7 +160,7 @@ export interface CompatibilityRecordSnapshot {
 	readonly method: PropertyKey;
 	readonly shape: string;
 	readonly piVersion: string;
-	readonly versionRange: string;
+	readonly compatibilityBasis: string;
 	readonly generation: number;
 	readonly disposed: boolean;
 	readonly diagnostic: string | undefined;
@@ -190,16 +168,13 @@ export interface CompatibilityRecordSnapshot {
 
 export interface CompatibilityProbeReport {
 	attemptedVersion: string;
-	supportedVersions: readonly string[];
-	certificationTable: typeof CERTIFICATION_TABLE;
 	piVersion: string;
-	versionRange: string;
+	compatibilityBasis: typeof COMPATIBILITY_BASIS;
 	generation: number;
 	recordSnapshots: readonly CompatibilityRecordSnapshot[];
 	unsupported: ReadonlyArray<{ subtype: string; method: PropertyKey; reason: string }>;
 	delegationMarkers: readonly string[];
 	certification: readonly {
-		readonly version: string;
 		readonly attemptedVersion: string;
 		readonly matchedIdentity: KnownNativeIdentity | undefined;
 		readonly knownIdentities: readonly KnownNativeIdentity[];
@@ -286,10 +261,42 @@ export interface PiVersionResolution {
 	readFile?: (path: string) => string;
 }
 
+/**
+ * The bundled Node/RPC runtime intentionally has no filesystem module identity
+ * for the host package: extensions receive it through jiti's virtual modules.
+ * Use the process entrypoint for diagnostics before resolving the extension's
+ * own peer dependency, which may be an older development copy.
+ */
+function detectPiVersionFromHostProcess(readFile: (path: string) => string): string | undefined {
+	if (process.env.PI_CODING_AGENT !== "true" && process.env.AI_AGENT !== "pi") return undefined;
+	const argv1 = process.argv[1];
+	if (typeof argv1 !== "string" || argv1.length === 0 || !isAbsolute(argv1)) return undefined;
+	let directory = dirname(resolve(argv1));
+	for (;;) {
+		try {
+			const packageJson = JSON.parse(readFile(join(directory, "package.json"))) as {
+				name?: string;
+				version?: string;
+			};
+			if (packageJson.name === "@earendil-works/pi-coding-agent" && typeof packageJson.version === "string") {
+				return packageJson.version;
+			}
+		} catch {
+			// Keep walking toward the filesystem root.
+		}
+		const parent = dirname(directory);
+		if (parent === directory) return undefined;
+		directory = parent;
+	}
+}
+
 export function detectPiVersion(resolution: PiVersionResolution = {}): {
 	version: string | undefined;
 	diagnostic?: string;
 } {
+	const readFile = resolution.readFile ?? ((path: string) => readFileSync(path, "utf8"));
+	const hostProcessVersion = detectPiVersionFromHostProcess(readFile);
+	if (hostProcessVersion) return { version: hostProcessVersion };
 	const resolvePackageEntry =
 		resolution.resolvePackageEntry ??
 		((name: string) => {
@@ -301,7 +308,6 @@ export function detectPiVersion(resolution: PiVersionResolution = {}): {
 				);
 			}
 		});
-	const readFile = resolution.readFile ?? ((path: string) => readFileSync(path, "utf8"));
 	try {
 		const entry = resolvePackageEntry("@earendil-works/pi-coding-agent");
 		let directory = dirname(entry);
@@ -357,7 +363,6 @@ function certificationRecord(
 	const descriptor = evidence;
 	const value = descriptor?.value;
 	return {
-		version: attemptedVersion ?? "unknown",
 		attemptedVersion: attemptedVersion ?? "unknown",
 		matchedIdentity,
 		knownIdentities: KNOWN_NATIVE_IDENTITIES[`${spec.subtype}:${spec.method}`] ?? [],
@@ -419,7 +424,7 @@ function createFallbackRecord(
 		method: spec.method,
 		originalIdentity: Reflect.get(spec.target, spec.method),
 		piVersion: piVersion ?? "unknown",
-		versionRange: SUPPORTED_VERSION_RANGE,
+		compatibilityBasis: COMPATIBILITY_BASIS,
 		shape: "unsupported",
 		diagnostic: reason,
 		generation,
@@ -472,7 +477,7 @@ function probeSpec(options: {
 		target: spec.target,
 		method: spec.method,
 		piVersion: piVersion ?? "unknown",
-		versionRange: SUPPORTED_VERSION_RANGE,
+		compatibilityBasis: COMPATIBILITY_BASIS,
 		shape: identity !== undefined && shape(spec),
 		generation,
 		expectedIdentity: identity,
@@ -598,68 +603,9 @@ export const targetSpecs: readonly TargetSpec[] = [
 ];
 
 /**
- * Version → surface → recorded certified identity (informational). Certification
- * itself is decided per-surface by the runtime identity; this table only documents
- * which identity each supported Pi version is known to carry.
+ * The live report below is the certification table: it records the actual Pi
+ * version, descriptor, and identity seen in this process for every surface.
  */
-export const CERTIFICATION_TABLE: Readonly<
-	Record<
-		string,
-		Readonly<
-			Record<
-				string,
-				Readonly<{
-					feature: CompatibilityRecord["feature"];
-					subtype: CompatibilityRecord["subtype"];
-					target: object;
-					method: string;
-					writable: boolean;
-					configurable: boolean;
-					name: string;
-					arity: number;
-					fingerprint: string;
-					adapterId: string | undefined;
-					status: "certified";
-				}>
-			>
-		>
-	>
-> = Object.freeze(
-	Object.fromEntries(
-		SUPPORTED_PI_VERSIONS.map((version) => [
-			version,
-			Object.freeze(
-				Object.fromEntries(
-					targetSpecs.flatMap((spec) => {
-						const key = `${spec.subtype}:${spec.method}`;
-						const identity = (KNOWN_NATIVE_IDENTITIES[key] ?? []).find((candidate) =>
-							candidate.versions.includes(version),
-						);
-						if (!identity) return [];
-						return [
-							[
-								key,
-								Object.freeze({
-									feature: spec.feature,
-									subtype: spec.subtype,
-									target: spec.target,
-									method: spec.method,
-									writable: true,
-									configurable: true,
-									name: identity.name,
-									arity: identity.arity,
-									fingerprint: identity.fingerprint,
-									adapterId: spec.adapterId,
-									status: "certified" as const,
-								}),
-							],
-						];
-					}),
-				),
-			),
-		]),
-	),
-);
 
 const reportStates = new WeakMap<
 	object,
@@ -723,10 +669,8 @@ export function probePiCompatibility(
 	}
 	const report: CompatibilityProbeReport = {
 		attemptedVersion: piVersion ?? "unknown",
-		supportedVersions: SUPPORTED_PI_VERSIONS,
-		certificationTable: CERTIFICATION_TABLE,
 		piVersion: piVersion ?? "unknown",
-		versionRange: SUPPORTED_VERSION_RANGE,
+		compatibilityBasis: COMPATIBILITY_BASIS,
 		generation: currentGeneration(),
 		recordSnapshots: Object.freeze(
 			records.map((record) =>
@@ -736,7 +680,7 @@ export function probePiCompatibility(
 					method: record.method,
 					shape: record.shape,
 					piVersion: record.piVersion,
-					versionRange: record.versionRange,
+					compatibilityBasis: record.compatibilityBasis,
 					generation: record.generation,
 					disposed: record.disposed,
 					diagnostic: record.diagnostic,

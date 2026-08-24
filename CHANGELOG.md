@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-08-24
+
+### Fixed
+
+- Fixed the host-binding diagnostic for Pi 0.84.3's bundled Node/RPC runtime. The extension loader's virtual host modules are now recognized as the running Pi instead of being mistaken for a second modular package copy; Pi version detection also prefers the actual host entrypoint over a local development peer.
+- Removed the hardcoded Pi version allowlist from compatibility reporting. Patches now report live per-surface identity certification and continue to support future versions automatically when their native identities are unchanged.
+
 ## [1.0.3] - 2026-08-24
 
 ### Added

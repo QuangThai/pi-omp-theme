@@ -6,7 +6,7 @@ import {
 	detectPiVersion,
 	disposePiCompatibilityProbe,
 	probePiCompatibility,
-	SUPPORTED_VERSION_RANGE,
+	COMPATIBILITY_BASIS,
 } from "./compatibility-probe.js";
 import type { HostBinding } from "./host-binding.js";
 
@@ -97,8 +97,7 @@ export function createCompatibilityCoordinator(dispose = disposePiCompatibilityP
 				cleanupPending,
 				nativeFallbacks: report?.unsupported.filter((item) => /fallback|identity/i.test(item.reason)).length ?? 0,
 				piVersion: version.version ?? report?.piVersion ?? "unknown",
-				versionRange: report?.versionRange ?? SUPPORTED_VERSION_RANGE,
-				supportedVersions: report?.supportedVersions ?? [],
+				compatibilityBasis: report?.compatibilityBasis ?? COMPATIBILITY_BASIS,
 				// Whether this extension shares the running Pi's modules. "foreign" means
 				// every core patch is withheld: it would certify against a second copy of
 				// Pi that never renders (see host-binding.ts).

@@ -5,15 +5,14 @@ import { createRequire } from "node:module";
 import { dirname, extname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+const manifest = JSON.parse(readFileSync("package.json", "utf8"));
 const expected = {
   name: "@nguyenquangthai/pi-omp-theme",
-  version: "1.0.3",
+  version: manifest.version,
   entry: "./dist/extensions/pi-omp-theme.ts",
   repository: "git+https://github.com/QuangThai/pi-omp-theme.git",
   image: "https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/gallery-preview.png",
 };
-
-const manifest = JSON.parse(readFileSync("package.json", "utf8"));
 assert.equal(manifest.name, expected.name);
 assert.equal(manifest.version, expected.version);
 assert.equal(manifest.repository?.url, expected.repository);

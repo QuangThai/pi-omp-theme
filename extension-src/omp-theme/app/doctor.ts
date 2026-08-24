@@ -35,8 +35,8 @@ export function createDoctor(state: DoctorState): Readonly<Record<string, unknow
 		...(state.operational?.compatibility && typeof state.operational.compatibility.piVersion === "string"
 			? { piVersion: state.operational.compatibility.piVersion }
 			: {}),
-		...(state.operational?.compatibility && typeof state.operational.compatibility.versionRange === "string"
-			? { piVersionRange: state.operational.compatibility.versionRange }
+		...(state.operational?.compatibility && typeof state.operational.compatibility.compatibilityBasis === "string"
+			? { compatibilityBasis: state.operational.compatibility.compatibilityBasis }
 			: {}),
 		...(state.compatibility ? { compatibility: state.compatibility } : {}),
 		...(state.operational

@@ -26,6 +26,10 @@ import {
 	type TurnState,
 } from "../extension-src/omp-theme/features/tools/boxed/turn-summary.js";
 import { createCompatibilityCoordinator } from "../extension-src/omp-theme/pi/compatibility-coordinator.js";
+import {
+	COMPATIBILITY_BASIS,
+	probePiCompatibility,
+} from "../extension-src/omp-theme/pi/compatibility-probe.js";
 import { probeHostBinding } from "../extension-src/omp-theme/pi/host-binding.js";
 import piOmpThemeExtension from "../extension-src/omp-theme/pi/index.js";
 import { createPiOmpThemeSessionCoordinator } from "../extension-src/omp-theme/pi/session-coordinator.js";
@@ -83,6 +87,39 @@ test("host-binding probe distinguishes shared and foreign Pi module identities",
 	});
 	assert.equal(foreign.status, "foreign");
 	assert.match(foreign.reason, /second copy/);
+});
+
+test("host-binding probe treats Pi's bundled Node runtime as the loader host", async () => {
+	const fixture = packageFixture();
+	const binding = await probeHostBinding({
+		argv1: join(fixture.hostRoot, "dist", "bundle", "cli.js"),
+		readFile: fixture.readFile,
+		resolveExtensionEntry: () => join(fixture.extensionRoot, "dist", "index.js"),
+		extensionAssistantMessageComponent: function SharedComponent() {},
+		bundledHostRuntime: true,
+		importModule: async () => {
+			throw new Error("the modular package entry must not be imported for a bundled host");
+		},
+	});
+
+	assert.equal(binding.status, "bound");
+	assert.match(binding.reason, /bundled runtime/);
+	assert.equal(binding.hostPackage, fixture.hostRoot);
+});
+
+test("compatibility probing is identity-based rather than version-allowlisted", () => {
+	const report = probePiCompatibility("99.99.99");
+	try {
+		assert.equal(report.attemptedVersion, "99.99.99");
+		assert.equal(report.compatibilityBasis, COMPATIBILITY_BASIS);
+		assert.ok(report.certification.length > 0);
+		assert.ok(report.certification.every((surface) => surface.status === "certified"));
+		assert.ok(report.certification.every((surface) => surface.matchedIdentity !== undefined));
+		assert.equal("supportedVersions" in report, false);
+		assert.equal("certificationTable" in report, false);
+	} finally {
+		report.disposeOwner();
+	}
 });
 
 test("host-binding probe degrades to unknown when no absolute host entry exists", async () => {

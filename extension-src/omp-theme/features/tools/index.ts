@@ -5,6 +5,7 @@
 import { safeVisibleWidth as visibleWidth } from "../../shared/render-budget.js";
 import { EMPTY_BATCH_COMPONENT } from "./boxed/batch.js";
 import { renderBoxedToolCall, renderBoxedToolResult } from "./boxed/index.js";
+import { clearPresentationTui, notePresentationTui } from "./boxed/render-viewport.js";
 
 /**
  * Batch members render zero lines. Pi's ToolExecutionComponent always adds a
@@ -410,6 +411,7 @@ export function createToolDecorationOwner(snapshot: Partial<ToolDecorationSnapsh
 			else state.failed++;
 		}
 		capturedToolUi = undefined;
+		clearPresentationTui();
 		const archive = state.active.size === 0 ? finalize(state) : undefined;
 		return { restored: state.restored, failed: state.failed, diagnostics: new Map(state.diagnostics), archive };
 	};
@@ -417,6 +419,7 @@ export function createToolDecorationOwner(snapshot: Partial<ToolDecorationSnapsh
 		decorateToolRendererSelection(subtype: RendererSubtype, original: unknown, instance: object, args: unknown[]) {
 			if (typeof original !== "function") return undefined;
 			capturedToolUi = (instance as { ui?: { requestRender?: (force?: boolean) => void } }).ui ?? capturedToolUi;
+			notePresentationTui(capturedToolUi);
 			const renderer = Reflect.apply(original, instance, args);
 			if (state.snapshot.style === "compact-box") {
 				const toolName = (instance as { toolName?: unknown }).toolName;

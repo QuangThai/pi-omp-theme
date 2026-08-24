@@ -10,10 +10,10 @@ export const CONFIG_PRESETS: Readonly<Record<PresetName, Readonly<PiOmpThemeConf
 		placement: "below",
 		editor: { style: "dock", frame: "claude", showMetadata: false },
 		statusLine: {
-			separator: "·",
+			separator: "|",
 			layout: {
 				// No `pi` segment: the π wordmark is omp's own branding, not Pi's.
-				left: ["model_effort", "path", "git", "context_pct"],
+				left: ["model_effort", "path", "git", "claude_context"],
 				right: [],
 				// No extension statuses: they are other packages' text and cost a whole row.
 				secondary: [],

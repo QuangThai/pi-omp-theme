@@ -30,6 +30,7 @@ import {
 } from "./compatibility-probe.js";
 import { createPiConfigFilePort, defaultStoragePaths } from "./config-host.js";
 import { createConfigSourceAdapter, readSessionAuthorization } from "./config-session.js";
+import { describeForeignHostBinding, type HostBinding, probeHostBinding } from "./host-binding.js";
 import { buildOperationalState } from "./operational-state.js";
 import { collectToolDetails } from "./startup-resources.js";
 
@@ -77,6 +78,12 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 	// start() re-reads and re-captures at every session_start.
 	let authorization = readSessionAuthorization(pi);
 	let productGate: "omitted" | "allow" | "deny" = "omitted";
+	// Probed once per process at the first session start: whether this module
+	// graph is the running Pi's own (see host-binding.ts). A "foreign" binding
+	// withholds every core patch and is reported once in the session.
+	let hostBinding: HostBinding | undefined;
+	let hostBindingProbe: Promise<HostBinding> | undefined;
+	let foreignBindingReported = false;
 	const syncOperational = (config: import("../domain/config-types.js").NormalizedPiOmpThemeConfig) => {
 		app.setOperationalState(
 			buildOperationalState(
@@ -148,7 +155,7 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 					return;
 				}
 			}
-			compatibility.install(config, tuiSession, productGate);
+			compatibility.install(config, tuiSession, productGate, hostBinding);
 			syncOperational(config);
 		},
 	);
@@ -197,8 +204,16 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 			active = false;
 			await app.reload();
 			productGate = app.productPolicy.corePatchGate;
+			// Resolve the host binding before the first install so a foreign module
+			// graph never certifies patches against a Pi copy that does not render.
+			hostBindingProbe ??= probeHostBinding();
+			hostBinding = await hostBindingProbe;
+			if (hostBinding.status === "foreign" && !foreignBindingReported) {
+				foreignBindingReported = true;
+				ctx.ui?.notify?.(describeForeignHostBinding(hostBinding), "warning");
+			}
 			active = true;
-			compatibility.install(app.config, ctx.mode === "tui", productGate);
+			compatibility.install(app.config, ctx.mode === "tui", productGate, hostBinding);
 			// Auto-apply the configured theme before surfaces capture the active one.
 			applyAutoTheme(app.config, ctx);
 			// Session-scoped render configuration for the boxed tool/message surfaces.

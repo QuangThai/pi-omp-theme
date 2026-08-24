@@ -130,7 +130,6 @@ export function createPiOmpThemeRuntime(
 				generation,
 				initialSnapshot: currentSnapshot,
 				isCurrent: () => !disposed,
-				clearOnStartup: host.startupReason === "startup",
 			});
 			if (statusLine) {
 				disposables.add(statusLine);

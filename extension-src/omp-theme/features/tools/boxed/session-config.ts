@@ -114,12 +114,29 @@ export function stopElapsedTicker(state: Record<string, unknown> | undefined): v
 	tickerStates.delete(state);
 }
 
-/** Stop every elapsed ticker (session start/shutdown). */
+/**
+ * Stop every elapsed ticker and freeze the elapsed of every state that still
+ * had one (session start/shutdown, agent run boundaries).
+ *
+ * A ticker normally stops on the tool's terminal render pass. When a run is
+ * interrupted, Pi drops the pending tool before that pass happens (its
+ * `agent_end` clears the pending set, so a late result is never applied): the
+ * component stays "partial" forever and its ticker would keep invalidating it
+ * once a second for the rest of the session. Once that block scrolls out of
+ * view, each tick forces pi-tui's clear-and-replay redraw — a stutter every
+ * second plus a wiped scrollback. The run boundary is the reliable backstop.
+ */
 export function stopAllElapsedTickers(): void {
 	for (const state of tickerStates) {
 		const handle = state[TICKER_KEY] as TickerHandle | undefined;
 		if (handle !== undefined) clearInterval(handle);
 		delete state[TICKER_KEY];
+		recordExecutionEnded(state);
 	}
 	tickerStates.clear();
+}
+
+/** Number of live elapsed tickers (diagnostics). */
+export function activeElapsedTickerCount(): number {
+	return tickerStates.size;
 }

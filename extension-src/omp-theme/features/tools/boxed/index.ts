@@ -15,6 +15,7 @@ import { grepTool } from "./grep.js";
 import { lsTool } from "./ls.js";
 import { getQuickEditToolConfig, quickEditTool } from "./quick-edit.js";
 import { readTool } from "./read.js";
+import { noteToolRowHint } from "./render-viewport.js";
 import { getStateElapsedMs, getToolsRenderConfig } from "./session-config.js";
 import type { BoxedToolContext, BoxedToolDefinition } from "./shared.js";
 import {
@@ -84,7 +85,10 @@ export function renderBoxedToolCall(
 		return EMPTY_BATCH_COMPONENT;
 	}
 	// Capture the component invalidate so the turn_end path can force this block
-	// to re-run the renderer selectors (pi only re-invokes them from updateDisplay).
+	// to re-run the renderer selectors (pi only re-invokes them from updateDisplay),
+	// and the row the block lands on so that path can tell whether the rewrite
+	// stays inside the viewport (render-viewport.ts).
+	noteToolRowHint(context.toolCallId);
 	noteTurnMemberRender(context.toolCallId, context.invalidate);
 	const tool = typeof toolName === "string" ? REGISTRY[toolName] : undefined;
 	if (tool) return tool.call(args, theme, context);

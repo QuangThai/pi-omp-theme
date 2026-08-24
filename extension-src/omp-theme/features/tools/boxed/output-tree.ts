@@ -4,12 +4,12 @@
 // a **boxless tree panel** — a summary header line followed by `├─/└─` rows —
 // instead of a boxed command/response shell. This module owns:
 //
-// - output parsers that turn native tool text (entries, paths, `file:line:`
-//   match lines) into structured records, dropping trailing truncation notices;
+// - output parsers that turn native tool text into structured entries plus grep
+//   match/context code-frame rows, dropping model-facing truncation notices;
 // - `renderOutputTree`, which lays out a flat list of entries under a header
 //   (used by lone ls/find and bash ls/find);
-// - `renderGrepTree`, which lays out grep matches grouped by file (used by grep
-//   and bash grep/rg).
+// - `renderGrepTree`, which applies strict final-row budgets to grouped grep
+//   output, favors file breadth when collapsed, and restores context when expanded.
 //
 // Design notes:
 // - Pure + theme-consuming: no filesystem, no global state, no caching (callers
@@ -20,15 +20,18 @@
 //   as one visual family.
 
 import type { BoxTheme } from "../../../shared/box.js";
-import { dimLine } from "../../../shared/box.js";
+import { dimLine, replaceTabs } from "../../../shared/box.js";
 import { safeTruncateToWidth } from "../../../shared/render-budget.js";
 
 /** Indent for top-level tree rows; matches the quiet-tool batch panel. */
 export const TREE_INDENT = "  ";
 /** Extra indent for rows nested under a grouping node. */
 export const TREE_CHILD_INDENT = "  ";
-/** Default number of entries/matches shown before collapsing to "… N more". */
+/** Default number of entries shown before collapsing to "… N more". */
 export const OUTPUT_TREE_HEAD_LIMIT = 6;
+/** OMP search previews use strict final-row budgets, separate from generic tools. */
+export const GREP_COLLAPSED_LINE_LIMIT = 6;
+export const GREP_EXPANDED_LINE_LIMIT = 24;
 
 // ── Nerd Font file-type icons ───────────────────────────────────────────────
 // Only used when the session glyph mode is nerd (see withIcons). Unicode/ASCII
@@ -100,11 +103,17 @@ export function fileIcon(path: string): string {
  *  output text, not separate metadata). Dropped before parsing. */
 const NOTICE_LINE_PATTERN = /^\[[^\]]*\]$/;
 
-/** A parsed grep match line. Context lines are not surfaced in the tree. */
+/** A parsed grep match line. */
 export interface GrepMatch {
 	readonly file: string;
 	readonly line: number;
 	readonly content: string;
+}
+
+/** A user-visible grep code-frame line. Expanded rendering includes context
+ * lines; collapsed rendering filters down to actual matches. */
+export interface GrepDisplayLine extends GrepMatch {
+	readonly isMatch: boolean;
 }
 
 /** Drop trailing tool notices (`[Showing last …]`, `[Truncated: …]`) and blanks. */
@@ -157,45 +166,105 @@ export function parseFindOutput(rawText: string): string[] {
 		.filter((line) => line.length > 0);
 }
 
-// Match line:  path/to/file.ts:42:  matched content   (Pi grep adds a space;
-// ripgrep/grep emit no space). Context lines (path-line- …) are dropped.
-const GREP_MATCH_PATTERN = /^(.*):(\d+):[ \t]?(.*)$/;
-// Single-file ripgrep/grep output: `42:  content` (no filename).
-const GREP_BARE_PATTERN = /^(\d+):[ \t]?(.*)$/;
+// Pi match lines use `file:line: content`; context uses `file-line- content`.
+// Match parsing binds the first numeric delimiter (after a possible drive
+// prefix) so `:N:` inside source content cannot steal the file/line boundary.
+const GREP_MATCH_PATTERN = /^(.*?):(\d+):[ \t]?(.*)$/;
+const GREP_CONTEXT_FALLBACK_PATTERN = /^(.*)-(\d+)-[ \t]?(.*)$/;
+// Single-file ripgrep/grep output omits the filename.
+const GREP_BARE_MATCH_PATTERN = /^(\d+):[ \t]?(.*)$/;
+const GREP_BARE_CONTEXT_PATTERN = /^(\d+)-[ \t]?(.*)$/;
 
-/**
- * Parse native `grep` output into match records. Only real match lines
- * (`file:line: content`) are kept; context lines (`file-line- …`) are dropped
- * so the tree stays focused on hits. Trailing notices are removed.
- */
-export function parseGrepOutput(rawText: string): GrepMatch[] {
-	const matches: GrepMatch[] = [];
-	for (const line of stripNotices(rawText)) {
-		const match = GREP_MATCH_PATTERN.exec(line);
-		if (!match) continue;
-		const [, file, lineNo, content] = match;
-		if (!file || lineNo === undefined || content === undefined) continue;
-		const parsed = Number(lineNo);
-		if (!Number.isFinite(parsed) || parsed < 1) continue;
-		matches.push({ file, line: parsed, content });
-	}
-	return matches;
+function parsedDisplayLine(
+	match: RegExpExecArray | null,
+	isMatch: boolean,
+	fileOverride?: string,
+): GrepDisplayLine | undefined {
+	if (!match) return undefined;
+	const file = fileOverride ?? match[1];
+	const lineNo = fileOverride === undefined ? match[2] : match[1];
+	const content = fileOverride === undefined ? match[3] : match[2];
+	if (!file || lineNo === undefined || content === undefined) return undefined;
+	const parsed = Number(lineNo);
+	if (!Number.isFinite(parsed) || parsed < 1) return undefined;
+	return { file, line: parsed, content, isMatch };
 }
 
-/**
- * Parse single-file grep/ripgrep output — `line: content` without a filename —
- * attributing every match to the given file. Used by bash `grep pattern file`.
- */
-export function parseGrepBareOutput(rawText: string, file: string): GrepMatch[] {
-	const matches: GrepMatch[] = [];
-	for (const line of stripNotices(rawText)) {
-		const match = GREP_BARE_PATTERN.exec(line);
+function pushUniqueDisplayLine(
+	lines: GrepDisplayLine[],
+	indexes: Map<string, number>,
+	line: GrepDisplayLine,
+): void {
+	const key = `${line.file}\0${line.line}`;
+	const existingIndex = indexes.get(key);
+	if (existingIndex === undefined) {
+		indexes.set(key, lines.length);
+		lines.push(line);
+		return;
+	}
+	// Overlapping context windows can repeat the same source line. Keep one row,
+	// upgrading a prior context copy when that line is itself a later match.
+	const existing = lines[existingIndex];
+	if (line.isMatch && existing && !existing.isMatch) lines[existingIndex] = line;
+}
+
+function parsedContextLine(rawLine: string, knownFiles: readonly string[]): GrepDisplayLine | undefined {
+	for (const file of knownFiles) {
+		const prefix = `${file}-`;
+		if (!rawLine.startsWith(prefix)) continue;
+		const match = /^(\d+)-[ \t]?(.*)$/.exec(rawLine.slice(prefix.length));
 		if (!match) continue;
 		const parsed = Number(match[1]);
 		if (!Number.isFinite(parsed) || parsed < 1) continue;
-		matches.push({ file, line: parsed, content: match[2] ?? "" });
+		return { file, line: parsed, content: match[2] ?? "", isMatch: false };
 	}
-	return matches;
+	return parsedDisplayLine(GREP_CONTEXT_FALLBACK_PATTERN.exec(rawLine), false);
+}
+
+/** Parse native grep output for the TUI, preserving match and context rows. */
+export function parseGrepDisplayOutput(rawText: string): GrepDisplayLine[] {
+	const rawLines = stripNotices(rawText);
+	const knownFiles = [
+		...new Set(
+			rawLines
+				.map((line) => parsedDisplayLine(GREP_MATCH_PATTERN.exec(line), true)?.file)
+				.filter((file): file is string => Boolean(file)),
+		),
+	].sort((left, right) => right.length - left.length);
+	const lines: GrepDisplayLine[] = [];
+	const indexes = new Map<string, number>();
+	for (const line of rawLines) {
+		const parsed = parsedDisplayLine(GREP_MATCH_PATTERN.exec(line), true) ?? parsedContextLine(line, knownFiles);
+		if (parsed) pushUniqueDisplayLine(lines, indexes, parsed);
+	}
+	return lines;
+}
+
+/** Parse native grep output into actual match records only. */
+export function parseGrepOutput(rawText: string): GrepMatch[] {
+	return parseGrepDisplayOutput(rawText)
+		.filter((line) => line.isMatch)
+		.map(({ file, line, content }) => ({ file, line, content }));
+}
+
+/** Parse single-file grep/ripgrep output for the TUI. */
+export function parseGrepBareDisplayOutput(rawText: string, file: string): GrepDisplayLine[] {
+	const lines: GrepDisplayLine[] = [];
+	const indexes = new Map<string, number>();
+	for (const line of stripNotices(rawText)) {
+		const parsed =
+			parsedDisplayLine(GREP_BARE_MATCH_PATTERN.exec(line), true, file) ??
+			parsedDisplayLine(GREP_BARE_CONTEXT_PATTERN.exec(line), false, file);
+		if (parsed) pushUniqueDisplayLine(lines, indexes, parsed);
+	}
+	return lines;
+}
+
+/** Parse single-file grep/ripgrep output into actual matches only. */
+export function parseGrepBareOutput(rawText: string, file: string): GrepMatch[] {
+	return parseGrepBareDisplayOutput(rawText, file)
+		.filter((line) => line.isMatch)
+		.map(({ file: parsedFile, line, content }) => ({ file: parsedFile, line, content }));
 }
 
 /** Group grep matches by file, preserving first-seen order. */
@@ -265,27 +334,147 @@ export function renderOutputTree(
 }
 
 export interface GrepTreeOptions {
-	/** Maximum matches shown (across all files) before the "… N more" row. */
-	headLimit?: number;
+	/** Strict body-row budget, including file nodes and the trailing summary. */
+	lineBudget?: number;
+	/** Expanded mode may include context lines supplied through displayLines. */
+	expanded?: boolean;
+	/** Parsed match + context lines. Falls back to match-only records. */
+	displayLines?: readonly GrepDisplayLine[];
 	/** Indent prefix applied to top-level rows. */
 	indent?: string;
 	/** Nerd Font mode: prefix file nodes with their file-type icon. */
 	withIcons?: boolean;
+	/** Optional OSC-8/link wrapper supplied by a renderer that knows the cwd. */
+	link?: (styledText: string, file: string, line?: number) => string;
 }
 
-function formatMatchRow(theme: BoxTheme, match: GrepMatch): string {
-	// Match rows render in the output text color (not primary) so they read like
-	// the matched code; only the file nodes carry the primary color.
-	const label = theme.fg("toolOutput", `*${match.line}`);
-	const sep = dimLine("│");
-	return `${label}${sep} ${theme.fg("toolOutput", match.content)}`;
+interface GrepDisplayGroup {
+	file: string;
+	lines: GrepDisplayLine[];
+}
+
+interface SelectedGrepGroup {
+	group: GrepDisplayGroup;
+	lines: GrepDisplayLine[];
+}
+
+function groupDisplayLines(lines: readonly GrepDisplayLine[]): GrepDisplayGroup[] {
+	const groups: GrepDisplayGroup[] = [];
+	const byFile = new Map<string, GrepDisplayGroup>();
+	for (const line of lines) {
+		let group = byFile.get(line.file);
+		if (!group) {
+			group = { file: line.file, lines: [] };
+			byFile.set(line.file, group);
+			groups.push(group);
+		}
+		group.lines.push(line);
+	}
+	return groups;
+}
+
+function fullRowCount(groups: readonly GrepDisplayGroup[], multiFile: boolean): number {
+	return groups.reduce((count, group) => count + group.lines.length + (multiFile ? 1 : 0), 0);
+}
+
+function selectCollapsedGroups(
+	groups: readonly GrepDisplayGroup[],
+	lineBudget: number,
+	multiFile: boolean,
+): SelectedGrepGroup[] {
+	const matchesOnly = groups.map((group) => ({
+		file: group.file,
+		lines: group.lines.filter((line) => line.isMatch),
+	}));
+	if (fullRowCount(matchesOnly, multiFile) <= lineBudget) {
+		return matchesOnly.filter((group) => group.lines.length > 0).map((group) => ({ group, lines: [...group.lines] }));
+	}
+
+	// Keep one row for the global summary, then select matches round-robin by
+	// file. This prevents one hot file from hiding every other result group.
+	const contentBudget = Math.max(0, lineBudget - 1);
+	const selected = new Map<string, SelectedGrepGroup>();
+	let usedRows = 0;
+	for (let round = 0; ; round++) {
+		let progressed = false;
+		for (const group of matchesOnly) {
+			const line = group.lines[round];
+			if (!line) continue;
+			const existing = selected.get(group.file);
+			const cost = existing ? 1 : multiFile ? 2 : 1;
+			if (usedRows + cost > contentBudget) continue;
+			if (existing) existing.lines.push(line);
+			else selected.set(group.file, { group, lines: [line] });
+			usedRows += cost;
+			progressed = true;
+		}
+		if (!progressed) break;
+	}
+	return matchesOnly.flatMap((group) => {
+		const value = selected.get(group.file);
+		return value ? [value] : [];
+	});
+}
+
+function expandedSliceWithMatch(lines: readonly GrepDisplayLine[], capacity: number): GrepDisplayLine[] {
+	if (capacity <= 0) return [];
+	const prefix = lines.slice(0, capacity);
+	if (prefix.some((line) => line.isMatch)) return prefix;
+	const firstMatch = lines.findIndex((line) => line.isMatch);
+	if (firstMatch < 0) return [];
+	const start = Math.max(0, firstMatch - (capacity - 1));
+	return lines.slice(start, firstMatch + 1);
+}
+
+function selectExpandedGroups(
+	groups: readonly GrepDisplayGroup[],
+	lineBudget: number,
+	multiFile: boolean,
+): SelectedGrepGroup[] {
+	if (fullRowCount(groups, multiFile) <= lineBudget) {
+		return groups.map((group) => ({ group, lines: [...group.lines] }));
+	}
+	const contentBudget = Math.max(0, lineBudget - 1);
+	const selected: SelectedGrepGroup[] = [];
+	let usedRows = 0;
+	for (const group of groups) {
+		const headerCost = multiFile ? 1 : 0;
+		const available = contentBudget - usedRows - headerCost;
+		const lines = expandedSliceWithMatch(group.lines, available);
+		if (lines.length === 0) continue;
+		selected.push({ group, lines });
+		usedRows += headerCost + lines.length;
+		if (lines.length < group.lines.length) break;
+	}
+	return selected;
+}
+
+function formatMatchRow(theme: BoxTheme, line: GrepDisplayLine, lineNumberWidth: number): string {
+	const marker = line.isMatch ? "*" : " ";
+	const lineNumber = `${marker}${String(line.line).padStart(lineNumberWidth, " ")}`;
+	const contentColor = line.isMatch ? "toolOutput" : "dim";
+	return `${theme.fg("dim", lineNumber)}${dimLine("│")} ${theme.fg(contentColor, replaceTabs(line.content))}`;
+}
+
+function moreSummary(
+	theme: BoxTheme,
+	hiddenMatches: number,
+	hiddenLines: number,
+	hiddenFiles: number,
+): string {
+	const primary =
+		hiddenMatches > 0
+			? `${hiddenMatches} more ${pluralForm("match", hiddenMatches)}`
+			: `${hiddenLines} more ${pluralForm("line", hiddenLines)}`;
+	const files = hiddenFiles > 0 ? ` · ${hiddenFiles} more ${pluralForm("file", hiddenFiles)}` : "";
+	return theme.fg("dim", `… ${primary}${files}`);
 }
 
 /**
- * Render a grep matches tree: `<header>` then matches grouped by file. With a
- * single file the matches are direct children; with several files each file is
- * a `├─ file` node and its matches hang off an indented trunk beneath. A
- * trailing `└─ … N more matches` row appears when the match budget is exceeded.
+ * Render grep output with a strict visual-line budget. Collapsed mode favors
+ * breadth across files and match lines only; expanded mode keeps source order
+ * and includes context. Each file is one tree item whose continuation gutter
+ * carries its code frame, matching OMP's quieter grouped-search presentation.
  */
 export function renderGrepTree(
 	theme: BoxTheme,
@@ -294,65 +483,58 @@ export function renderGrepTree(
 	width: number,
 	options: GrepTreeOptions = {},
 ): string[] {
-	const headLimit = options.headLimit ?? OUTPUT_TREE_HEAD_LIMIT;
 	const indent = options.indent ?? TREE_INDENT;
 	const safeWidth = Math.max(1, width);
-
+	const lineBudget = Math.max(0, Math.floor(options.lineBudget ?? OUTPUT_TREE_HEAD_LIMIT));
 	const out: string[] = [safeTruncateToWidth(header, safeWidth, "…")];
-	if (matches.length === 0) return out;
+	if (matches.length === 0 || lineBudget === 0) return out;
 
-	const groups = groupMatchesByFile(matches);
-	const singleFile = groups.length === 1;
-
-	// First decide which matches fit the budget so branch glyphs (├─ vs └─) and
-	// the trailing "… N more" row stay consistent.
-	const budget = matches.slice(0, headLimit);
-	const remaining = matches.length - budget.length;
-	const truncated = remaining > 0;
-	const totalVisible = budget.length;
-
+	const fallbackLines: GrepDisplayLine[] = matches.map((match) => ({ ...match, isMatch: true }));
+	const displayLines = options.displayLines?.some((line) => line.isMatch) ? options.displayLines : fallbackLines;
+	const groups = groupDisplayLines(displayLines);
+	const multiFile = groups.length > 1;
+	const selected = options.expanded
+		? selectExpandedGroups(groups, lineBudget, multiFile)
+		: selectCollapsedGroups(groups, lineBudget, multiFile);
+	const selectedLines = selected.flatMap((entry) => entry.lines);
+	const selectedMatches = selectedLines.filter((line) => line.isMatch).length;
+	const totalDisplayMatches = displayLines.filter((line) => line.isMatch).length;
+	const hiddenMatches = Math.max(matches.length - selectedMatches, totalDisplayMatches - selectedMatches, 0);
+	// Collapsed mode intentionally discards context; only expanded context omitted
+	// by its own budget is user-visible as "more lines".
+	const hiddenLines = options.expanded ? Math.max(displayLines.length - selectedLines.length, 0) : 0;
+	const selectedFiles = new Set(selected.filter((entry) => entry.lines.some((line) => line.isMatch)).map((entry) => entry.group.file));
+	const hiddenFiles = groups.filter((group) => !selectedFiles.has(group.file)).length;
+	const hasSummary = hiddenMatches > 0 || hiddenLines > 0;
 	const push = (line: string) => out.push(safeTruncateToWidth(line, safeWidth, "…"));
 
-	if (singleFile) {
-		budget.forEach((match, index) => {
-			const isLast = index === totalVisible - 1 && !truncated;
-			push(`${indent}${dimLine(isLast ? "└─" : "├─")} ${formatMatchRow(theme, match)}`);
-		});
-	} else {
-		// Walk the budget, tracking position within each file group so the file
-		// node and its match subtree render as one connected unit.
-		let shown = 0;
-		for (let gi = 0; gi < groups.length && shown < totalVisible; gi++) {
-			const group = groups[gi];
-			if (!group) continue;
-			const isLastGroup = gi === groups.length - 1;
-			const trunk = isLastGroup ? " " : dimLine("│");
-
-			const visibleHere: GrepMatch[] = [];
-			for (const match of group.matches) {
-				if (shown >= totalVisible) break;
-				visibleHere.push(match);
-				shown++;
+	selected.forEach((entry, index) => {
+		const isLast = index === selected.length - 1 && !hasSummary;
+		const branchPrefix = `${indent}${dimLine(isLast ? "└─" : "├─")} `;
+		const continuePrefix = `${indent}${isLast ? "  " : dimLine("│ ")} `;
+		const lineNumberWidth = entry.group.lines.reduce(
+			(max, line) => Math.max(max, String(line.line).length),
+			1,
+		);
+		if (multiFile) {
+			const rawLabel = options.withIcons ? `${fileIcon(entry.group.file)} ${entry.group.file}` : entry.group.file;
+			const styledLabel = theme.fg("accent", rawLabel);
+			push(`${branchPrefix}${options.link?.(styledLabel, entry.group.file) ?? styledLabel}`);
+			for (const line of entry.lines) {
+				const styledLine = formatMatchRow(theme, line, lineNumberWidth);
+				push(`${continuePrefix}${options.link?.(styledLine, line.file, line.line) ?? styledLine}`);
 			}
-			if (visibleHere.length === 0) continue;
-
-			const groupIsLastRendered = shown >= totalVisible && !truncated;
-			const fileLabel = options.withIcons ? `${fileIcon(group.file)} ${group.file}` : group.file;
-			// File nodes use the primary (accent) color, matching read/ls/find paths.
-			push(`${indent}${dimLine(groupIsLastRendered ? "└─" : "├─")} ${theme.fg("accent", fileLabel)}`);
-
-			visibleHere.forEach((match, index) => {
-				const isLastInGroup = index === visibleHere.length - 1;
-				const isLastOverall = groupIsLastRendered && isLastInGroup;
-				push(
-					`${indent}${trunk}${TREE_CHILD_INDENT}${dimLine(isLastOverall ? "└─" : "├─")} ${formatMatchRow(theme, match)}`,
-				);
-			});
+			return;
 		}
-	}
+		entry.lines.forEach((line, lineIndex) => {
+			const styledLine = formatMatchRow(theme, line, lineNumberWidth);
+			const linked = options.link?.(styledLine, line.file, line.line) ?? styledLine;
+			push(`${lineIndex === 0 ? branchPrefix : continuePrefix}${linked}`);
+		});
+	});
 
-	if (truncated) {
-		push(`${indent}${dimLine("└─")} ${theme.fg("dim", `… ${remaining} more ${pluralForm("match", remaining)}`)}`);
+	if (hasSummary && out.length - 1 < lineBudget) {
+		push(`${indent}${dimLine("└─")} ${moreSummary(theme, hiddenMatches, hiddenLines, hiddenFiles)}`);
 	}
 	return out;
 }

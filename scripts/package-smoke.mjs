@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { createRequire } from "node:module";
+import { dirname, extname, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const expected = {
   name: "@nguyenquangthai/pi-omp-theme",
-  version: "1.0.1",
-  entry: "./dist/extensions/pi-omp-theme.js",
+  version: "1.0.2",
+  entry: "./dist/extensions/pi-omp-theme.ts",
   repository: "git+https://github.com/QuangThai/pi-omp-theme.git",
   image: "https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/gallery-preview.png",
 };
@@ -25,13 +26,36 @@ assert.deepEqual(manifest.pi?.themes, ["./themes"]);
 assert.equal(manifest.pi?.image, expected.image);
 assert.ok(existsSync(expected.entry), `missing compiled extension: ${expected.entry}`);
 
+// Pi loads extensions through jiti. For ESM `.js`/`.mjs` entries jiti tries a
+// native import first and only falls back to its transpiling loader — the one
+// that maps `@earendil-works/*` onto the running Pi's own modules — when the
+// native import fails. A `.js` entry that can natively resolve a
+// `node_modules/@earendil-works/pi-coding-agent` next to it (a local checkout
+// installed with `pi install <dir>`) binds to a second copy of Pi and every
+// prototype patch silently misses the TUI. jiti always transpiles `.ts`, so the
+// `.ts` extension is what guarantees the host binding. Keep it.
+assert.equal(extname(expected.entry), ".ts", "the compiled entry must keep its .ts extension (host binding)");
+
 const lock = JSON.parse(readFileSync("package-lock.json", "utf8"));
 assert.equal(lock.version, expected.version);
 assert.equal(lock.packages?.[""]?.version, expected.version);
 assert.equal(lock.packages?.[""]?.engines?.node, manifest.engines.node);
 
-const extension = await import(`${pathToFileURL(resolve(expected.entry)).href}?smoke=${Date.now()}`);
-assert.equal(typeof extension.default, "function", "compiled extension must export a default factory");
+// Load the entry the way Pi does: jiti with Pi's host aliases (built Node mode).
+const piPackageJson = resolve("node_modules/@earendil-works/pi-coding-agent/package.json");
+const piRequire = createRequire(piPackageJson);
+const { createJiti } = piRequire("jiti");
+const piEntry = resolve(dirname(piPackageJson), "dist/index.js");
+const tuiEntry = fileURLToPath(import.meta.resolve("@earendil-works/pi-tui"));
+const jiti = createJiti(pathToFileURL(piPackageJson).href, {
+  moduleCache: false,
+  alias: {
+    "@earendil-works/pi-coding-agent": piEntry,
+    "@earendil-works/pi-tui": tuiEntry,
+  },
+});
+const factory = await jiti.import(resolve(expected.entry), { default: true });
+assert.equal(typeof factory, "function", "compiled extension must export a default factory");
 
 for (const file of ["themes/titanium.json", "themes/titanium-light.json"]) {
   const theme = JSON.parse(readFileSync(file, "utf8"));
@@ -65,7 +89,7 @@ const expectedFiles = [
   "CHANGELOG.md",
   "LICENSE",
   "README.md",
-  "dist/extensions/pi-omp-theme.js",
+  "dist/extensions/pi-omp-theme.ts",
   "package.json",
   "themes/titanium-light.json",
   "themes/titanium.json",

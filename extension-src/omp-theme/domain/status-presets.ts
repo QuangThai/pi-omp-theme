@@ -35,7 +35,7 @@ export const STATUS_PRESETS: Readonly<Record<PresetName, StatusLayout>> = Object
 	// here a config that overrides just one group silently inherits `default`'s
 	// other two, which is not the layout the preset promises.
 	claude: Object.freeze({
-		left: ["model_effort", "path", "git", "context_pct"],
+		left: ["model_effort", "path", "git", "claude_context"],
 		right: [],
 		secondary: [],
 	}),

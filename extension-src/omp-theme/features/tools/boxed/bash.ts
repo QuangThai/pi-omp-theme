@@ -1,8 +1,10 @@
 // Boxed bash tool renderer
 // (renderCall/renderResult only).
 
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { highlightCode } from "@earendil-works/pi-coding-agent";
-import type { Component } from "@earendil-works/pi-tui";
+import { getCapabilities, hyperlink, type Component } from "@earendil-works/pi-tui";
 import { stripAnsi } from "../../../shared/ansi.js";
 import type { BoxTheme } from "../../../shared/box.js";
 import {
@@ -37,10 +39,15 @@ import {
 	renderGitDiffResult,
 } from "./git.js";
 import {
+	GREP_COLLAPSED_LINE_LIMIT,
+	GREP_EXPANDED_LINE_LIMIT,
+	type GrepDisplayLine,
 	type GrepMatch,
 	groupMatchesByFile,
 	parseFindOutput,
+	parseGrepBareDisplayOutput,
 	parseGrepBareOutput,
+	parseGrepDisplayOutput,
 	parseGrepOutput,
 	parseLsLongOutput,
 	parseLsOutput,
@@ -696,23 +703,27 @@ function bashTreeHeader(theme: BoxTheme, cls: BashTreeClass, counts?: { files?: 
 	const label = cls.kind === "find" ? "Find" : cls.kind === "ls" ? "List" : "Grep";
 	const hasDetail = Boolean(cls.pattern) || Boolean(counts);
 	// ls/find/grep headers carry the magnifying-glass icon in Nerd Font mode.
-	const icon = getToolsRenderConfig().nerdFonts ? `${SEARCH_ICON} ` : "";
-	const prefix = icon + (hasDetail ? `${label}:` : label);
-	const patternPart = cls.pattern ? ` ${theme.fg("text", cls.pattern)}` : "";
+	const icon = getToolsRenderConfig().nerdFonts ? `${theme.fg("toolTitle", SEARCH_ICON)} ` : "";
+	const prefixText = hasDetail ? `${label}:` : label;
+	const prefix = theme.fg("toolTitle", typeof theme?.bold === "function" ? theme.bold(prefixText) : prefixText);
+	const patternPart = cls.pattern ? ` ${theme.fg("muted", cls.pattern.replace(/\r\n?|\n/g, " "))}` : "";
 	let middle = "";
 	if (counts) {
 		if (cls.kind === "grep") {
 			const matches = counts.matches ?? 0;
 			const files = counts.files ?? 0;
-			middle = ` ${theme.fg("accent", `${matches} ${pluralForm("match", matches)}`)}${theme.fg("dim", ` · ${files} ${pluralForm("file", files)}`)}`;
+			middle = theme.fg(
+				"dim",
+				` ${matches} ${pluralForm("match", matches)} · ${files} ${pluralForm("file", files)}`,
+			);
 		} else {
 			const files = counts.files ?? 0;
-			middle = ` ${theme.fg("accent", `${files} ${pluralForm("file", files)}`)}`;
+			middle = theme.fg("dim", ` ${files} ${pluralForm("file", files)}`);
 		}
 	}
 	const pathPart =
 		cls.pathLabel && cls.pathLabel !== "current directory" ? theme.fg("dim", ` · in ${cls.pathLabel}`) : "";
-	return `${typeof theme?.bold === "function" ? theme.bold(prefix) : prefix}${patternPart}${middle}${pathPart}`;
+	return `${icon}${prefix}${patternPart}${middle}${pathPart}`;
 }
 
 /** `ls -l` long-format lines (permissions block) can't be parsed into names
@@ -728,7 +739,7 @@ function isLongFormatLs(text: string): boolean {
 
 /** Parsed bash tree output, or null to fall back to the boxed shell
  *  (long-format ls, unparseable grep). */
-type ParsedBashTree = { entries: string[] } | { matches: GrepMatch[] };
+type ParsedBashTree = { entries: string[] } | { matches: GrepMatch[]; displayLines: GrepDisplayLine[] };
 
 function parseBashTreeOutput(cls: BashTreeClass, output: string): ParsedBashTree | null {
 	if (cls.kind === "ls") {
@@ -739,16 +750,19 @@ function parseBashTreeOutput(cls: BashTreeClass, output: string): ParsedBashTree
 	}
 	if (cls.kind === "find") return { entries: parseFindOutput(output) };
 	const matches = parseGrepOutput(output);
+	const displayLines = parseGrepDisplayOutput(output);
 	if (matches.length === 0 && output.trim().length > 0) {
 		// Single-file `rg`/`grep` output is `line: content` with no filename:
-		// attribute matches to the command's single path argument.
+		// attribute matches and context to the command's single path argument.
 		if (cls.singlePath) {
 			const bare = parseGrepBareOutput(output, cls.singlePath);
-			if (bare.length > 0) return { matches: bare };
+			if (bare.length > 0) {
+				return { matches: bare, displayLines: parseGrepBareDisplayOutput(output, cls.singlePath) };
+			}
 		}
 		return null;
 	}
-	return { matches };
+	return { matches, displayLines };
 }
 
 interface BashTreeState {
@@ -827,10 +841,24 @@ export function resetBashTreeRegistry(): void {
 	semanticStates.clear();
 }
 
+function linkBashGrepLine(
+	context: BoxedToolContext,
+	styledText: string,
+	file: string,
+	line?: number,
+): string {
+	if (!getCapabilities().hyperlinks) return styledText;
+	const url = pathToFileURL(resolve(context.cwd, file));
+	if (line !== undefined) url.searchParams.set("line", String(line));
+	return hyperlink(styledText, url.href);
+}
+
 function renderBashTreeLines(
 	theme: BoxTheme,
 	state: { cls: BashTreeClass; parsed?: ParsedBashTree },
 	width: number,
+	expanded: boolean,
+	context: BoxedToolContext,
 ): string[] {
 	const safeWidth = Math.max(1, width);
 	const cls = state.cls;
@@ -844,12 +872,22 @@ function renderBashTreeLines(
 	}
 	if (state.parsed && "matches" in state.parsed) {
 		const matches = state.parsed.matches;
+		const config = getToolsRenderConfig();
+		const configuredLimit = expanded ? config.maxExpandedLines : config.maxCollapsedLines;
+		const ompLimit = expanded ? GREP_EXPANDED_LINE_LIMIT : GREP_COLLAPSED_LINE_LIMIT;
 		return renderGrepTree(
 			theme,
 			bashTreeHeader(theme, cls, { matches: matches.length, files: groupMatchesByFile(matches).length }),
 			matches,
 			safeWidth,
-			{ indent: TREE_INDENT, withIcons: getToolsRenderConfig().nerdFonts },
+			{
+				indent: TREE_INDENT,
+				withIcons: config.nerdFonts,
+				lineBudget: Math.max(0, Math.min(configuredLimit, ompLimit)),
+				expanded,
+				displayLines: state.parsed.displayLines,
+				link: (styledText, file, line) => linkBashGrepLine(context, styledText, file, line),
+			},
 		);
 	}
 	return [safeTruncateToWidth(bashTreeHeader(theme, cls), safeWidth, "…")];
@@ -887,7 +925,7 @@ function renderSemanticPanel(theme: BoxTheme, toolCallId: string, context: Boxed
 			if (isBashTreeClass(state.cls)) {
 				const treeState: { cls: BashTreeClass; parsed?: ParsedBashTree } = { cls: state.cls };
 				if (state.parsed !== undefined) treeState.parsed = state.parsed as ParsedBashTree;
-				return renderBashTreeLines(theme, treeState, width);
+				return renderBashTreeLines(theme, treeState, width, context.expanded, context);
 			}
 			// Git classes only ever carry git parsed values (parseSemanticOutput
 			// dispatches on the class), so the narrowed cast is exact.

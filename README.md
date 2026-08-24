@@ -38,7 +38,18 @@ pi list
 pi -p "/pi-omp-theme doctor"
 ```
 
-`pi list` should include `npm:@nguyenquangthai/pi-omp-theme`. The doctor command reports the active preset, Pi compatibility identity, theme, and surface fallbacks.
+`pi list` should include `npm:@nguyenquangthai/pi-omp-theme`. The doctor command reports the active preset, Pi compatibility identity, theme, surface fallbacks, and the host binding (`operational.compatibility.hostBinding.status` must read `bound`).
+
+### Install from a local checkout
+
+```bash
+npm ci && npm run build
+pi install /path/to/pi-omp-theme
+```
+
+The compiled entry is `dist/extensions/pi-omp-theme.ts` on purpose. Pi loads extensions through jiti, which tries a native `import()` for ESM `.js` entries first and only applies its host aliases (`@earendil-works/*` → the running Pi's own modules) when that native import fails. A `.js` entry next to a checkout's `node_modules/@earendil-works/pi-coding-agent` therefore binds the extension to a second copy of Pi and every message/tool decoration silently misses the TUI. jiti always transpiles `.ts`, so the `.ts` entry keeps the binding correct wherever the package lives. If the doctor ever reports `hostBinding.status: "foreign"`, the extension was loaded outside Pi's loader; reinstall with `pi install npm:@nguyenquangthai/pi-omp-theme` or rebuild the checkout.
+
+The first launch after a rebuild transpiles the bundle once (a few seconds); jiti caches the result for later launches.
 
 ### Update
 
@@ -48,7 +59,7 @@ pi update npm:@nguyenquangthai/pi-omp-theme
 pi update --extensions
 ```
 
-Version-pinned installs such as `npm:@nguyenquangthai/pi-omp-theme@1.0.1` remain pinned until explicitly changed.
+Version-pinned installs such as `npm:@nguyenquangthai/pi-omp-theme@1.0.2` remain pinned until explicitly changed.
 
 ### Uninstall
 

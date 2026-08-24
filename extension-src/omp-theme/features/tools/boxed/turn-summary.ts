@@ -35,6 +35,7 @@ import type { Component } from "@earendil-works/pi-tui";
 import type { BoxTheme } from "../../../shared/box.js";
 import { safeTruncateToWidth } from "../../../shared/render-budget.js";
 import { pluralForm } from "./output-tree.js";
+import { resetToolRowHints, toolRowPlacement } from "./render-viewport.js";
 import { getToolsRenderConfig } from "./session-config.js";
 
 export interface TurnMemberInfo {
@@ -93,6 +94,7 @@ const invalidateByCallId = new Map<string, () => void>();
 export function resetTurnRegistry(): void {
 	memberByCallId.clear();
 	invalidateByCallId.clear();
+	resetToolRowHints();
 }
 
 interface ToolCallLike {
@@ -292,8 +294,18 @@ export function noteTurnMemberRender(toolCallId: string, invalidate: () => void)
 /**
  * Force the just-finished turn's tool blocks to re-render (updateDisplay).
  * Components that never rendered (headless/print) have no captured callback.
+ *
+ * Returns whether the blocks were rewritten now. Collapsing rewrites rows that
+ * are already on screen; when the run's first collapsible block has scrolled
+ * above pi-tui's viewport, that rewrite can only be painted by clearing the
+ * screen and scrollback and replaying the transcript — a full-screen flash
+ * that also throws away the user's scroll position. Such a run is left as it
+ * is: the registry already marks it ended, so its blocks collapse on their
+ * next natural re-render (resize, theme change, session restore) with no
+ * forced redraw.
  */
-export function invalidateTurnMembers(turn: TurnState): void {
+export function invalidateTurnMembers(turn: TurnState): boolean {
+	if (turn.leaderId && toolRowPlacement(turn.leaderId) === "above") return false;
 	for (const member of turn.members) {
 		const invalidate = invalidateByCallId.get(member.toolCallId);
 		if (!invalidate) continue;
@@ -304,6 +316,7 @@ export function invalidateTurnMembers(turn: TurnState): void {
 			invalidateByCallId.delete(member.toolCallId);
 		}
 	}
+	return true;
 }
 
 /**

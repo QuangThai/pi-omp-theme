@@ -57,8 +57,6 @@ export interface StatusLineInstallOptions {
 	generation: number;
 	initialSnapshot: StatusSnapshot;
 	isCurrent?: () => boolean;
-	/** Force a full terminal redraw (clear screen + scrollback) on the first footer mount. */
-	clearOnStartup?: boolean;
 }
 
 interface Ownership {
@@ -128,7 +126,6 @@ export function installStatusLine(options: StatusLineInstallOptions): StatusLine
 	let footerData: FooterDataProviderView | undefined;
 	let footerOwner = false;
 	let footerUnsubscribe: (() => void) | undefined;
-	let clearedOnStartup = false;
 	const segments = new Map(createBuiltinSegments());
 	for (const item of config.statusLine.customItems) {
 		if (!item.id || !item.statusKey) continue;
@@ -194,6 +191,7 @@ export function installStatusLine(options: StatusLineInstallOptions): StatusLine
 			options: {
 				...Object.fromEntries(config.statusLine.disabledSegments.map((id) => [id, { disabled: true }])),
 				context_bar: { width: config.statusLine.contextBarWidth },
+				claude_context: { width: config.statusLine.contextBarWidth },
 			},
 		});
 		const lines = secondary ? result.lines.slice(1) : result.lines.slice(0, 1);
@@ -235,11 +233,6 @@ export function installStatusLine(options: StatusLineInstallOptions): StatusLine
 			secondaryComponent?.invalidate();
 			tui.requestRender?.();
 		});
-		if (options.clearOnStartup && !clearedOnStartup) {
-			clearedOnStartup = true;
-			// Force a full redraw on the first frame: clears the screen and scrollback.
-			tui.requestRender?.(true);
-		}
 		return {
 			// The native footer is replaced by an empty component; visible status lives in widgets.
 			render() {

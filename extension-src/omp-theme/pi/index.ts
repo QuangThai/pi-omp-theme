@@ -1,6 +1,7 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import type { StatusSnapshot } from "../domain/status.js";
 import { closeActiveBatch } from "../features/tools/boxed/batch.js";
+import { stopAllElapsedTickers } from "../features/tools/boxed/session-config.js";
 import {
 	beginAgentRun,
 	finishAgentRun,
@@ -82,6 +83,9 @@ export default function piOmpThemeExtension(pi: ExtensionAPI): void {
 	pi.on("agent_start", () => {
 		coordinator.app.runtime.current?.dismissStartup();
 		startWorkingShimmer();
+		// No tool can still be running when a new run starts; drop any ticker an
+		// interrupted previous run left behind before it can force redraws.
+		stopAllElapsedTickers();
 		// Turn summary (ADR 0007): a summary group spans the whole agent run
 		// (user request → agent_end), not pi's per-message turn_end.
 		beginAgentRun();
@@ -137,16 +141,20 @@ export default function piOmpThemeExtension(pi: ExtensionAPI): void {
 	});
 	pi.on("agent_end", () => {
 		stopWorkingShimmer();
+		// Every tool of the run has settled (Pi drops its pending set here); a
+		// ticker that outlived its terminal render pass would otherwise keep
+		// invalidating a block once a second for the rest of the session.
+		stopAllElapsedTickers();
 		// The run is complete: collapse its tool blocks into one summary line.
 		// Pi only re-invokes the tool renderer selectors from updateDisplay(), so
 		// the captured per-block invalidate callbacks force the collapse and the
 		// captured Tui repaints. Interrupted runs (a call without a result) stay
-		// expanded.
+		// expanded. A run whose blocks already scrolled above the viewport is
+		// collapsed lazily instead (see invalidateTurnMembers): rewriting those
+		// rows would make pi-tui clear the screen and scrollback and replay the
+		// whole transcript.
 		const run = finishAgentRun();
-		if (run) {
-			invalidateTurnMembers(run);
-			requestToolPresentationRender();
-		}
+		if (run && invalidateTurnMembers(run)) requestToolPresentationRender();
 	});
 	pi.on("agent_settled", (_event, ctx) => coordinator.app.update({ ...usagePatch(ctx) }, "coalesced"));
 	pi.on("session_tree", (_event, ctx) => {

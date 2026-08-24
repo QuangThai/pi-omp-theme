@@ -9,6 +9,7 @@ export const STATUS_SEGMENT_IDS = [
 	"git",
 	"context_pct",
 	"context_bar",
+	"claude_context",
 	"context_total",
 	"auto_compact",
 	"token_in",
@@ -282,6 +283,33 @@ export function createBuiltinSegments(): ReadonlyMap<StatusSegmentId, StatusSegm
 				compactContent: theme.apply(token, `${Math.round(percent)}%`),
 			};
 		}),
+		// Claude Code's compact progress cluster: [bar] | 7% used | 19.2K/272K.
+		// It is a named preset-only segment so the default and omp status lines keep
+		// their existing context presentation.
+		segment(
+			"claude_context",
+			90,
+			({ snapshot, theme, options }) => {
+				const percent = contextPercent(snapshot.context ?? {});
+				if (percent === undefined) return { visible: false, content: "" };
+				const token = claudeContextToken(percent);
+				const current = snapshot.context?.currentTokens;
+				const total = snapshot.context?.windowTokens;
+				const width = (options.claude_context?.width as number | undefined) ?? CONTEXT_BAR_WIDTH;
+				const separator = ` ${theme.apply("separator", "|")} `;
+				const used = `${theme.apply(token, `${Math.round(percent)}%`)} ${theme.apply("muted", "used")}`;
+				const tokens =
+					current !== undefined && total !== undefined
+						? theme.apply("muted", `${formatTokens(current)}/${formatTokens(total)}`)
+						: "";
+				return {
+					visible: true,
+					content: [renderClaudeContextBar(theme, percent, width), used, tokens].filter(Boolean).join(separator),
+					compactContent: theme.apply(token, `${Math.round(percent)}% used`),
+				};
+			},
+			true,
+		),
 		// The size of the window, compactly: `272K`. Raw digits (`21760/272000`)
 		// read as noise on a status line, and the used-of-total pair is already
 		// spelled out by the context gauge and the frame footer.
@@ -376,6 +404,19 @@ const CONTEXT_BAR_WIDTH = 10;
 function contextBar(percent: number, width = CONTEXT_BAR_WIDTH): string {
 	const filled = Math.max(0, Math.min(width, Math.round((percent / 100) * width)));
 	return "█".repeat(filled) + "░".repeat(width - filled);
+}
+
+function claudeContextToken(percent: number): SemanticToken {
+	return percent < 50 ? "success" : contextBarToken(percent);
+}
+
+function renderClaudeContextBar(theme: ResolvedTheme, percent: number, width: number): string {
+	const filled = Math.max(0, Math.min(width, Math.round((percent / 100) * width)));
+	const open = theme.apply("separator", "[");
+	const progress = theme.apply(claudeContextToken(percent), "█".repeat(filled));
+	const track = theme.apply("dim", "░".repeat(width - filled));
+	const close = theme.apply("separator", "]");
+	return `${open}${progress}${track}${close}`;
 }
 
 /** Bar colors: green under 50%, yellow from 50% to 70%, red above 70%. */

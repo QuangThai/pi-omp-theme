@@ -1,6 +1,6 @@
 {
   "name": "@nguyenquangthai/pi-omp-theme",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "An OMP-inspired visual theme and TUI presentation extension for Pi.",
   "license": "MIT",
   "author": "Nguyen Quang Thai",
@@ -29,7 +29,7 @@
   ],
   "pi": {
     "extensions": [
-      "./dist/extensions/pi-omp-theme.js"
+      "./dist/extensions/pi-omp-theme.ts"
     ],
     "themes": [
       "./themes"
@@ -37,7 +37,7 @@
     "image": "https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/gallery-preview.png"
   },
   "files": [
-    "dist/**/*.js",
+    "dist/**/*.ts",
     "themes",
     "README.md",
     "CHANGELOG.md",
@@ -45,11 +45,12 @@
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "test": "node scripts/run-tests.mjs",
     "depcruise": "depcruise extension-src/omp-theme --config dependency-cruiser.config.cjs",
     "build": "tsup",
     "package:smoke": "node scripts/package-smoke.mjs",
     "dev": "tsup --watch",
-    "check": "npm run typecheck && npm run depcruise && npm run build && npm run package:smoke",
+    "check": "npm run typecheck && npm test && npm run depcruise && npm run build && npm run package:smoke",
     "prepack": "npm run check"
   },
   "peerDependencies": {

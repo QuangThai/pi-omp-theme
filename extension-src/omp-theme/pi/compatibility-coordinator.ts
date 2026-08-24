@@ -8,6 +8,7 @@ import {
 	probePiCompatibility,
 	SUPPORTED_VERSION_RANGE,
 } from "./compatibility-probe.js";
+import type { HostBinding } from "./host-binding.js";
 
 export interface CompatibilityCoordinator {
 	captureAuthorization(
@@ -18,10 +19,16 @@ export interface CompatibilityCoordinator {
 		asciiFlag: boolean,
 	): void;
 	state(config: NormalizedPiOmpThemeConfig): Readonly<Record<string, unknown>>;
+	/**
+	 * Install the certified patches. A "foreign" host binding (the extension
+	 * imported a second copy of Pi, see host-binding.ts) skips installation: the
+	 * patches would certify and install fine on that copy and never run.
+	 */
 	install(
 		config: NormalizedPiOmpThemeConfig,
 		tui: boolean,
 		productGate?: "omitted" | "allow" | "deny",
+		hostBinding?: HostBinding,
 	): CompatibilityProbeReport | undefined;
 	dispose(): CompatibilityCleanupResult;
 	readonly report: CompatibilityProbeReport | undefined;
@@ -39,6 +46,7 @@ export function createCompatibilityCoordinator(dispose = disposePiCompatibilityP
 				ascii: boolean;
 		  }
 		| undefined;
+	let hostBinding: HostBinding | undefined;
 	return {
 		get report() {
 			return report;
@@ -91,6 +99,10 @@ export function createCompatibilityCoordinator(dispose = disposePiCompatibilityP
 				piVersion: version.version ?? report?.piVersion ?? "unknown",
 				versionRange: report?.versionRange ?? SUPPORTED_VERSION_RANGE,
 				supportedVersions: report?.supportedVersions ?? [],
+				// Whether this extension shares the running Pi's modules. "foreign" means
+				// every core patch is withheld: it would certify against a second copy of
+				// Pi that never renders (see host-binding.ts).
+				hostBinding: hostBinding ?? { status: "unknown", reason: "not probed yet" },
 				assistantMessage: surface(
 					"messages",
 					config.enabled && config.messages.enabled && config.messages.assistantPrefix,
@@ -105,10 +117,12 @@ export function createCompatibilityCoordinator(dispose = disposePiCompatibilityP
 				),
 			};
 		},
-		install(config, tui, productGate = "omitted") {
+		install(config, tui, productGate = "omitted", binding) {
+			hostBinding = binding ?? hostBinding;
 			const productDenied = productGate === "deny";
 			if (cleanupPending && !report) cleanupPending = false;
 			if (cleanupPending || !tui || !config.enabled || !authorization?.core || productDenied) return undefined;
+			if (hostBinding?.status === "foreign") return undefined;
 			// Certification is per-surface identity (fingerprint) based, never pinned to
 			// a Pi version: authorization only needs the session flags + config. Version
 			// drift that preserves identities keeps working; changed identities degrade

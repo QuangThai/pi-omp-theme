@@ -30,11 +30,11 @@ import {
 /**
  * Certification is identity-first, never version-pinned: a surface is certified
  * when the runtime method (or class constructor, for additive installs) matches a
- * recorded name/arity/source-fingerprint identity. Pi version strings are
- * informational only (diagnostics, doctor output) and never gate installation — a
- * version drift that preserves the native identity keeps working, and a drift that
- * changes the identity degrades that single surface to its native fallback while
- * every other surface continues.
+ * recorded name/arity/source identity. Modular runtimes use exact fingerprints;
+ * Pi's minified bundle uses stable source markers because bundling rewrites local
+ * names and whitespace. Pi version strings are informational only and never gate
+ * installation — changed identities degrade that single surface to its native
+ * fallback while every other surface continues.
  */
 /** Compatibility is decided from the live native identities, not a Pi version allowlist. */
 export const COMPATIBILITY_BASIS = "runtime-identity" as const;
@@ -44,14 +44,17 @@ export interface KnownNativeIdentity {
 	readonly name: string;
 	readonly arity: number;
 	readonly fingerprint: string;
+	/** Stable source markers used when Pi's bundled minifier rewrites the fingerprint. */
+	readonly sourceMarkers?: readonly string[];
 }
 
 /**
  * Registry of recorded native identities per surface. A surface matches when the
- * runtime function has the same name, arity, and source fingerprint as one of its
- * identities. A matching name/arity/hash is evidence of the shipped native method,
- * not a cryptographic proof: code loaded before this module could spoof the same
- * function source. Unrecorded identities therefore fall back natively per surface.
+ * runtime function has the same name and arity plus either an exact source
+ * fingerprint or the stable markers recorded for Pi's bundled runtime. A matching
+ * identity is evidence of the shipped native method, not a cryptographic proof:
+ * code loaded before this module could spoof the same function source. Unrecorded
+ * identities therefore fall back natively per surface.
  */
 export const KNOWN_NATIVE_IDENTITIES: Readonly<Record<string, readonly KnownNativeIdentity[]>> = Object.freeze({
 	"native-markdown-theme:getMarkdownThemeWithSettings": Object.freeze([
@@ -60,12 +63,24 @@ export const KNOWN_NATIVE_IDENTITIES: Readonly<Record<string, readonly KnownNati
 			arity: 0,
 			fingerprint: "5f63d168",
 		}),
+		Object.freeze({
+			name: "getMarkdownThemeWithSettings",
+			arity: 0,
+			fingerprint: "e177a5a7",
+			sourceMarkers: Object.freeze(["getMarkdownTheme()", "codeBlockIndent", "getCodeBlockIndent"]),
+		}),
 	]),
 	"native-assistant-message:render": Object.freeze([
 		Object.freeze({
 			name: "render",
 			arity: 1,
 			fingerprint: "2a39243f",
+		}),
+		Object.freeze({
+			name: "render",
+			arity: 1,
+			fingerprint: "a9be09a3",
+			sourceMarkers: Object.freeze(["hasToolCalls", "OSC133_ZONE_START", "OSC133_ZONE_END", "OSC133_ZONE_FINAL"]),
 		}),
 	]),
 	"native-assistant-message:updateContent": Object.freeze([
@@ -81,12 +96,30 @@ export const KNOWN_NATIVE_IDENTITIES: Readonly<Record<string, readonly KnownNati
 			arity: 1,
 			fingerprint: "d2114491",
 		}),
+		Object.freeze({
+			name: "updateContent",
+			arity: 1,
+			fingerprint: "356b7e83",
+			sourceMarkers: Object.freeze([
+				"isStreaming",
+				"contentContainer",
+				"createMarkdownTransform",
+				"thinkingText",
+				"hideThinkingBlock",
+			]),
+		}),
 	]),
 	"native-compaction-message:updateDisplay": Object.freeze([
 		Object.freeze({
 			name: "updateDisplay",
 			arity: 0,
 			fingerprint: "f8c44e78",
+		}),
+		Object.freeze({
+			name: "updateDisplay",
+			arity: 0,
+			fingerprint: "5118a51d",
+			sourceMarkers: Object.freeze(["Compacted from", "customMessageLabel", "customMessageText"]),
 		}),
 	]),
 	"native-branch-message:updateDisplay": Object.freeze([
@@ -95,12 +128,24 @@ export const KNOWN_NATIVE_IDENTITIES: Readonly<Record<string, readonly KnownNati
 			arity: 0,
 			fingerprint: "415d57b7",
 		}),
+		Object.freeze({
+			name: "updateDisplay",
+			arity: 0,
+			fingerprint: "2185274e",
+			sourceMarkers: Object.freeze(["Branch Summary", "customMessageLabel", "customMessageText"]),
+		}),
 	]),
 	"native-skill-message:updateDisplay": Object.freeze([
 		Object.freeze({
 			name: "updateDisplay",
 			arity: 0,
 			fingerprint: "48099ea6",
+		}),
+		Object.freeze({
+			name: "updateDisplay",
+			arity: 0,
+			fingerprint: "4051fd65",
+			sourceMarkers: Object.freeze(["skillBlock", "customMessageLabel", "customMessageText"]),
 		}),
 	]),
 	"native-custom-message:rebuild": Object.freeze([
@@ -109,6 +154,12 @@ export const KNOWN_NATIVE_IDENTITIES: Readonly<Record<string, readonly KnownNati
 			arity: 0,
 			fingerprint: "76ae2e3a",
 		}),
+		Object.freeze({
+			name: "rebuild",
+			arity: 0,
+			fingerprint: "b89987cc",
+			sourceMarkers: Object.freeze(["customRenderer", "customComponent", "customMessageLabel", "customMessageText"]),
+		}),
 	]),
 	"tool-call-renderer:getCallRenderer": Object.freeze([
 		Object.freeze({
@@ -116,12 +167,24 @@ export const KNOWN_NATIVE_IDENTITIES: Readonly<Record<string, readonly KnownNati
 			arity: 0,
 			fingerprint: "951ea0e0",
 		}),
+		Object.freeze({
+			name: "getCallRenderer",
+			arity: 0,
+			fingerprint: "e50613b7",
+			sourceMarkers: Object.freeze(["builtInToolDefinition", "renderCall", "toolDefinition"]),
+		}),
 	]),
 	"tool-result-renderer:getResultRenderer": Object.freeze([
 		Object.freeze({
 			name: "getResultRenderer",
 			arity: 0,
 			fingerprint: "8a25cd71",
+		}),
+		Object.freeze({
+			name: "getResultRenderer",
+			arity: 0,
+			fingerprint: "28c4dc22",
+			sourceMarkers: Object.freeze(["builtInToolDefinition", "renderResult", "toolDefinition"]),
 		}),
 	]),
 	"native-bash-execution:render": Object.freeze([
@@ -133,6 +196,12 @@ export const KNOWN_NATIVE_IDENTITIES: Readonly<Record<string, readonly KnownNati
 			name: "BashExecutionComponent",
 			arity: 2,
 			fingerprint: "a5b5abca",
+		}),
+		Object.freeze({
+			name: "BashExecutionComponent",
+			arity: 2,
+			fingerprint: "98d22d96",
+			sourceMarkers: Object.freeze(["outputLines", "contentContainer", "Running...", "setComplete", "appendOutput"]),
 		}),
 	]),
 });
@@ -223,12 +292,32 @@ export function fingerprint(value: unknown): string | undefined {
 	return hash.toString(16).padStart(8, "0");
 }
 
+function isBundledPiRuntime(): boolean {
+	if (process.env.PI_CODING_AGENT !== "true" && process.env.AI_AGENT !== "pi") return false;
+	const argv1 = process.argv[1];
+	return (
+		typeof argv1 === "string" &&
+		argv1.length > 0 &&
+		isAbsolute(argv1) &&
+		/[\\/]dist[\\/]bundle[\\/]/i.test(resolve(argv1))
+	);
+}
+
+function matchesSourceMarkers(value: Function, markers: readonly string[] | undefined): boolean {
+	if (!isBundledPiRuntime() || !markers || markers.length === 0) return false;
+	const source = Function.prototype.toString.call(value);
+	return markers.every((marker) => source.includes(marker));
+}
+
 function knownIdentityMatches(spec: TargetSpec, value: unknown): KnownNativeIdentity | undefined {
 	if (typeof value !== "function") return undefined;
 	const hash = fingerprint(value);
 	const key = `${spec.subtype}:${spec.method}`;
 	return (KNOWN_NATIVE_IDENTITIES[key] ?? []).find(
-		(identity) => value.name === identity.name && value.length === identity.arity && hash === identity.fingerprint,
+		(identity) =>
+			value.name === identity.name &&
+			value.length === identity.arity &&
+			(hash === identity.fingerprint || matchesSourceMarkers(value, identity.sourceMarkers)),
 	);
 }
 
@@ -436,8 +525,8 @@ function createFallbackRecord(
 function probeDiagnostic(spec: TargetSpec, identity: unknown): string {
 	if (!shape(spec)) return "target method shape is not an own writable/configurable function";
 	if (identity === undefined)
-		return "runtime native identity (name, arity, or source fingerprint) matched no recorded Pi surface";
-	return "exact native identity verified; certified guarded decoration enabled";
+		return "runtime native identity (name, arity, fingerprint, or bundled source markers) matched no recorded Pi surface";
+	return "recorded native identity verified; certified guarded decoration enabled";
 }
 
 function surfaceDisabled(spec: TargetSpec, config: CompatibilityProbeOptions["config"]): boolean {

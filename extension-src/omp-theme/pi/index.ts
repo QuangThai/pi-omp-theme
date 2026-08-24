@@ -55,8 +55,9 @@ export function __setCompatibilityTestHooks(hooks: CompatibilityTestHooks): () =
 /** Thin Pi adapter: register flags, commands, and forward lifecycle events. */
 export default function piOmpThemeExtension(pi: ExtensionAPI): void {
 	// The core/message/tool surfaces are default-on (identity-certified per surface by
-	// name/arity/source fingerprint, graceful native fallback for any surface whose
-	// runtime identity is not recorded, conflict-preserving). The OFF switch is the
+	// name/arity plus an exact fingerprint or bundled-runtime source markers, with
+	// graceful native fallback for any surface whose runtime identity is not recorded,
+	// conflict-preserving). The OFF switch is the
 	// product gate `compatibility.allowCorePatches: false` (or `enabled: false`) in config.
 	for (const [name, description] of [
 		["pi-omp-theme-core-patches", "Enable pi-omp-theme message/tool core patches"],

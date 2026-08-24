@@ -4,6 +4,12 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-08-24
+
+### Fixed
+
+- Recognized Pi 0.84.3's minified bundled-runtime method identities through stable source markers, so message and tool compatibility patches install instead of falling back to Pi's default TUI rendering.
+
 ## [1.0.4] - 2026-08-24
 
 ### Fixed

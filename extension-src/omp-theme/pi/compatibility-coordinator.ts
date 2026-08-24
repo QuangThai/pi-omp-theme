@@ -122,9 +122,9 @@ export function createCompatibilityCoordinator(dispose = disposePiCompatibilityP
 			if (cleanupPending && !report) cleanupPending = false;
 			if (cleanupPending || !tui || !config.enabled || !authorization?.core || productDenied) return undefined;
 			if (hostBinding?.status === "foreign") return undefined;
-			// Certification is per-surface identity (fingerprint) based, never pinned to
-			// a Pi version: authorization only needs the session flags + config. Version
-			// drift that preserves identities keeps working; changed identities degrade
+			// Certification is per-surface identity based, never pinned to a Pi version:
+			// authorization only needs the session flags + config. Version drift that
+			// preserves the recorded identity keeps working; changed identities degrade
 			// per-surface inside the probe.
 			const assistantEnabled =
 				authorization.assistant &&

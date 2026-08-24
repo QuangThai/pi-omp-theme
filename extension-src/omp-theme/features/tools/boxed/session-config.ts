@@ -3,6 +3,8 @@
 // Set once per session by the compatibility coordinator; read inside renderers.
 // Kept out of the render path (no filesystem/config reads during render).
 
+import { toolRowPlacement } from "./render-viewport.js";
+
 export interface ToolsRenderConfig {
 	maxCollapsedLines: number;
 	maxExpandedLines: number;
@@ -97,11 +99,28 @@ const tickerStates = new Set<Record<string, unknown>>();
 /**
  * While a tool is running, re-render once per second so live elapsed labels
  * tick without any output events. Idempotent per state.
+ *
+ * The ticker stops as soon as the block has scrolled above pi-tui's viewport:
+ * from there the label cannot be repainted incrementally, the frozen panel
+ * (render-viewport.ts) keeps handing back what is already on screen, and the
+ * once-a-second rebuild would only burn a full block re-render per tick. The
+ * settled result still reports the true duration — nothing is lost but the
+ * ticking of a label nobody can see.
  */
-export function startElapsedTicker(state: Record<string, unknown> | undefined, invalidate: () => void): void {
+export function startElapsedTicker(
+	state: Record<string, unknown> | undefined,
+	invalidate: () => void,
+	toolCallId?: string,
+): void {
 	if (!state || typeof state !== "object") return;
 	if (state[TICKER_KEY] !== undefined) return;
-	state[TICKER_KEY] = setInterval(() => invalidate(), 1000) as unknown as TickerHandle;
+	state[TICKER_KEY] = setInterval(() => {
+		if (toolCallId && toolRowPlacement(toolCallId) === "above") {
+			stopElapsedTicker(state);
+			return;
+		}
+		invalidate();
+	}, 1000) as unknown as TickerHandle;
 	tickerStates.add(state);
 }
 

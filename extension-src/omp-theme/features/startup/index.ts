@@ -4,6 +4,11 @@ import type { NormalizedPiOmpThemeConfig } from "../../domain/config-types.js";
 import type { StatusSnapshot } from "../../domain/status.js";
 import { type ActiveTheme, type ResolvedTheme, resolveTheme } from "../../domain/theme.js";
 import { fitAnsiWidth, truncateAnsi, visibleWidth } from "../../shared/ansi.js";
+import {
+	notePresentationTui,
+	topRowScrolledAway,
+	type PresentationTui,
+} from "../../shared/viewport.js";
 import { renderWelcome, type WelcomeProvider, WELCOME_PROVIDER_SLOTS } from "./welcome.js";
 import { compactLogoHeader } from "./logo.js";
 
@@ -94,6 +99,22 @@ export interface StartupInstallOptions {
 
 export const STARTUP_WIDGET_KEY = "pi-omp-theme.startup";
 const owners = new WeakMap<object, Map<string, symbol>>();
+
+/**
+ * The parts of a snapshot the header actually paints (see styledLines /
+ * renderWelcome). The header lives at the top of the transcript: once it has
+ * scrolled away, any change to its lines makes pi-tui clear the screen and
+ * scrollback and replay the whole transcript. Status-only updates (git, usage,
+ * context) arrive many times per turn and must never reach the component, so
+ * update() compares this key and only invalidates when the painted data moved.
+ */
+export function startupHeaderKey(snapshot: StartupSnapshot): string {
+	return JSON.stringify({
+		model: snapshot.model,
+		provider: snapshot.startupProvider,
+		resources: snapshot.resources,
+	});
+}
 
 function ownerMap(host: object): Map<string, symbol> {
 	let map = owners.get(host);
@@ -403,19 +424,23 @@ class StartupComponent implements Component {
 	private config: NormalizedPiOmpThemeConfig;
 	private readonly theme: ActiveTheme;
 	private readonly overlay: boolean;
+	private readonly tui: PresentationTui;
 	private readonly requestRender: () => void;
+	private painted: { width: number; lines: string[] } | undefined;
 
 	constructor(
 		theme: ActiveTheme,
 		config: NormalizedPiOmpThemeConfig,
 		snapshot: StartupSnapshot,
 		overlay: boolean,
+		tui: PresentationTui,
 		requestRender: () => void,
 	) {
 		this.theme = theme;
 		this.config = config;
 		this.snapshot = snapshot;
 		this.overlay = overlay;
+		this.tui = tui;
 		this.requestRender = requestRender;
 	}
 
@@ -430,7 +455,19 @@ class StartupComponent implements Component {
 	}
 
 	render(width: number): string[] {
-		return styledLines(this.theme, this.config, this.snapshot, this.overlay, width);
+		// The card sits at the top of the transcript. Once any leading row is out
+		// of reach, a later update may touch an inaccessible row and force a clear
+		// and replay, so the whole banner conservatively keeps its painted copy
+		// until a width change already redraws the frame. Overlays float over
+		// the viewport and are never in the scrollback, so they always re-render.
+		// Re-note the renderer here so header stability does not depend on a tool
+		// component having rendered first, and recovers if a tool owner was disposed.
+		notePresentationTui(this.tui);
+		const painted = this.painted;
+		if (!this.overlay && painted && painted.width === width && topRowScrolledAway()) return painted.lines;
+		const lines = styledLines(this.theme, this.config, this.snapshot, this.overlay, width);
+		this.painted = { width, lines };
+		return lines;
 	}
 
 	invalidate(): void {
@@ -468,8 +505,8 @@ export function installStartup(options: StartupInstallOptions): StartupInstallat
 	let overlayDone: ((value: undefined) => void) | undefined;
 	const components: StartupComponent[] = [];
 	const timeoutMs = options.timeoutMs;
-	const component = (theme: unknown, isOverlay: boolean, tui: { requestRender?: () => void }) => {
-		const result = new StartupComponent(activeThemeFromPi(theme), config, snapshot, isOverlay, () => {
+	const component = (theme: unknown, isOverlay: boolean, tui: PresentationTui) => {
+		const result = new StartupComponent(activeThemeFromPi(theme), config, snapshot, isOverlay, tui, () => {
 			tui.requestRender?.();
 			options.requestRender?.();
 		});
@@ -555,11 +592,17 @@ export function installStartup(options: StartupInstallOptions): StartupInstallat
 				}
 			});
 	};
+	let headerKey = startupHeaderKey(snapshot);
 	const installation: StartupInstallation = {
 		generation: options.generation,
 		update(next) {
 			if (disposed || options.isCurrent?.() === false) return;
 			snapshot = next;
+			const nextKey = startupHeaderKey(next);
+			// Nothing the header paints changed: leave its rows untouched so a
+			// header that has scrolled out of view never forces a full redraw.
+			if (nextKey === headerKey) return;
+			headerKey = nextKey;
 			for (const item of components) item.setSnapshot(next);
 			options.requestRender?.();
 		},

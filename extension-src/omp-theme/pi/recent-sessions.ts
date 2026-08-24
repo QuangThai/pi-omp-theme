@@ -8,7 +8,7 @@
 // Everything here is best-effort and bounded: a welcome screen must never be
 // the reason a session fails to start, and it must not stat a large history.
 
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { closeSync, openSync, readdirSync, readSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 export interface RecentSession {
@@ -34,6 +34,27 @@ function formatAge(fromMs: number, nowMs: number): string {
 	const days = Math.round(hours / 24);
 	if (days < 30) return `${days}d ago`;
 	return `${Math.round(days / 30)}mo ago`;
+}
+
+/**
+ * The first `bytes` of a file. Session transcripts grow to megabytes; reading
+ * one whole just to keep its head ran synchronously on the startup path, before
+ * the themed surfaces could replace Pi's native frame.
+ */
+function readHead(path: string, bytes: number): string {
+	const fd = openSync(path, "r");
+	try {
+		const buffer = Buffer.alloc(bytes);
+		let length = 0;
+		while (length < bytes) {
+			const read = readSync(fd, buffer, length, bytes - length, length);
+			if (read === 0) break;
+			length += read;
+		}
+		return buffer.toString("utf8", 0, length);
+	} finally {
+		closeSync(fd);
+	}
 }
 
 /** First line of prose from a session's opening user message. */
@@ -111,7 +132,7 @@ export function readRecentSessions(
 			if (sessions.length >= limit) break;
 			let head = "";
 			try {
-				head = readFileSync(candidate.path, "utf8").slice(0, HEAD_BYTES);
+				head = readHead(candidate.path, HEAD_BYTES);
 			} catch {
 				continue;
 			}

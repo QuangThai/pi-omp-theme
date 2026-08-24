@@ -509,6 +509,58 @@ function acceptedInput(input: unknown): unknown {
 	return validateConfigLayer(input).accepted;
 }
 
+const COORDINATED_PRESET_PATHS = [
+	"placement",
+	"editor.style",
+	"editor.frame",
+	"statusLine.separator",
+	"statusLine.layout.left",
+	"statusLine.layout.right",
+	"statusLine.layout.secondary",
+] as const;
+
+function valueAtPath(value: unknown, path: string): unknown {
+	let current = value;
+	for (const segment of path.split(".")) {
+		if (!isRecord(current) || !Object.hasOwn(current, segment)) return undefined;
+		current = current[segment];
+	}
+	return current;
+}
+
+function sameConfigValue(left: unknown, right: unknown): boolean {
+	if (Array.isArray(left) && Array.isArray(right))
+		return left.length === right.length && left.every((value, index) => value === right[index]);
+	return left === right;
+}
+
+function presetOverrideDiagnostic(
+	config: NormalizedPiOmpThemeConfig,
+	sourceMap: Readonly<Record<string, string>>,
+): ConfigDiagnostic | undefined {
+	const coordinatedPreset = presetConfig(config.preset);
+	const conflicts = COORDINATED_PRESET_PATHS.flatMap((path) => {
+		const expected = valueAtPath(coordinatedPreset, path);
+		const source = sourceMap[path];
+		if (
+			expected === undefined ||
+			source === undefined ||
+			source === "default" ||
+			source.startsWith("preset:") ||
+			sameConfigValue(valueAtPath(config, path), expected)
+		)
+			return [];
+		return [`${path} (${source})`];
+	});
+	if (conflicts.length === 0) return undefined;
+	return {
+		code: "CFG-PRESET-OVERRIDE",
+		level: "warning",
+		path: "preset",
+		message: `preset "${config.preset}" has coordinated UI overrides at ${conflicts.join(", ")}; remove them or expect a hybrid layout`,
+	};
+}
+
 export function resolveConfigDetailed(sources: ConfigSources): {
 	readonly config: NormalizedPiOmpThemeConfig;
 	readonly diagnostics: readonly ConfigDiagnostic[];
@@ -643,5 +695,10 @@ export function resolveConfigDetailed(sources: ConfigSources): {
 	if (sources.projectTrusted !== false) sourcePath(layerResults.get("project")?.accepted, "", "project");
 	sourcePath(envPatch, "", "environment");
 	sourcePath(layerResults.get("session")?.accepted, "", "session");
-	return { config: normalizeConfig(merged), diagnostics: boundedDiagnostics(diagnostics), sources: sourceMap };
+	const config = normalizeConfig(merged);
+	const overrideDiagnostic = presetOverrideDiagnostic(config, sourceMap);
+	// Keep the semantic preset warning visible even when malformed leaves have
+	// already filled the bounded diagnostic budget.
+	if (overrideDiagnostic) diagnostics.unshift(overrideDiagnostic);
+	return { config, diagnostics: boundedDiagnostics(diagnostics), sources: sourceMap };
 }

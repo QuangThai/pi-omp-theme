@@ -78,12 +78,22 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 	// start() re-reads and re-captures at every session_start.
 	let authorization = readSessionAuthorization(pi);
 	let productGate: "omitted" | "allow" | "deny" = "omitted";
-	// Probed once per process at the first session start: whether this module
-	// graph is the running Pi's own (see host-binding.ts). A "foreign" binding
-	// withholds every core patch and is reported once in the session.
+	// Probed once per process: whether this module graph is the running Pi's own
+	// (see host-binding.ts). A "foreign" binding withholds every core patch and
+	// is reported once in the session.
+	//
+	// The probe and the global-config read both start here, at extension load,
+	// rather than inside session_start. Pi paints its native frame (default
+	// editor, footer, empty header) as soon as its TUI starts and only then
+	// emits session_start; every await on that path is time the user watches
+	// the native chrome before the themed surfaces replace it.
 	let hostBinding: HostBinding | undefined;
-	let hostBindingProbe: Promise<HostBinding> | undefined;
+	const hostBindingProbe: Promise<HostBinding> = probeHostBinding().catch((error: unknown) => ({
+		status: "unknown" as const,
+		reason: `host binding probe failed: ${error instanceof Error ? error.message : String(error)}`,
+	}));
 	let foreignBindingReported = false;
+	source.warm();
 	const syncOperational = (config: import("../domain/config-types.js").NormalizedPiOmpThemeConfig) => {
 		app.setOperationalState(
 			buildOperationalState(
@@ -186,8 +196,9 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 			if (app.runtime.current) app.sessionShutdown();
 			cwd = ctx.cwd ?? process.cwd();
 			tuiSession = ctx.mode === "tui";
-			app.setProjectTrusted(ctx.isProjectTrusted());
-			source.setSession(cwd, ctx.isProjectTrusted());
+			const projectTrusted = ctx.isProjectTrusted();
+			app.setProjectTrusted(projectTrusted);
+			source.setSession(cwd, projectTrusted);
 			// Drop any batch state carried over from the previous session (Pi renders
 			// the restored chat between session_shutdown and the next session_start).
 			resetBatchRegistry();
@@ -206,7 +217,6 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 			productGate = app.productPolicy.corePatchGate;
 			// Resolve the host binding before the first install so a foreign module
 			// graph never certifies patches against a Pi copy that does not render.
-			hostBindingProbe ??= probeHostBinding();
 			hostBinding = await hostBindingProbe;
 			if (hostBinding.status === "foreign" && !foreignBindingReported) {
 				foreignBindingReported = true;
@@ -280,7 +290,7 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 					// untitled bar until something renamed it.
 					...(sessionTitle ? { sessionName: sessionTitle } : {}),
 					getContextUsage: ctx.getContextUsage,
-					projectTrusted: ctx.isProjectTrusted(),
+					projectTrusted,
 					gitRunner,
 				},
 				event.reason as "startup" | "reload" | "new" | "resume" | "fork",

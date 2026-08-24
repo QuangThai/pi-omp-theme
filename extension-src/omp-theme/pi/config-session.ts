@@ -18,6 +18,17 @@ export interface ProductPolicy {
 }
 export interface ConfigSourceAdapter {
 	setSession(cwd: string, trusted: boolean): void;
+	/**
+	 * Start reading the *global* configuration before the session is known.
+	 *
+	 * Pi paints its native frame as soon as its TUI starts and only then emits
+	 * `session_start`; every await on that path is time the user watches the
+	 * native chrome instead of the theme. Warming the read removes it from that
+	 * path. Only the global file is read: the project file is gated on
+	 * `isProjectTrusted()`, which is not known yet, and an untrusted project's
+	 * settings must not be read at all — not even to be discarded.
+	 */
+	warm(): void;
 	load(): Promise<{
 		config: unknown;
 		diagnostics: readonly ConfigDiagnostic[];
@@ -72,23 +83,41 @@ export function createConfigSourceAdapter(
 ): ConfigSourceAdapter {
 	let trusted = true;
 	let currentCwd = process.cwd();
+	type ScopedRead = Awaited<ReturnType<typeof readScopedConfig>>;
+	let warmed: { path: string; read: Promise<ScopedRead | undefined> } | undefined;
 	return {
 		setSession(nextCwd, nextTrusted) {
 			currentCwd = nextCwd;
 			trusted = nextTrusted;
 		},
+		warm() {
+			const { globalPath } = paths(currentCwd);
+			if (warmed?.path === globalPath) return;
+			// Failure is not handled here: load() falls back to a fresh read, which
+			// produces the diagnostics the doctor reports.
+			warmed = { path: globalPath, read: readScopedConfig(port, globalPath).catch(() => undefined) };
+		},
 		async load() {
-			const storage = paths(currentCwd);
-			const global = await readScopedConfig(port, storage.globalPath);
-			const project = trusted ? await readScopedConfig(port, storage.projectPath) : undefined;
+			// Capture the session boundary before awaiting the warmed read. A later
+			// setSession() must not change which project's file this load is allowed
+			// to read or which trust value reaches config resolution.
+			const loadCwd = currentCwd;
+			const loadTrusted = trusted;
+			const storage = paths(loadCwd);
+			// A warmed read counts only for the path it was started for; a session
+			// that moved cwd re-reads.
+			const warmedRead = warmed?.path === storage.globalPath ? warmed.read : undefined;
+			warmed = undefined;
+			const global = (await warmedRead) ?? (await readScopedConfig(port, storage.globalPath));
+			const project = loadTrusted ? await readScopedConfig(port, storage.projectPath) : undefined;
 			const resolved = resolveConfigDetailed({
 				global: global.value,
 				project: project?.value,
-				projectTrusted: trusted,
+				projectTrusted: loadTrusted,
 				environment: process.env,
 				session: sessionOverrides(pi),
 			});
-			const productPolicy = resolveProductGate(global.value, project?.value, sessionOverrides(pi), trusted);
+			const productPolicy = resolveProductGate(global.value, project?.value, sessionOverrides(pi), loadTrusted);
 			return {
 				config: resolved.config,
 				diagnostics: [...global.diagnostics, ...(project?.diagnostics ?? []), ...resolved.diagnostics],

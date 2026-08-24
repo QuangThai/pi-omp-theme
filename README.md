@@ -59,7 +59,7 @@ pi update npm:@nguyenquangthai/pi-omp-theme
 pi update --extensions
 ```
 
-Version-pinned installs such as `npm:@nguyenquangthai/pi-omp-theme@1.0.2` remain pinned until explicitly changed.
+Version-pinned installs such as `npm:@nguyenquangthai/pi-omp-theme@1.0.3` remain pinned until explicitly changed.
 
 ### Uninstall
 
@@ -82,12 +82,7 @@ Use the `piOmpTheme` key in Pi's global or trusted project `settings.json`:
 ```json
 {
   "piOmpTheme": {
-    "preset": "omp",
-    "placement": "border",
-    "editor": {
-      "style": "dock",
-      "frame": "rounded"
-    },
+    "preset": "claude",
     "theme": {
       "autoApply": "titanium"
     },
@@ -97,6 +92,8 @@ Use the `piOmpTheme` key in Pi's global or trusted project `settings.json`:
   }
 }
 ```
+
+Presets coordinate status placement, editor style/frame, separator, and status layout. Keep those fields omitted when you want the preset's complete composition; for example, changing only `preset` to `"omp"` selects the rounded border layout. Explicit values still win, but `/pi-omp-theme doctor` warns when they contradict coordinated preset fields and produce a hybrid UI.
 
 Precedence:
 

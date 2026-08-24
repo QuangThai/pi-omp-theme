@@ -113,7 +113,7 @@ export function noteExecutionStart(context: BoxedToolContext): void {
  */
 export function noteBoxedCallState(context: BoxedToolContext): void {
 	if (!context.executionStarted) return;
-	if (context.isPartial) startElapsedTicker(context.state, context.invalidate);
+	if (context.isPartial) startElapsedTicker(context.state, context.invalidate, context.toolCallId);
 	else {
 		recordExecutionEnded(context.state);
 		stopElapsedTicker(context.state);
@@ -128,7 +128,7 @@ export function noteBoxedCallState(context: BoxedToolContext): void {
 export function noteBoxedResultPhase(context: BoxedToolContext, isPartial: boolean): boolean {
 	const firstResultPass = !isResultSeen(context.state);
 	markResultSeen(context.state);
-	if (isPartial) startElapsedTicker(context.state, context.invalidate);
+	if (isPartial) startElapsedTicker(context.state, context.invalidate, context.toolCallId);
 	else {
 		recordExecutionEnded(context.state);
 		stopElapsedTicker(context.state);

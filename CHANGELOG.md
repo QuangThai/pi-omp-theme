@@ -2,6 +2,29 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased]
+
+## [1.0.3] - 2026-08-24
+
+### Added
+
+- Added `CFG-PRESET-OVERRIDE` diagnostics when explicit placement, editor, separator, or status-layout values contradict a coordinated preset and produce a hybrid UI.
+- Added regression coverage for host binding, elapsed-ticker cleanup, viewport-aware turn collapse, preset resolution, and narrow-terminal status rendering; `npm test` now runs every compiled `*.test.ts` suite.
+
+### Changed
+
+- Reworked the README configuration example around a preset-first setup and documented when explicit fields intentionally override preset-owned composition.
+- The host-binding probe and the global configuration read now start when the extension loads instead of inside `session_start`, and the welcome card reads only the head of each recent session file, so the themed editor, status line, and header replace Pi's native startup frame sooner. Project settings are still read only after `isProjectTrusted()` answers.
+- Moved the renderer-viewport facts to `shared/viewport.ts` so surfaces outside the tool renderers can ask whether their rows are still reachable.
+
+### Fixed
+
+- Fixed a full-screen repaint after every `write`, `edit`, and `bash` result. The git refresh handed the welcome card a snapshot without `resources`, flipping its "Tool providers" panel to "No tool providers" at the top of the transcript; once that row had scrolled out of view, pi-tui could only paint the change by clearing the screen and scrollback and replaying the whole transcript (`fullRender: firstChanged < viewportTop (9 < …)`). Every update path now builds the same startup snapshot, and the header only invalidates when the data it paints (model, provider, resources) changes.
+- Stopped tool call cards from rewriting rows that have scrolled above pi-tui's viewport. Live elapsed labels and the batch, grep, and semantic-bash panels are rebuilt on every `updateDisplay`, so an out-of-reach card kept forcing the clear-and-replay redraw for the rest of the run; such a card now keeps its painted lines. An explicit `Ctrl+O` expansion still repaints on request. Settlement repaints only for tools whose final output lives in the call card (`read`/`find`/`ls` batches, `grep`, `write`, and parsed semantic-bash cards); tools with a dedicated result component keep the painted call card and settle at the visible result tail. Result bodies are never frozen and keep streaming.
+- The per-second elapsed ticker now stops itself once its block leaves the viewport instead of rebuilding a block nobody can see.
+- The welcome card stops repainting itself once the transcript has scrolled past it, so a mid-session model switch no longer wipes the scrollback.
+- Captured project trust once at session start and reused that decision for configuration loading and runtime state, preventing the two paths from diverging within one session.
+
 ## [1.0.2] - 2026-08-24
 
 ### Added

@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const expected = {
   name: "@nguyenquangthai/pi-omp-theme",
-  version: "1.0.2",
+  version: "1.0.3",
   entry: "./dist/extensions/pi-omp-theme.ts",
   repository: "git+https://github.com/QuangThai/pi-omp-theme.git",
   image: "https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/gallery-preview.png",

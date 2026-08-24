@@ -102,6 +102,9 @@ export function createPiOmpThemeRuntime(
 			: {}),
 	};
 	let currentSnapshot = createSnapshot(generation, 0, initialValues);
+	// The startup card renders from these resources; kept current here so every
+	// update path hands the header the same data (see startupSnapshot below).
+	let currentResources: StartupResources | undefined = host.resources;
 	let statusLine: ReturnType<typeof installStatusLine> | undefined;
 	let editor: ReturnType<typeof installEditor> | undefined;
 	let startup: ReturnType<typeof installStartup> | undefined;
@@ -110,13 +113,22 @@ export function createPiOmpThemeRuntime(
 		editor: "disabled",
 		startup: "disabled",
 	};
+	// The single source of the startup header's snapshot. The header sits at the
+	// top of the transcript, so once it has scrolled out of view any change to
+	// its lines forces pi-tui's clear-and-replay redraw. Building the snapshot in
+	// one place keeps every update path byte-identical: an earlier copy of this
+	// object in invalidateGit() omitted `resources`, which flipped the card's
+	// "Tool providers" panel to "No tool providers" after every write/edit/bash
+	// result and made the whole transcript repaint.
 	const startupSnapshot = (config: NormalizedPiOmpThemeConfig): StartupSnapshot => ({
 		...currentSnapshot,
 		reason: host.startupReason ?? "startup",
-		...(host.provider ? { startupProvider: host.provider } : {}),
+		...(host.provider ?? currentSnapshot.provider
+			? { startupProvider: host.provider ?? currentSnapshot.provider }
+			: {}),
 		...(host.cwd ? { project: host.cwd.split(/[\\/]/).filter(Boolean).at(-1) } : {}),
 		preset: config.preset,
-		...(host.resources ? { resources: host.resources } : {}),
+		...(currentResources ? { resources: currentResources } : {}),
 	});
 	const installStatus = () => {
 		if (!host.hasUI || host.mode !== "tui" || !host.ui || !currentConfig.enabled || !currentConfig.statusLine.enabled) {
@@ -237,14 +249,7 @@ export function createPiOmpThemeRuntime(
 			currentSnapshot = replaceSnapshot(currentSnapshot, generation, { ...currentSnapshot, git: value });
 			statusLine?.update(currentSnapshot);
 			editor?.update(currentSnapshot);
-			startup?.update({
-				...currentSnapshot,
-				reason: host.startupReason ?? "startup",
-				...(host.provider ? { startupProvider: host.provider } : {}),
-				...(host.cwd ? { project: host.cwd.split(/[\\/]/).filter(Boolean).at(-1) } : {}),
-				preset: currentConfig.preset,
-				...(host.resources ? { resources: host.resources } : {}),
-			});
+			startup?.update(startupSnapshot(currentConfig));
 			requestRender();
 		});
 	}
@@ -268,14 +273,8 @@ export function createPiOmpThemeRuntime(
 		scheduler,
 		updateStartupResources(resources) {
 			if (disposed) return;
-			startup?.update({
-				...currentSnapshot,
-				reason: host.startupReason ?? "startup",
-				...(host.provider ? { startupProvider: host.provider } : {}),
-				...(host.cwd ? { project: host.cwd.split(/[\\/]/).filter(Boolean).at(-1) } : {}),
-				preset: currentConfig.preset,
-				resources,
-			});
+			currentResources = resources;
+			startup?.update(startupSnapshot(currentConfig));
 			requestRender();
 		},
 		dismissStartup() {
@@ -300,14 +299,7 @@ export function createPiOmpThemeRuntime(
 			});
 			statusLine?.update(currentSnapshot);
 			editor?.update(currentSnapshot);
-			startup?.update({
-				...currentSnapshot,
-				reason: host.startupReason ?? "startup",
-				...(host.provider ? { startupProvider: host.provider } : {}),
-				...(host.cwd ? { project: host.cwd.split(/[\\/]/).filter(Boolean).at(-1) } : {}),
-				preset: currentConfig.preset,
-				...(host.resources ? { resources: host.resources } : {}),
-			});
+			startup?.update(startupSnapshot(currentConfig));
 		},
 		configure(nextConfig) {
 			if (disposed) return;
@@ -352,13 +344,7 @@ export function createPiOmpThemeRuntime(
 				currentSnapshot = replaceSnapshot(currentSnapshot, generation, { ...currentSnapshot, git: value });
 				statusLine?.update(currentSnapshot);
 				editor?.update(currentSnapshot);
-				startup?.update({
-					...currentSnapshot,
-					reason: host.startupReason ?? "startup",
-					...(host.provider ? { startupProvider: host.provider } : {}),
-					...(host.cwd ? { project: host.cwd.split(/[\\/]/).filter(Boolean).at(-1) } : {}),
-					preset: currentConfig.preset,
-				});
+				startup?.update(startupSnapshot(currentConfig));
 				requestRender();
 			});
 		},

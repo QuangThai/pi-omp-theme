@@ -1,34 +1,25 @@
 // Viewport awareness for tool presentation (regular/main-screen TUI mode).
 //
-// Pi's main-screen renderer repaints incrementally: only rows that changed are
-// rewritten. The one thing it cannot do incrementally is change a row that has
-// already scrolled *above* the tracked viewport — for that it clears the
-// screen and the scrollback (`ESC[2J ESC[H ESC[3J`) and replays every line.
-// From the user's side that is a full-screen flash, a lost scroll position and
-// a wiped scrollback; repeated, it reads as continuous stutter.
+// The renderer facts live in shared/viewport.ts; this module maps them onto
+// tool blocks: where a block landed when it first rendered, whether it is still
+// reachable, and the lines it last painted while it was.
 //
-// Tool blocks are the extension's only surface that rewrites rows after they
-// were drawn (turn collapse, live elapsed labels). This module records where a
-// block landed when it first rendered and answers, at rewrite time, whether it
-// is still inside the viewport. Callers skip rewrites that would force the
-// full redraw and let the block pick up its new shape on the next natural
-// re-render (resize, theme change, session restore).
-//
-// Only two public-in-JavaScript fields of pi-tui's main-screen renderer are
-// read (`previousLines`, `previousViewportTop`); everything is optional and a
-// missing field degrades to "unknown", which callers treat as safe to rewrite —
-// the behaviour the extension had before this module existed.
+// Callers skip rewrites that would force pi-tui's clear-and-replay redraw and
+// let the block pick up its new shape on a width redraw or session restore.
+// Same-width theme/config changes deliberately leave off-screen history stale:
+// changing it would require the destructive redraw this module prevents.
 
-/** Structural view of the Pi TUI a tool component carries as `ui`. */
-export interface PresentationTui {
-	requestRender?: (force?: boolean) => void;
-	/** "regular" (main screen + scrollback) or "fullscreen" (alternate screen). */
-	mode?: unknown;
-	/** Main-screen renderer: the lines of the last painted frame. */
-	previousLines?: unknown;
-	/** Main-screen renderer: index of the first line inside the tracked viewport. */
-	previousViewportTop?: unknown;
-}
+import {
+	clearPresentationTui as clearSharedPresentationTui,
+	getPresentationTui,
+	notePresentationTui as noteSharedPresentationTui,
+	paintedRowCount,
+	type PresentationTui,
+	trackedViewportTop,
+} from "../../../shared/viewport.js";
+
+export type { PresentationTui };
+export { getPresentationTui };
 
 /**
  * Rows of dock chrome (working row, editor frame, status rows, spacers) that
@@ -38,20 +29,15 @@ export interface PresentationTui {
  */
 const DOCK_ALLOWANCE_ROWS = 12;
 
-let presentationTui: PresentationTui | undefined;
 const rowHints = new Map<string, number>();
+const frozenPanels = new Map<string, { width: number; lines: string[] }>();
 
-/** Remember the Pi TUI seen from a decorated tool component (latest wins). */
 export function notePresentationTui(candidate: unknown): void {
-	if (candidate && typeof candidate === "object") presentationTui = candidate as PresentationTui;
+	noteSharedPresentationTui(candidate);
 }
 
 export function clearPresentationTui(): void {
-	presentationTui = undefined;
-}
-
-export function getPresentationTui(): PresentationTui | undefined {
-	return presentationTui;
+	clearSharedPresentationTui();
 }
 
 /**
@@ -62,12 +48,13 @@ export function getPresentationTui(): PresentationTui | undefined {
  */
 export function noteToolRowHint(toolCallId: string): void {
 	if (!toolCallId || rowHints.has(toolCallId)) return;
-	const lines = presentationTui?.previousLines;
-	if (Array.isArray(lines)) rowHints.set(toolCallId, lines.length);
+	const rows = paintedRowCount();
+	if (rows !== undefined) rowHints.set(toolCallId, rows);
 }
 
 export function resetToolRowHints(): void {
 	rowHints.clear();
+	frozenPanels.clear();
 }
 
 export type ToolRowPlacement = "inside" | "above" | "unknown";
@@ -80,11 +67,57 @@ export type ToolRowPlacement = "inside" | "above" | "unknown";
  * has no scrollback to lose, so it also answers "inside").
  */
 export function toolRowPlacement(toolCallId: string): ToolRowPlacement {
-	const tui = presentationTui;
-	if (!tui) return "unknown";
-	if (tui.mode === "fullscreen") return "inside";
+	if (!getPresentationTui()) return "unknown";
+	const viewportTop = trackedViewportTop();
+	// Fullscreen (or an unreadable viewport): nothing scrolls out of reach.
+	if (viewportTop === undefined) return getPresentationTui()?.mode === "fullscreen" ? "inside" : "unknown";
 	const hint = rowHints.get(toolCallId);
-	const viewportTop = tui.previousViewportTop;
-	if (hint === undefined || typeof viewportTop !== "number" || !Number.isFinite(viewportTop)) return "unknown";
+	if (hint === undefined) return "unknown";
 	return hint - DOCK_ALLOWANCE_ROWS >= viewportTop ? "inside" : "above";
+}
+
+/**
+ * The lines a live panel should paint this pass.
+ *
+ * Panels that read a live registry (batch, grep, semantic bash) and cards that
+ * carry a running elapsed are rebuilt from scratch on every `updateDisplay`, so
+ * their content keeps moving for as long as the tool runs. While the block is
+ * reachable that is exactly right. Once it has scrolled above the viewport the
+ * only faithful choice left is the one already on screen: hand back the last
+ * lines painted at this width, so the frame stays byte-identical and pi-tui
+ * keeps to its incremental path.
+ *
+ * `variant` is what the freeze deliberately does not swallow. An explicit
+ * user expansion (Ctrl+O) is worth a repaint even from out of reach. Callers
+ * may also include settlement only when the call component owns final output;
+ * tools with a dedicated result component keep the painted call card. A width
+ * change invalidates the copy too because pi-tui already repaints the whole
+ * frame on resize. Theme/config changes at the same width deliberately keep old
+ * off-screen rows; repainting them would reintroduce the destructive
+ * clear-and-replay this cache exists to prevent.
+ */
+export function panelLines(
+	toolCallId: string,
+	variant: string,
+	width: number,
+	render: () => string[],
+): string[] {
+	if (!toolCallId) return render();
+	const key = JSON.stringify([toolCallId, variant]);
+	const frozen = frozenPanels.get(key);
+	if (frozen && frozen.width === width && toolRowPlacement(toolCallId) === "above") return frozen.lines;
+	const lines = render();
+	// Keep every session-local painted copy until the session reset. Evicting by
+	// count is incorrect: a long transcript would eventually evict an active
+	// off-screen panel, and its next live update would force the very full redraw
+	// this cache prevents. resetToolRowHints() releases all copies at the session
+	// boundary together with the renderer's own transcript state.
+	if (frozen) frozenPanels.delete(key);
+	frozenPanels.set(key, { width, lines });
+	return lines;
+}
+
+/** Frozen panel count (diagnostics/tests). */
+export function frozenPanelCount(): number {
+	return frozenPanels.size;
 }

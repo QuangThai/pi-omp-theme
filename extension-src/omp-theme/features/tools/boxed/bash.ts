@@ -836,6 +836,21 @@ function parseSemanticOutput(cls: BashSemanticClass, output: string): ParsedSema
 
 const semanticStates = new Map<string, BashTreeState>();
 
+/**
+ * Whether the settled semantic result is painted by the call component.
+ *
+ * Most bash results render in the result component and must not force an
+ * off-screen call card to repaint just to change its running chrome. Parsed
+ * tree/card results are the exception: their result component is empty and the
+ * semantic call panel owns the final output. Git diffs and GH job logs still
+ * render in dedicated result components.
+ */
+export function bashSettledResultLivesInCall(toolCallId: string): boolean {
+	const state = semanticStates.get(toolCallId);
+	if (!state?.parsed || state.fallback) return false;
+	return !isGitDiffClass(state.cls) && !isGhRunJobClass(state.cls);
+}
+
 /** Reset all semantic bash state (session start/shutdown, new message). */
 export function resetBashTreeRegistry(): void {
 	semanticStates.clear();
@@ -999,7 +1014,7 @@ export const bashTool: BoxedToolDefinition = {
 				if (state) state.fallback = true;
 			}
 		} else if (options.isPartial) {
-			startElapsedTicker(context.state, context.invalidate);
+			startElapsedTicker(context.state, context.invalidate, context.toolCallId);
 		} else {
 			recordExecutionEnded(context.state);
 			stopElapsedTicker(context.state);

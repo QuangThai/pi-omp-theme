@@ -282,7 +282,68 @@ test("a tool that settles out of reach still shows what its call card owns", () 
 	}
 });
 
-test("result-owned settlement stays frozen while expansion still repaints on request", () => {
+test("a frozen pending bash call reopens before a streamed Output divider", () => {
+	const theme = { fg: (_color: string, text: string) => text, bold: (text: string) => text };
+	const state: Record<string, unknown> = {};
+	const args = { command: "printf 'streamed'" };
+	const context = () =>
+		({
+			args,
+			toolCallId: "streaming-reopen",
+			invalidate() {},
+			state,
+			cwd: "D:\\Personal\\pi-omp-theme",
+			executionStarted: true,
+			argsComplete: true,
+			isPartial: true,
+			expanded: false,
+			showImages: false,
+			isError: false,
+		}) as never;
+	const callOnly = () => {
+		const ctx = context();
+		return renderBoxedToolCall("bash", args, theme, ctx).render(80);
+	};
+	const frame = (output: string) => {
+		const ctx = context();
+		const call = renderBoxedToolCall("bash", args, theme, ctx);
+		const result = renderBoxedToolResult(
+			"bash",
+			{ content: [{ type: "text", text: output }] },
+			{ expanded: false, isPartial: true },
+			theme,
+			ctx,
+		);
+		return [...call.render(80), ...result.render(80)];
+	};
+
+	paintedFrame(20, 0);
+	const pending = callOnly();
+	assert.ok(pending.some((line) => line.includes("╰")), "a call with no result is a closed pending card");
+	assert.equal(toolRowPlacement("streaming-reopen"), "inside");
+
+	// Pi builds the call component before the result component, but paints both
+	// only after the result renderer marks resultSeen. The lazy call shape must
+	// therefore reopen even on this first partial-result pass.
+	const firstResult = frame("");
+	assert.equal(firstResult.some((line) => line.includes("╰")), false, "the first result pass leaves the call open");
+
+	// The next update happens after the call has moved above the viewport.
+	paintedFrame(400, 120);
+	assert.equal(toolRowPlacement("streaming-reopen"), "above");
+	const streamed = frame("  streamed output");
+	const divider = streamed.findIndex((line) => line.includes("Output"));
+	assert.ok(divider > 0, "the streamed result has an Output divider");
+	assert.equal(
+		streamed.slice(0, divider).some((line) => line.includes("╰")),
+		false,
+		"the frozen pending border must not remain before the streamed result",
+	);
+	assert.ok(streamed[divider - 1]?.includes("│"), "the call remains open immediately before Output");
+	assert.ok(streamed[divider + 1]?.includes("streamed output"), "the streamed body follows the divider");
+});
+
+test("result-owned settlement repairs a pending envelope while expansion still repaints", () => {
 	const theme = { fg: (_color: string, text: string) => text, bold: (text: string) => text };
 	const card = (options: { marker: string; isPartial: boolean; expanded: boolean }) =>
 		renderBoxedToolCall(
@@ -314,10 +375,10 @@ test("result-owned settlement stays frozen while expansion still repaints on req
 	// panel churn that used to force a redraw on every pass.
 	assert.doesNotMatch(card({ marker: "beta", isPartial: true, expanded: false }), /beta/);
 	assert.match(card({ marker: "beta", isPartial: true, expanded: false }), /alpha/);
-	// This fallback tool owns its final output in the result component. Settling
-	// must not rewrite the off-screen call card merely to change its chrome.
-	assert.doesNotMatch(card({ marker: "settled", isPartial: false, expanded: false }), /settled/);
-	assert.match(card({ marker: "settled", isPartial: false, expanded: false }), /alpha/);
+	// A pending call has a closed envelope, so result-owned settlement must repair
+	// that topology before the result component can continue it.
+	assert.match(card({ marker: "settled", isPartial: false, expanded: false }), /settled/);
+	assert.doesNotMatch(card({ marker: "settled", isPartial: false, expanded: false }), /alpha/);
 	// Ctrl+O is an explicit request and is independently answered.
 	assert.match(card({ marker: "opened", isPartial: false, expanded: true }), /opened/);
 });
@@ -332,7 +393,7 @@ test("only tools whose call card owns final output receive a settlement variant"
 	assert.equal(settledResultLivesInCall("bash", "unparsed-bash"), false);
 });
 
-test("result-owned settlement does not trigger pi-tui clear-and-replay", () => {
+test("result-owned settlement repairs an off-screen pending envelope", () => {
 	const writes: string[] = [];
 	const terminal: Terminal = {
 		columns: 80,
@@ -403,11 +464,15 @@ test("result-owned settlement does not trigger pi-tui clear-and-replay", () => {
 		tui.renderNow();
 
 		const emitted = writes.slice(writeCount).join("");
-		assert.equal(tui.fullRedraws, redraws, "settlement stays on the differential render path");
-		assert.ok(!emitted.includes("\u001b[2J"), "screen was not cleared");
-		assert.ok(!emitted.includes("\u001b[3J"), "scrollback was not cleared");
+		// The pending-to-open transition is structural. If the call is already
+		// above scrollback, one full redraw is the only way to repair its old
+		// closing border before the result component continues it.
+		assert.equal(tui.fullRedraws, redraws + 1, "the structural transition gets one repair redraw");
+		assert.ok(emitted.includes("\u001b[2J"), "the repair redraw clears the screen");
+		assert.ok(emitted.includes("\u001b[3J"), "the repair redraw clears stale scrollback");
 		const painted = tui.captureRenderState().previousLines.join("\n");
-		assert.match(painted, /running-call/, "the unreachable call card keeps its painted copy");
+		assert.match(painted, /settled-call/, "the repaired call card reaches the transcript");
+		assert.doesNotMatch(painted, /running-call/, "the stale pending call card is not retained");
 		assert.match(painted, /result tail: done/, "the visible result tail still settles");
 	} finally {
 		tui.stop({ preserveScreen: true });

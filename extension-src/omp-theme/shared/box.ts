@@ -48,8 +48,9 @@ export interface BoxedRenderOptions {
 	/** Execution has started but the tool is still running (title `◌` instead of `✓`). */
 	running?: boolean;
 	/** A result renderer already produced a continuation for this call, so the call
-	 *  leaves the box open instead of closing it with a pending label. */
-	resultSeen?: boolean;
+	 *  leaves the box open instead of closing it with a pending label. May be lazy
+	 *  because Pi builds the call and result components before painting either. */
+	resultSeen?: boolean | (() => boolean);
 	pendingText?: string;
 	/** Verbatim bottom-border label for the pending/running card (overrides the
 	 *  `… ${pendingText}` default, e.g. a live `◌ Running · 12.4s` status). */
@@ -694,6 +695,8 @@ function boxedTruncatedLine(theme: BoxTheme, content: string, width: number): st
 type RenderLinesCache = {
 	width: number;
 	lines: string[];
+	/** Resolved call-envelope state when the call uses a lazy resultSeen value. */
+	resultSeen?: boolean;
 };
 
 function pushBoundedLines(target: string[], lines: string[], maxLines: number): boolean {
@@ -774,7 +777,9 @@ export function renderBoxedToolCall(
 			cache = null;
 		},
 		render(width: number): string[] {
-			if (cache?.width === width) return cache.lines;
+			const resultSeen =
+				typeof options.resultSeen === "function" ? options.resultSeen() : Boolean(options.resultSeen);
+			if (cache?.width === width && cache.resultSeen === resultSeen) return cache.lines;
 			const title = formatBoxedToolTitle(
 				theme,
 				toolName,
@@ -792,7 +797,7 @@ export function renderBoxedToolCall(
 				...(detailLines.length > 0 ? [boxBlankLine(theme, renderedWidth)] : []),
 				...detailLines.flatMap((line) => boxedWrappedLines(theme, line, renderedWidth)),
 			];
-			if (options.isPending && !options.resultSeen) {
+			if (options.isPending && !resultSeen) {
 				// Pending/running card: the status is the last content row and the
 				// border below it stays plain, so every box in the transcript closes
 				// the same way. Once a result renderer has produced a continuation,
@@ -808,7 +813,7 @@ export function renderBoxedToolCall(
 				// continues it with the result divider.
 				lines.push(boxBlankLine(theme, renderedWidth));
 			}
-			cache = { width, lines: dropOmittedLines(lines) };
+			cache = { width, resultSeen, lines: dropOmittedLines(lines) };
 			return cache.lines;
 		},
 	};

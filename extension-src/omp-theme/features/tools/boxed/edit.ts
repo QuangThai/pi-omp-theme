@@ -72,7 +72,7 @@ export const editTool: BoxedToolDefinition = {
 			isPartial: Boolean(context.isPartial),
 			isPending: Boolean(context.isPartial),
 			running: Boolean(context.executionStarted),
-			resultSeen: isResultSeen(context.state),
+			resultSeen: () => isResultSeen(context.state),
 		});
 	},
 	result(result, options, theme, context) {

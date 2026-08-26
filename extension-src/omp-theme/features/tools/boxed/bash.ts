@@ -218,7 +218,7 @@ function renderBoxedBashCall(
 		detailLines.push(theme.fg("muted", `... ${commandLines.length - maxCommandLines - 1} more lines`));
 	}
 	const running = Boolean(context.executionStarted);
-	const resultSeen = isResultSeen(context.state);
+	const resultSeen = () => isResultSeen(context.state);
 	const base = {
 		widthKey,
 		isError: Boolean(context.isError),
@@ -226,7 +226,7 @@ function renderBoxedBashCall(
 		isPending: Boolean(context.isPartial),
 		running,
 	};
-	if (running && context.isPartial && !resultSeen) {
+	if (running && context.isPartial && !resultSeen()) {
 		// Pre-result running card: the call closes the box with a live running
 		// footer and a `No output received yet` line. The first partial result
 		// renders nothing, so this card is never duplicated below.
@@ -235,6 +235,7 @@ function renderBoxedBashCall(
 			...base,
 			showHeader: false,
 			pendingLabel: formatBoxedRunningStatus(theme, getStateElapsedMs(context.state)),
+			resultSeen,
 		});
 	}
 	// Streaming (a result renderer already continues this box) and terminal

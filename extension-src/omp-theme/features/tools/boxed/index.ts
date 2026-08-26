@@ -16,7 +16,7 @@ import { lsTool } from "./ls.js";
 import { getQuickEditToolConfig, quickEditTool } from "./quick-edit.js";
 import { readTool } from "./read.js";
 import { noteToolRowHint, panelLines } from "./render-viewport.js";
-import { getStateElapsedMs, getToolsRenderConfig } from "./session-config.js";
+import { getStateElapsedMs, getToolsRenderConfig, isResultSeen } from "./session-config.js";
 import type { BoxedToolContext, BoxedToolDefinition } from "./shared.js";
 import {
 	emptyTurnResult,
@@ -108,7 +108,13 @@ function viewportStableCall(toolName: unknown, context: BoxedToolContext, compon
 			// result state installed by its result renderer in the same display pass.
 			const phase =
 				!context.isPartial && settledResultLivesInCall(toolName, context.toolCallId) ? "settled" : "stable";
-			const variant = `${phase}:${context.expanded ? "expanded" : "collapsed"}`;
+			// A pending call has a closing bottom border. Once a result renderer has
+			// been seen (or the call becomes terminal), the call must stay open for
+			// the result component to continue it. Keep that topology in the cache
+			// variant; otherwise a frozen pending copy leaves `Output` below a closed
+			// frame when the first streamed result arrives out of reach.
+			const frame = context.isPartial && !isResultSeen(context.state) ? "pending" : "open";
+			const variant = `${phase}:${frame}:${context.expanded ? "expanded" : "collapsed"}`;
 			return panelLines(context.toolCallId, variant, width, () => component.render(width));
 		},
 	};

@@ -4,6 +4,12 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [1.0.6] - 2026-08-26
+
+### Fixed
+
+- Kept boxed tool calls open when streamed result output follows a pending call, including calls already above the viewport. Lazy result state and topology-aware viewport caching now prevent stale closing borders and disconnected `Output` dividers.
+
 ## [1.0.5] - 2026-08-24
 
 ### Fixed

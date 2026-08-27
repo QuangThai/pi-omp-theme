@@ -11,7 +11,7 @@ const expected = {
   version: manifest.version,
   entry: "./dist/extensions/pi-omp-theme.ts",
   repository: "git+https://github.com/QuangThai/pi-omp-theme.git",
-  image: "https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/gallery-preview.png",
+  image: "https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/gallery-preview.png?v=gallery-2",
 };
 assert.equal(manifest.name, expected.name);
 assert.equal(manifest.version, expected.version);

@@ -5,7 +5,41 @@
 
 An OMP-inspired visual theme and TUI presentation extension for [Pi](https://pi.dev). It combines Titanium dark/light themes with a coordinated startup view, status line, editor, messages, and tool rendering.
 
-![pi-omp-theme preview](https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/gallery-preview.png)
+![pi-omp-theme surface gallery](https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/gallery-preview.png?v=gallery-2)
+
+## Surface gallery
+
+The gallery is more than a logo preview: it shows the surfaces people see in a real Pi session. These representative Pi 0.84.2 captures use the Titanium dark theme, Unicode glyphs, a 120-column terminal, and sample local project data. Click any thumbnail for the full-size image.
+
+| Surface | What it demonstrates | Full-size preview |
+|---|---|---|
+| **Welcome** | Startup resources, tool providers, and recent sessions | [open `welcome.png`](https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/welcome.png) |
+| **Read** | Quiet, single-line file reads with a readable path | [open `read.png`](https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/read.png) |
+| **List** | Bounded directory output rendered as a tree | [open `list.png`](https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/list.png) |
+| **Grep** | Match counts, file grouping, context, and truncation | [open `grep.png`](https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/grep.png) |
+| **Tool call** | Boxed command, response, exit status, and elapsed time | [open `tool-call.png`](https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/tool-call.png) |
+| **Status line** | Model, effort, path, Git state, and context usage | [open `status-line.png`](https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/status-line.png) |
+
+<table>
+  <tr>
+    <td width="50%"><strong>Welcome</strong><br><a href="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/welcome.png"><img src="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/welcome.png" alt="Welcome screen with resources, providers, and recent sessions" width="100%"></a></td>
+    <td width="50%"><strong>Read</strong><br><a href="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/read.png"><img src="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/read.png" alt="Compact read tool surface" width="100%"></a></td>
+  </tr>
+  <tr>
+    <td><strong>List</strong><br><a href="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/list.png"><img src="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/list.png" alt="List tool rendered as a bounded tree" width="100%"></a></td>
+    <td><strong>Grep</strong><br><a href="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/grep.png"><img src="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/grep.png" alt="Grep results grouped by file with match context" width="100%"></a></td>
+  </tr>
+  <tr>
+    <td><strong>Tool call</strong><br><a href="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/tool-call.png"><img src="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/tool-call.png" alt="Boxed tool call with output, exit status, and elapsed time" width="100%"></a></td>
+    <td><strong>Status line</strong><br><a href="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/status-line.png"><img src="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/status-line.png" alt="Responsive status line with model, Git, and context usage" width="100%"></a></td>
+  </tr>
+</table>
+
+Install it in Pi with one command:
+
+```bash
+pi install npm:@nguyenquangthai/pi-omp-theme
+```
 
 ## Features
 

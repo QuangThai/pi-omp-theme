@@ -20,11 +20,11 @@
 //   as one visual family.
 
 import type { BoxTheme } from "../../../shared/box.js";
-import { dimLine, replaceTabs, TOOL_CONTENT_PREFIX } from "../../../shared/box.js";
+import { dimLine, replaceTabs } from "../../../shared/box.js";
 import { safeTruncateToWidth } from "../../../shared/render-budget.js";
 
-/** Indent for top-level tree rows; shared with every boxless tool body. */
-export const TREE_INDENT = TOOL_CONTENT_PREFIX;
+/** Indent for top-level tree rows; matches the quiet-tool batch panel. */
+export const TREE_INDENT = "  ";
 /** Extra indent for rows nested under a grouping node. */
 export const TREE_CHILD_INDENT = "  ";
 /** Default number of entries shown before collapsing to "… N more". */

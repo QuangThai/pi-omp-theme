@@ -1,6 +1,6 @@
 {
   "name": "@nguyenquangthai/pi-omp-theme",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "An OMP-inspired visual theme and TUI presentation extension for Pi.",
   "license": "MIT",
   "author": "Nguyen Quang Thai",
@@ -58,8 +58,8 @@
     "@earendil-works/pi-tui": "*"
   },
   "devDependencies": {
-    "@earendil-works/pi-coding-agent": "^0.84.4",
-    "@earendil-works/pi-tui": "^0.84.4",
+    "@earendil-works/pi-coding-agent": "^0.84.0",
+    "@earendil-works/pi-tui": "^0.84.0",
     "@types/node": "^24.0.0",
     "dependency-cruiser": "^17.4.3",
     "tsup": "^8.5.0",

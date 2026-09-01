@@ -187,55 +187,6 @@ function validResultArgs(args: unknown[]): args is [object, object, object, Tool
 		validContext(context)
 	);
 }
-function normalizeToolRenderContext(instance: object, value: unknown, args: object): ToolRenderContext {
-	if (validContext(value)) return value;
-	const context = isObject(value) ? value : {};
-	const hostState = ownData(instance, "rendererState");
-	const state = isObject(ownData(context, "state"))
-		? (ownData(context, "state") as object)
-		: isObject(hostState)
-			? hostState
-			: {};
-	const hostInvalidate = (instance as { invalidate?: unknown }).invalidate;
-	const candidateInvalidate = ownData(context, "invalidate");
-	const lastComponent = ownData(context, "lastComponent");
-	const result = ownData(instance, "result");
-	const boolean = (key: string, fallback = false): boolean => {
-		const candidate = ownData(context, key);
-		if (typeof candidate === "boolean") return candidate;
-		const host = ownData(instance, key);
-		return typeof host === "boolean" ? host : fallback;
-	};
-	return {
-		args,
-		toolCallId:
-			typeof ownData(context, "toolCallId") === "string"
-				? (ownData(context, "toolCallId") as string)
-				: typeof ownData(instance, "toolCallId") === "string"
-					? (ownData(instance, "toolCallId") as string)
-					: "unknown-tool-call",
-		invalidate:
-			typeof candidateInvalidate === "function"
-				? (candidateInvalidate as () => void)
-				: typeof hostInvalidate === "function"
-					? () => Reflect.apply(hostInvalidate as (...values: unknown[]) => unknown, instance, [])
-					: () => {},
-		lastComponent: lastComponent === undefined || isObject(lastComponent) ? lastComponent : undefined,
-		state,
-		cwd:
-			typeof ownData(context, "cwd") === "string"
-				? (ownData(context, "cwd") as string)
-				: typeof ownData(instance, "cwd") === "string"
-					? (ownData(instance, "cwd") as string)
-					: process.cwd(),
-		executionStarted: boolean("executionStarted"),
-		argsComplete: boolean("argsComplete"),
-		isPartial: boolean("isPartial", true),
-		expanded: boolean("expanded"),
-		showImages: boolean("showImages"),
-		isError: boolean("isError", isObject(result) && ownData(result, "isError") === true),
-	};
-}
 function descriptorView(descriptor: PropertyDescriptor | undefined): DescriptorView | undefined {
 	if (!descriptor) return undefined;
 	if ("value" in descriptor)
@@ -469,57 +420,74 @@ export function createToolDecorationOwner(snapshot: Partial<ToolDecorationSnapsh
 			if (typeof original !== "function") return undefined;
 			capturedToolUi = (instance as { ui?: { requestRender?: (force?: boolean) => void } }).ui ?? capturedToolUi;
 			notePresentationTui(capturedToolUi);
+			const renderer = Reflect.apply(original, instance, args);
 			if (state.snapshot.style === "compact-box") {
 				const toolName = (instance as { toolName?: unknown }).toolName;
-				// Compact-box owns the complete call/result topology. Do not select and
-				// conditionally fall back to a custom renderer here: that is how one tool
-				// can retain its native inset while neighboring tools start at column 0.
-				// A normalized context keeps the shell aligned across small Pi context
-				// shape changes without handing ownership back to the native renderer.
-				neutralizeToolContainerBackground(instance);
-				if (subtype === "tool-call-renderer")
-					return (callArgs: unknown, theme: unknown, rawContext: unknown) => {
-						const normalizedArgs = isObject(callArgs) ? callArgs : {};
-						if (!validCallArgs([normalizedArgs, theme, rawContext])) note(state, `${subtype}-normalized-context`);
-						const context = normalizeToolRenderContext(instance, rawContext, normalizedArgs);
-						const component = renderBoxedToolCall(
+				// Tools without a native renderCall/renderResult (e.g. extension tools
+				// like TaskUpdate/TaskList) still get boxed presentation through a
+				// fallback renderer, mirroring the generic boxed fallback used for
+				// unknown tool names.
+				if (typeof renderer !== "function") {
+					neutralizeToolContainerBackground(instance);
+					if (subtype === "tool-call-renderer")
+						return (callArgs: unknown, theme: unknown, context: unknown) => {
+							const component = renderBoxedToolCall(
+								toolName,
+								callArgs as Record<string, unknown>,
+								theme as never,
+								context as never,
+							);
+							// Same batch-member contract as the native-renderer path: a
+							// collapsed turn member (or quiet batch member) returns the
+							// singleton and must be hidden, or Pi leaves a stray native
+							// placeholder row per block after the collapse.
+							if (component === EMPTY_BATCH_COMPONENT) hideBatchMember(instance);
+							return component;
+						};
+					return (result: unknown, options: unknown, theme: unknown, context: unknown) => {
+						const component = renderBoxedToolResult(
 							toolName,
-							normalizedArgs as Record<string, unknown>,
+							result as { content?: readonly unknown[]; details?: unknown },
+							options as { expanded: boolean; isPartial: boolean },
 							theme as never,
 							context as never,
 						);
 						if (component === EMPTY_BATCH_COMPONENT) hideBatchMember(instance);
 						return component;
 					};
-				return (result: unknown, options: unknown, theme: unknown, rawContext: unknown) => {
-					const normalizedResult =
-						isObject(result) && Array.isArray(ownData(result, "content"))
-							? (result as { content?: readonly unknown[]; details?: unknown })
-							: { content: [] };
-					const normalizedOptions = {
-						expanded: isObject(options) && typeof ownData(options, "expanded") === "boolean"
-							? (ownData(options, "expanded") as boolean)
-							: false,
-						isPartial: isObject(options) && typeof ownData(options, "isPartial") === "boolean"
-							? (ownData(options, "isPartial") as boolean)
-							: false,
-					};
-					if (!validResultArgs([normalizedResult, normalizedOptions, theme, rawContext]))
-						note(state, `${subtype}-normalized-context`);
-					const hostArgs = ownData(instance, "args");
-					const context = normalizeToolRenderContext(instance, rawContext, isObject(hostArgs) ? hostArgs : {});
-					const component = renderBoxedToolResult(
-						toolName,
-						normalizedResult,
-						normalizedOptions,
-						theme as never,
-						context as never,
-					);
+				}
+				return function (this: unknown, ...rendererArgs: unknown[]) {
+					const valid = subtype === "tool-call-renderer" ? validCallArgs(rendererArgs) : validResultArgs(rendererArgs);
+					if (!valid) {
+						note(state, `${subtype}-malformed-context`);
+						return Reflect.apply(renderer, this, rendererArgs);
+					}
+					const component =
+						subtype === "tool-call-renderer"
+							? (() => {
+									const [args, theme, context] = rendererArgs as [object, object, ToolRenderContext];
+									return renderBoxedToolCall(
+										toolName,
+										args as Record<string, unknown>,
+										theme as never,
+										context as never,
+									);
+								})()
+							: (() => {
+									const [result, options, theme, context] = rendererArgs as [object, object, object, ToolRenderContext];
+									return renderBoxedToolResult(
+										toolName,
+										result as { content?: readonly unknown[]; details?: unknown },
+										options as { expanded: boolean; isPartial: boolean },
+										theme as never,
+										context as never,
+									);
+								})();
+					neutralizeToolContainerBackground(instance);
 					if (component === EMPTY_BATCH_COMPONENT) hideBatchMember(instance);
 					return component;
 				};
 			}
-			const renderer = Reflect.apply(original, instance, args);
 			if (typeof renderer !== "function") return renderer;
 			return function (this: unknown, ...rendererArgs: unknown[]) {
 				const valid = subtype === "tool-call-renderer" ? validCallArgs(rendererArgs) : validResultArgs(rendererArgs);

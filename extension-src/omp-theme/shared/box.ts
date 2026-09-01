@@ -193,14 +193,7 @@ export function parens(theme: BoxTheme, text: string, skipTextColor?: boolean): 
 const BOX_HORIZONTAL = "─";
 const BOX_VERTICAL = "│";
 const BOX_SIDE_PADDING = 1;
-/** Smallest width at which the two borders, side padding, and one content cell fit. */
-const BOX_FRAME_MIN_WIDTH = 5;
-/** Preferred compact width; the actual terminal width always wins when narrower. */
-const BOX_PREFERRED_MIN_WIDTH = 12;
-/** Shared transcript geometry: outer glyph at column 0, primary content at column 2. */
-export const TOOL_CONTENT_INDENT = 2;
-export const TOOL_CONTENT_PREFIX = " ".repeat(TOOL_CONTENT_INDENT);
-export const TOOL_RIGHT_MARGIN = 1;
+const BOX_MIN_WIDTH = 12;
 const BOX_ROUND_TOP_LEFT = "╭";
 const BOX_ROUND_TOP_RIGHT = "╮";
 const BOX_ROUND_BOTTOM_LEFT = "╰";
@@ -214,8 +207,7 @@ const BOX_LABEL_CAP = BOX_HORIZONTAL.repeat(3);
 const BOX_WIDTH_CACHE = new Map<string, number>();
 
 export function boxWidth(width: number): number {
-	const available = Number.isFinite(width) ? Math.floor(width) : BOX_PREFERRED_MIN_WIDTH;
-	return Math.max(BOX_FRAME_MIN_WIDTH, available);
+	return Math.max(BOX_MIN_WIDTH, width);
 }
 
 export function boxInnerWidth(width: number): number {
@@ -231,7 +223,7 @@ function _tightBoxWidth(
 	const contentWidth = contentLines.reduce((max, line) => Math.max(max, safeVisibleWidth(line)), 0);
 	const labelWidth = labelWidths.reduce((max, width) => Math.max(max, width), 0);
 	const neededWidth = Math.max(
-		BOX_PREFERRED_MIN_WIDTH,
+		BOX_MIN_WIDTH,
 		contentWidth + 2 + BOX_SIDE_PADDING * 2,
 		labelWidth + 2 + BOX_SIDE_PADDING * 2,
 	);
@@ -605,7 +597,7 @@ export function dropOmittedLines(lines: string[]): string[] {
 }
 
 export function boxBlankLine(theme: BoxTheme, width: number): string {
-	if (boxChrome === "light") return BOX_OMITTED_LINE;
+	return BOX_OMITTED_LINE;
 	const renderedWidth = boxWidth(width);
 	const contentWidth = boxInnerWidth(renderedWidth);
 	const sidePad = " ".repeat(BOX_SIDE_PADDING);
@@ -1035,6 +1027,9 @@ export function renderCompactBoxedFooter(
 	};
 }
 
+const TOOL_BODY_INDENT = 2;
+const TOOL_RIGHT_MARGIN = 1;
+
 export function renderToolCallHeader(
 	theme: BoxTheme,
 	label: string,
@@ -1044,7 +1039,7 @@ export function renderToolCallHeader(
 	return renderToolCallHeaderLines(theme, label, [parens(theme, detail, skipTextColor)]);
 }
 
-export function getToolBodyWidth(width: number, spaces = TOOL_CONTENT_INDENT): number {
+export function getToolBodyWidth(width: number, spaces = TOOL_BODY_INDENT): number {
 	return Math.max(1, width - spaces - TOOL_RIGHT_MARGIN);
 }
 
@@ -1070,7 +1065,7 @@ export function renderToolCallHeaderLines(theme: BoxTheme, label: string, detail
 	};
 }
 
-export function indentToolBody(text: string, spaces = TOOL_CONTENT_INDENT): string {
+export function indentToolBody(text: string, spaces = TOOL_BODY_INDENT): string {
 	const indent = " ".repeat(spaces);
 	return text
 		.split("\n")
@@ -1078,7 +1073,7 @@ export function indentToolBody(text: string, spaces = TOOL_CONTENT_INDENT): stri
 		.join("\n");
 }
 
-export function indentToolBodyLines(lines: string[], spaces = TOOL_CONTENT_INDENT): string[] {
+export function indentToolBodyLines(lines: string[], spaces = TOOL_BODY_INDENT): string[] {
 	const indent = " ".repeat(spaces);
 	return lines.map((line) => (line.length === 0 ? line : `${indent}${line}`));
 }

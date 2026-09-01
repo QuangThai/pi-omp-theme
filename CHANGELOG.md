@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [1.0.8] - 2026-09-01
+
+### Reverted
+
+- Reverted the v1.0.7 transcript geometry rollout after visual regressions made boxed Bash and error output feel heavier and less polished than the established renderer.
+- Restored the complete v1.0.6 rendering behavior, including native custom-tool ownership, the native working indicator, prior box spacing and narrow-width handling, and the Pi 0.84.2 development baseline.
+
 ## [1.0.7] - 2026-09-01
 
 ### Fixed

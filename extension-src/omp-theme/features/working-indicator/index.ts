@@ -8,6 +8,7 @@
  */
 
 import { keyText } from "@earendil-works/pi-coding-agent";
+import { truncateToWidth } from "@earendil-works/pi-tui";
 import { createSegmentedShimmer, type ShimmerMode, type ShimmerPalette } from "../../shared/shimmer.js";
 
 /** omp's `status` spinner set, at its 80 ms cadence. */
@@ -38,9 +39,24 @@ function interruptHint(): string {
 	}
 }
 
+interface WorkingWidgetTui {
+	requestRender(force?: boolean): void;
+}
+
+interface WorkingWidgetComponent {
+	render(width: number): string[];
+	invalidate(): void;
+}
+
 export interface WorkingIndicatorHost {
 	setWorkingIndicator?: (options?: { frames: string[]; intervalMs?: number }) => void;
 	setWorkingMessage?: (message?: string) => void;
+	setWorkingVisible?: (visible: boolean) => void;
+	setWidget?: (
+		key: string,
+		widget: ((tui: WorkingWidgetTui, theme: unknown) => WorkingWidgetComponent) | undefined,
+		options?: { placement: "aboveEditor" | "belowEditor" },
+	) => void;
 	// Method syntax, not a function property: Pi's own `fg` accepts only its
 	// ThemeColor union, which contravariance would reject against a `string`
 	// parameter. `BoxTheme` declares its `fg` the same way for the same reason.
@@ -51,6 +67,8 @@ export interface WorkingIndicatorHost {
  * Install the spinner. Returns whether Pi accepted it, so the caller can record
  * the surface as unavailable rather than assume it took effect.
  */
+let installedFrames: readonly string[] = STATUS_FRAMES;
+
 export function installWorkingIndicator(ui: WorkingIndicatorHost | undefined, ascii = false): boolean {
 	if (typeof ui?.setWorkingIndicator !== "function") return false;
 	const frames = (ascii ? ASCII_FRAMES : STATUS_FRAMES).map((frame) => {
@@ -62,6 +80,7 @@ export function installWorkingIndicator(ui: WorkingIndicatorHost | undefined, as
 	});
 	try {
 		ui.setWorkingIndicator({ frames, intervalMs: FRAME_INTERVAL_MS });
+		installedFrames = frames;
 		return true;
 	} catch {
 		return false;
@@ -80,6 +99,8 @@ export function restoreWorkingIndicator(ui: WorkingIndicatorHost | undefined): v
 
 // ── Working-message shimmer ──────────────────────────────────────────────────
 
+const WORKING_WIDGET_KEY = "pi-omp-theme-working";
+
 interface ShimmerState {
 	host: WorkingIndicatorHost;
 	mode: ShimmerMode;
@@ -87,6 +108,10 @@ interface ShimmerState {
 	palette: () => ShimmerPalette;
 	render?: (time: number) => string;
 	animated: boolean;
+	frames: readonly string[];
+	row: string;
+	widgetTui: WorkingWidgetTui | undefined;
+	ownsAlignedRow: boolean;
 	timer?: ReturnType<typeof setInterval> | undefined;
 }
 
@@ -132,7 +157,16 @@ export function configureWorkingShimmer(
 ): void {
 	disposeWorkingShimmer();
 	if (!ui || typeof ui.setWorkingMessage !== "function") return;
-	shimmer = { host: ui, mode, palette, animated: mode !== "off" };
+	shimmer = {
+		host: ui,
+		mode,
+		palette,
+		animated: mode !== "off",
+		frames: installedFrames,
+		row: "",
+		widgetTui: undefined,
+		ownsAlignedRow: typeof ui.setWidget === "function" && typeof ui.setWorkingVisible === "function",
+	};
 }
 
 /** Begin sweeping. Safe to call repeatedly; a second call does not stack timers. */
@@ -141,9 +175,35 @@ export function startWorkingShimmer(): void {
 	if (!state || state.timer) return;
 	const render = buildRowRenderer(state);
 	state.render = render;
+	if (state.ownsAlignedRow) {
+		try {
+			state.host.setWorkingVisible?.(false);
+			state.host.setWidget?.(
+				WORKING_WIDGET_KEY,
+				(tui) => {
+					state.widgetTui = tui;
+					return {
+						render: (width: number) => ["", truncateToWidth(state.row, Math.max(1, width), "…")],
+						// Invalidation means repaint/theme/width churn, not disposal. Keep the
+						// captured TUI so the animation can continue requesting frames.
+						invalidate: () => {},
+					};
+				},
+				{ placement: "aboveEditor" },
+			);
+		} catch {
+			state.ownsAlignedRow = false;
+			state.host.setWorkingVisible?.(true);
+		}
+	}
 	const paint = () => {
 		try {
-			state.host.setWorkingMessage?.(render(Date.now()));
+			const time = Date.now();
+			const frameIndex = Math.floor(time / FRAME_INTERVAL_MS) % Math.max(1, state.frames.length);
+			const frame = state.frames[frameIndex] ?? "";
+			state.row = `${frame}${frame ? " " : ""}${render(time)}`;
+			if (state.ownsAlignedRow) state.widgetTui?.requestRender();
+			else state.host.setWorkingMessage?.(render(time));
 		} catch {
 			stopWorkingShimmer();
 		}
@@ -165,7 +225,14 @@ export function stopWorkingShimmer(): void {
 		state.timer = undefined;
 	}
 	try {
-		state.host.setWorkingMessage?.(undefined);
+		if (state.ownsAlignedRow) {
+			state.host.setWidget?.(WORKING_WIDGET_KEY, undefined);
+			state.host.setWorkingVisible?.(true);
+			state.widgetTui = undefined;
+			state.row = "";
+		} else {
+			state.host.setWorkingMessage?.(undefined);
+		}
 	} catch {
 		// Best-effort restore.
 	}

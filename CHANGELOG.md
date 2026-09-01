@@ -4,6 +4,20 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [1.0.7] - 2026-09-01
+
+### Fixed
+
+- Unified transcript geometry around a shared column contract: top-level frames and markers start at column 0, primary content starts at column 2, and nested content starts at column 4.
+- Made compact-box rendering own both call and result presentation for custom tools, preventing native renderer padding from shifting tools such as Web Fetch to the right of Read, List, and Grep.
+- Replaced Pi's inset working loader with an aligned public widget while preserving the native working-message fallback on hosts without widget ownership APIs.
+- Restored boxed breathing rows that were accidentally omitted in every chrome mode, while light chrome continues to omit frame-only padding.
+- Kept boxed rows within narrow terminal budgets instead of forcing the preferred 12-column width when only 11 columns are available.
+
+### Changed
+
+- Updated the development/runtime verification baseline to Pi 0.84.4 and added geometry, custom-renderer, working-row, and real `ToolExecutionComponent` regression coverage.
+
 ## [1.0.6] - 2026-08-26
 
 ### Fixed

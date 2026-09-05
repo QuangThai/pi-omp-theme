@@ -1,6 +1,7 @@
 import { ENUMS, validateConfigLayer } from "../domain/config-normalization.js";
 import type { NormalizedPiOmpThemeConfig } from "../domain/config-types.js";
 import { type ConfigFilePort, type ConfigStoragePaths, writeScopedConfig } from "./config-storage.js";
+import { formatDoctorSummary } from "./doctor.js";
 
 export type Mutation = Record<string, unknown>;
 export interface CommandUi {
@@ -203,7 +204,15 @@ export async function executePiOmpThemeCommand(
 		return;
 	}
 	if (action === "doctor") {
-		host.ui.notify(JSON.stringify(app.doctor()), "info");
+		const report = app.doctor();
+		if (!scope) {
+			const summary = formatDoctorSummary(report);
+			host.ui.notify(summary.message, summary.type);
+		} else if ((scope === "json" || scope === "--json") && rest.length === 0) {
+			host.ui.notify(JSON.stringify(report), "info");
+		} else {
+			host.ui.notify("usage: /pi-omp-theme doctor [json]", "warning");
+		}
 		return;
 	}
 	if (action === "persist") {

@@ -108,6 +108,13 @@ export const KNOWN_NATIVE_IDENTITIES: Readonly<Record<string, readonly KnownNati
 				"hideThinkingBlock",
 			]),
 		}),
+		// Pi 0.85.0 keeps the same streaming/thinking contract in its modular
+		// runtime but wraps thinking blocks in MouseRegion for click-to-toggle.
+		Object.freeze({
+			name: "updateContent",
+			arity: 1,
+			fingerprint: "80e338d2",
+		}),
 	]),
 	"native-compaction-message:updateDisplay": Object.freeze([
 		Object.freeze({
@@ -173,6 +180,19 @@ export const KNOWN_NATIVE_IDENTITIES: Readonly<Record<string, readonly KnownNati
 			fingerprint: "e50613b7",
 			sourceMarkers: Object.freeze(["builtInToolDefinition", "renderCall", "toolDefinition"]),
 		}),
+		// Pi 0.85.0 moved built-in renderer lookup to InteractiveMode and leaves
+		// this selector responsible only for the definition passed by the host.
+		Object.freeze({
+			name: "getCallRenderer",
+			arity: 0,
+			fingerprint: "e0a9ed86",
+		}),
+		Object.freeze({
+			name: "getCallRenderer",
+			arity: 0,
+			fingerprint: "73116365",
+			sourceMarkers: Object.freeze(["toolDefinition", "renderCall"]),
+		}),
 	]),
 	"tool-result-renderer:getResultRenderer": Object.freeze([
 		Object.freeze({
@@ -185,6 +205,18 @@ export const KNOWN_NATIVE_IDENTITIES: Readonly<Record<string, readonly KnownNati
 			arity: 0,
 			fingerprint: "28c4dc22",
 			sourceMarkers: Object.freeze(["builtInToolDefinition", "renderResult", "toolDefinition"]),
+		}),
+		// Pi 0.85.0 uses the same definition hand-off for result renderers.
+		Object.freeze({
+			name: "getResultRenderer",
+			arity: 0,
+			fingerprint: "1567dcf4",
+		}),
+		Object.freeze({
+			name: "getResultRenderer",
+			arity: 0,
+			fingerprint: "d613a2a3",
+			sourceMarkers: Object.freeze(["toolDefinition", "renderResult"]),
 		}),
 	]),
 	"native-bash-execution:render": Object.freeze([
@@ -235,13 +267,20 @@ export interface CompatibilityRecordSnapshot {
 	readonly diagnostic: string | undefined;
 }
 
+export type CompatibilityFallbackCause = "disabled" | "incompatible" | "conflict" | "installation";
+
 export interface CompatibilityProbeReport {
 	attemptedVersion: string;
 	piVersion: string;
 	compatibilityBasis: typeof COMPATIBILITY_BASIS;
 	generation: number;
 	recordSnapshots: readonly CompatibilityRecordSnapshot[];
-	unsupported: ReadonlyArray<{ subtype: string; method: PropertyKey; reason: string }>;
+	unsupported: ReadonlyArray<{
+		subtype: CompatibilityRecord["subtype"];
+		method: PropertyKey;
+		reason: string;
+		cause: CompatibilityFallbackCause;
+	}>;
 	delegationMarkers: readonly string[];
 	certification: readonly {
 		readonly attemptedVersion: string;
@@ -304,21 +343,34 @@ function isBundledPiRuntime(): boolean {
 }
 
 function matchesSourceMarkers(value: Function, markers: readonly string[] | undefined): boolean {
-	if (!isBundledPiRuntime() || !markers || markers.length === 0) return false;
+	if (!markers || markers.length === 0) return false;
 	const source = Function.prototype.toString.call(value);
 	return markers.every((marker) => source.includes(marker));
 }
 
-function knownIdentityMatches(spec: TargetSpec, value: unknown): KnownNativeIdentity | undefined {
+/**
+ * Match one native method without consulting Pi's version number. Exact source
+ * identity is preferred; bundled builds may use stable contract markers because
+ * minification can rewrite an otherwise unchanged method.
+ */
+export function matchKnownNativeIdentity(
+	key: string,
+	value: unknown,
+	options: { readonly bundledRuntime?: boolean } = {},
+): KnownNativeIdentity | undefined {
 	if (typeof value !== "function") return undefined;
 	const hash = fingerprint(value);
-	const key = `${spec.subtype}:${spec.method}`;
+	const bundledRuntime = options.bundledRuntime ?? isBundledPiRuntime();
 	return (KNOWN_NATIVE_IDENTITIES[key] ?? []).find(
 		(identity) =>
 			value.name === identity.name &&
 			value.length === identity.arity &&
-			(hash === identity.fingerprint || matchesSourceMarkers(value, identity.sourceMarkers)),
+			(hash === identity.fingerprint || (bundledRuntime && matchesSourceMarkers(value, identity.sourceMarkers))),
 	);
+}
+
+function knownIdentityMatches(spec: TargetSpec, value: unknown): KnownNativeIdentity | undefined {
+	return matchKnownNativeIdentity(`${spec.subtype}:${spec.method}`, value);
 }
 
 function matchedNativeIdentity(spec: TargetSpec): KnownNativeIdentity | undefined {
@@ -543,6 +595,13 @@ function surfaceDisabled(spec: TargetSpec, config: CompatibilityProbeOptions["co
 	return true;
 }
 
+interface ProbeSpecResult {
+	record: CompatibilityRecord;
+	reason: string;
+	fallback: boolean;
+	fallbackCause?: CompatibilityFallbackCause;
+}
+
 function probeSpec(options: {
 	spec: TargetSpec;
 	piVersion: string | undefined;
@@ -551,15 +610,21 @@ function probeSpec(options: {
 	config?: CompatibilityProbeOptions["config"];
 	messageSnapshot: MessageDecorationSnapshot | undefined;
 	toolOwner: ReturnType<typeof createToolDecorationOwner> | undefined;
-}) {
+}): ProbeSpecResult {
 	const { spec, piVersion, generation, markers, config, toolOwner, messageSnapshot } = options;
 	const identity = trustedNativeIdentity(spec);
 	const diagnostic = probeDiagnostic(spec, identity);
 	const disabled = surfaceDisabled(spec, config);
 	if (disabled) {
 		const reason = "native fallback: surface disabled by normalized configuration";
-		return { record: createFallbackRecord(spec, piVersion, generation, reason), reason, fallback: true };
+		return {
+			record: createFallbackRecord(spec, piVersion, generation, reason),
+			reason,
+			fallback: true,
+			fallbackCause: "disabled",
+		};
 	}
+	const compatible = identity !== undefined && shape(spec);
 	const result = installDelegatingPatch({
 		feature: spec.feature,
 		subtype: spec.subtype,
@@ -567,7 +632,7 @@ function probeSpec(options: {
 		method: spec.method,
 		piVersion: piVersion ?? "unknown",
 		compatibilityBasis: COMPATIBILITY_BASIS,
-		shape: identity !== undefined && shape(spec),
+		shape: compatible,
 		generation,
 		expectedIdentity: identity,
 		hasExpectedIdentity: true,
@@ -598,10 +663,19 @@ function probeSpec(options: {
 			return renderSpecialMessageBlock(spec.subtype as SpecialBlockSubtype, original, target, args);
 		},
 	});
+	const fallback = result.status === "skipped";
+	const fallbackCause: CompatibilityFallbackCause | undefined = fallback
+		? !compatible
+			? "incompatible"
+			: result.record.shape === "conflict"
+				? "conflict"
+				: "installation"
+		: undefined;
 	return {
 		record: result.record,
 		reason: result.reason ?? result.record.diagnostic ?? "skipped",
-		fallback: result.status === "skipped",
+		fallback,
+		...(fallbackCause ? { fallbackCause } : {}),
 	};
 }
 
@@ -728,7 +802,12 @@ export function probePiCompatibility(
 	);
 	const evidenceByKey = new Map(evidence.map((item) => [`${item.subtype}:${String(item.method)}`, item]));
 	const records: CompatibilityRecord[] = [];
-	const unsupported: Array<{ subtype: string; method: PropertyKey; reason: string }> = [];
+	const unsupported: Array<{
+		subtype: CompatibilityRecord["subtype"];
+		method: PropertyKey;
+		reason: string;
+		cause: CompatibilityFallbackCause;
+	}> = [];
 	const certification: NonNullable<CompatibilityProbeReport["certification"]>[number][] = [];
 	for (const spec of targetSpecs) {
 		const captured = evidenceByKey.get(`${spec.subtype}:${String(spec.method)}`);
@@ -754,7 +833,13 @@ export function probePiCompatibility(
 			status: result.fallback ? "native-fallback" : "certified",
 			...(result.fallback ? { fallbackReason: result.reason } : {}),
 		});
-		if (result.fallback) unsupported.push({ subtype: spec.subtype, method: spec.method, reason: result.reason });
+		if (result.fallback)
+			unsupported.push({
+				subtype: spec.subtype,
+				method: spec.method,
+				reason: result.reason,
+				cause: result.fallbackCause ?? "installation",
+			});
 	}
 	const report: CompatibilityProbeReport = {
 		attemptedVersion: piVersion ?? "unknown",

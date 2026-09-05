@@ -53,7 +53,7 @@ pi install npm:@nguyenquangthai/pi-omp-theme
 ## Requirements
 
 - Node.js 22.19 or newer.
-- Pi 0.83.x or newer. Compatibility patches are probed against the live Pi runtime per surface; unrecognized identities fall back to Pi's native rendering.
+- Pi 0.83.x or newer. Compatibility patches are probed against the live Pi runtime per surface; Pi version numbers are diagnostic only, so unrelated releases keep the themed TUI when the patched method contracts remain unchanged. Unrecognized contracts fall back to Pi's native rendering.
 
 ## Install
 
@@ -72,7 +72,7 @@ pi list
 pi -p "/pi-omp-theme doctor"
 ```
 
-`pi list` should include `npm:@nguyenquangthai/pi-omp-theme`. The doctor command reports the active preset, Pi compatibility identity, theme, surface fallbacks, and the host binding (`operational.compatibility.hostBinding.status` must read `bound`).
+`pi list` should include `npm:@nguyenquangthai/pi-omp-theme`. The doctor summary reports the active preset, Pi compatibility identity, surface fallbacks, and host binding; `Host binding` should read `bound`. Use `/pi-omp-theme doctor json` when you need the complete field-level payload.
 
 ### Install from a local checkout
 
@@ -174,7 +174,8 @@ Invalid values fall back safely and appear in `/pi-omp-theme doctor`.
 | `/pi-omp-theme set <path> <JSON>` | Set a validated configuration leaf. |
 | `/pi-omp-theme persist global\|project set <path> <JSON>` | Persist a validated setting. |
 | `/pi-omp-theme reload` | Reload configuration and affected surfaces. |
-| `/pi-omp-theme doctor` | Show capability, conflict, fallback, and config diagnostics. |
+| `/pi-omp-theme doctor` | Show a compact, human-readable health report. |
+| `/pi-omp-theme doctor json` | Show the complete machine-readable diagnostic payload. |
 
 ## Privacy and security
 

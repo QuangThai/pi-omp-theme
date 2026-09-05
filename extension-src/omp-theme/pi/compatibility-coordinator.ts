@@ -8,7 +8,21 @@ import {
 	probePiCompatibility,
 	COMPATIBILITY_BASIS,
 } from "./compatibility-probe.js";
+import type { CompatibilitySubtype } from "./compatibility-registry.js";
 import type { HostBinding } from "./host-binding.js";
+
+const ASSISTANT_MESSAGE_SUBTYPES: readonly CompatibilitySubtype[] = ["native-assistant-message"];
+const SPECIAL_BLOCK_SUBTYPES: readonly CompatibilitySubtype[] = [
+	"native-compaction-message",
+	"native-branch-message",
+	"native-skill-message",
+	"native-custom-message",
+];
+const TOOL_SUBTYPES: readonly CompatibilitySubtype[] = [
+	"tool-call-renderer",
+	"tool-result-renderer",
+	"native-bash-execution",
+];
 
 export interface CompatibilityCoordinator {
 	captureAuthorization(
@@ -60,31 +74,26 @@ export function createCompatibilityCoordinator(dispose = disposePiCompatibilityP
 				config.enabled && config.messages.enabled && (config.messages.assistantPrefix || config.messages.specialBlocks);
 			const toolsConfigured = config.enabled && config.tools.enabled;
 			const surface = (
-				feature: "messages" | "tools",
 				configured: boolean,
 				surfaceAuthorized: boolean,
-				subtype?: string,
+				subtypes: readonly CompatibilitySubtype[],
 			) => {
-				const records =
-					report?.unsupported.filter((item) =>
-						feature === "messages" ? item.subtype.includes("message") : item.subtype.includes("tool"),
-					) ?? [];
-				// Identity drift degrades only the affected surface to native (graceful);
-				// a feature is only "failed" when an install/shape error occurred.
-				const failed = records.some((item) => /failed|rejected|rolled back|shape is not/i.test(item.reason));
-				const fallback = records.some((item) => /fallback|authorization|disabled|identity/i.test(item.reason));
+				const records = report?.unsupported.filter((item) => subtypes.includes(item.subtype)) ?? [];
+				// Disabled sibling patches are intentional and must not degrade this
+				// surface. Only its own non-disabled fallbacks are actionable.
+				const actionable = records.filter((item) => item.cause !== "disabled");
 				const authorized = Boolean(authorization?.core && surfaceAuthorized);
 				const installedRecord = report?.recordSnapshots.some(
-					(item) => item.feature === feature && !item.disposed && (subtype === undefined || item.subtype === subtype),
+					(item) => subtypes.includes(item.subtype) && !item.disposed,
 				);
 				return {
 					configured,
 					authorized,
 					installed: Boolean(installedRecord && authorized && configured),
-					conflicted: records.some((item) => item.reason.includes("owner")),
-					failed,
+					conflicted: actionable.some((item) => item.cause === "conflict"),
+					failed: actionable.some((item) => item.cause === "installation"),
 					cleanupPending,
-					nativeFallback: fallback,
+					nativeFallback: actionable.length > 0,
 					...(authorized ? {} : { awaitingAuthorization: true }),
 				};
 			};
@@ -92,10 +101,10 @@ export function createCompatibilityCoordinator(dispose = disposePiCompatibilityP
 				configured: messagesConfigured || toolsConfigured,
 				authorized: authorization?.core ?? false,
 				installed: report !== undefined,
-				conflicted: report?.unsupported.some((item) => item.reason.includes("owner")) ?? false,
-				failed: report?.unsupported.some((item) => /failed|rejected|rolled back/i.test(item.reason)) ?? false,
+				conflicted: report?.unsupported.some((item) => item.cause === "conflict") ?? false,
+				failed: report?.unsupported.some((item) => item.cause === "installation") ?? false,
 				cleanupPending,
-				nativeFallbacks: report?.unsupported.filter((item) => /fallback|identity/i.test(item.reason)).length ?? 0,
+				nativeFallbacks: report?.unsupported.filter((item) => item.cause !== "disabled").length ?? 0,
 				piVersion: version.version ?? report?.piVersion ?? "unknown",
 				compatibilityBasis: report?.compatibilityBasis ?? COMPATIBILITY_BASIS,
 				// Whether this extension shares the running Pi's modules. "foreign" means
@@ -103,16 +112,19 @@ export function createCompatibilityCoordinator(dispose = disposePiCompatibilityP
 				// Pi that never renders (see host-binding.ts).
 				hostBinding: hostBinding ?? { status: "unknown", reason: "not probed yet" },
 				assistantMessage: surface(
-					"messages",
 					config.enabled && config.messages.enabled && config.messages.assistantPrefix,
 					Boolean(authorization?.assistant),
-					"native-assistant-message",
+					ASSISTANT_MESSAGE_SUBTYPES,
 				),
-				tools: surface("tools", config.enabled && config.tools.enabled, Boolean(authorization?.tools)),
+				tools: surface(
+					config.enabled && config.tools.enabled,
+					Boolean(authorization?.tools),
+					TOOL_SUBTYPES,
+				),
 				specialBlocks: surface(
-					"messages",
 					config.enabled && config.messages.enabled && config.messages.specialBlocks,
 					Boolean(authorization?.core),
+					SPECIAL_BLOCK_SUBTYPES,
 				),
 			};
 		},

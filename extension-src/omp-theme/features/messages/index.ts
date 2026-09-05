@@ -243,13 +243,31 @@ function hasToolCallItems(message: unknown): boolean {
 }
 
 /**
+ * Pi 0.85 wraps thinking blocks in `MouseRegion` for click-to-toggle. Unwrap
+ * those presentation-only containers without importing pi-tui, because
+ * pi-coding-agent may resolve a nested copy and `instanceof` is unreliable.
+ */
+function unwrapPresentationChild(child: unknown): unknown {
+	let current = child;
+	for (let depth = 0; depth < 4; depth++) {
+		if (!current || typeof current !== "object") break;
+		const nested = (current as { child?: unknown }).child;
+		if (nested === undefined || nested === current) break;
+		current = nested;
+	}
+	return current;
+}
+
+/**
  * The hidden-thinking placeholder: a Text (setCustomBgFn) whose ANSI-stripped
  * rendered content is empty. Duck-typed on the public shape because
  * pi-coding-agent may resolve its own nested pi-tui copy, so `instanceof`
  * across that module boundary is unreliable.
  */
 function isBlankTextChild(child: unknown): boolean {
-	const candidate = child as { setCustomBgFn?: unknown; render?: (width: number) => string[] } | undefined;
+	const candidate = unwrapPresentationChild(child) as
+		| { setCustomBgFn?: unknown; render?: (width: number) => string[] }
+		| undefined;
 	if (typeof candidate?.setCustomBgFn !== "function" || typeof candidate.render !== "function") return false;
 	return contentText(candidate.render(0).join("\n")).trim() === "";
 }

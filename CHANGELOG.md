@@ -4,6 +4,18 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [1.0.9] - 2026-09-05
+
+### Changed
+
+- `/pi-omp-theme doctor` now shows a compact, human-readable health report; use `/pi-omp-theme doctor json` for the complete diagnostic payload.
+- Updated the development and release-verification baseline to Pi 0.85.0 while retaining runtime-identity compatibility with unchanged older surfaces.
+
+### Fixed
+
+- Recognized Pi 0.85.0's relocated built-in tool renderer identities so boxed tool calls and results do not fall back to the native renderer; hidden-thinking cleanup also handles Pi's new `MouseRegion` wrapper.
+- Scoped compatibility state to each TUI surface and classified fallback causes explicitly, so an intentionally disabled assistant decoration no longer makes configured special blocks look incompatible.
+
 ## [1.0.8] - 2026-09-01
 
 ### Reverted

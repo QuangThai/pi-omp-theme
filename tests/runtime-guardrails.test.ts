@@ -3,6 +3,7 @@ import { afterEach, test } from "node:test";
 import { join, resolve } from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import type { ConfigFilePort } from "../extension-src/omp-theme/app/config-storage.js";
+import { decorateMessageUpdate } from "../extension-src/omp-theme/features/messages/index.js";
 import { resolveConfigDetailed } from "../extension-src/omp-theme/domain/config-normalization.js";
 import {
 	clearPresentationTui,
@@ -28,6 +29,10 @@ import {
 import { createCompatibilityCoordinator } from "../extension-src/omp-theme/pi/compatibility-coordinator.js";
 import {
 	COMPATIBILITY_BASIS,
+	disposePiCompatibilityProbe,
+	fingerprint,
+	KNOWN_NATIVE_IDENTITIES,
+	matchKnownNativeIdentity,
 	probePiCompatibility,
 } from "../extension-src/omp-theme/pi/compatibility-probe.js";
 import { probeHostBinding } from "../extension-src/omp-theme/pi/host-binding.js";
@@ -118,8 +123,98 @@ test("compatibility probing is identity-based rather than version-allowlisted", 
 		assert.equal("supportedVersions" in report, false);
 		assert.equal("certificationTable" in report, false);
 	} finally {
-		report.disposeOwner();
+		assert.equal(disposePiCompatibilityProbe(report).complete, true);
 	}
+});
+
+test("bundled contract markers tolerate harmless rewrites but reject contract drift", () => {
+	const compatibleRewrite = function getCallRenderer(this: {
+		toolDefinition?: { renderCall?: unknown };
+	}) {
+		const renderer = this.toolDefinition?.renderCall;
+		return renderer;
+	};
+	const incompatibleRewrite = function getCallRenderer(this: { toolDefinition?: unknown }) {
+		return this.toolDefinition;
+	};
+	const identities = KNOWN_NATIVE_IDENTITIES["tool-call-renderer:getCallRenderer"] ?? [];
+
+	assert.equal(identities.some((identity) => identity.fingerprint === fingerprint(compatibleRewrite)), false);
+	assert.ok(
+		matchKnownNativeIdentity("tool-call-renderer:getCallRenderer", compatibleRewrite, { bundledRuntime: true }),
+	);
+	assert.equal(
+		matchKnownNativeIdentity("tool-call-renderer:getCallRenderer", compatibleRewrite, { bundledRuntime: false }),
+		undefined,
+	);
+	assert.equal(
+		matchKnownNativeIdentity("tool-call-renderer:getCallRenderer", incompatibleRewrite, { bundledRuntime: true }),
+		undefined,
+	);
+});
+
+test("disabled assistant decoration does not degrade configured special blocks", () => {
+	const compatibility = createCompatibilityCoordinator();
+	const { config } = resolveConfigDetailed({
+		global: { preset: "claude", compatibility: { allowCorePatches: true } },
+	});
+	compatibility.captureAuthorization(true, true, true, true, false);
+	const report = compatibility.install(config, true, "allow", { status: "bound", reason: "shared test host" });
+	assert.ok(report);
+	try {
+		const state = compatibility.state(config) as {
+			nativeFallbacks: number;
+			assistantMessage: { configured: boolean; nativeFallback: boolean };
+			specialBlocks: { configured: boolean; nativeFallback: boolean };
+			tools: { configured: boolean; nativeFallback: boolean };
+		};
+		assert.equal(state.assistantMessage.configured, false);
+		assert.equal(state.assistantMessage.nativeFallback, false);
+		assert.equal(state.specialBlocks.configured, true);
+		assert.equal(state.specialBlocks.nativeFallback, false);
+		assert.equal(state.tools.nativeFallback, false);
+		assert.equal(state.nativeFallbacks, 0);
+	} finally {
+		assert.equal(compatibility.dispose().complete, true);
+	}
+});
+
+test("Pi 0.85 tool renderer identities are recorded for modular and bundled hosts", () => {
+	assert.deepEqual(
+		KNOWN_NATIVE_IDENTITIES["tool-call-renderer:getCallRenderer"]?.slice(-2).map((identity) => identity.fingerprint),
+		["e0a9ed86", "73116365"],
+	);
+	assert.deepEqual(
+		KNOWN_NATIVE_IDENTITIES["tool-result-renderer:getResultRenderer"]?.slice(-2).map((identity) => identity.fingerprint),
+		["1567dcf4", "d613a2a3"],
+	);
+});
+
+test("hidden-thinking cleanup unwraps Pi 0.85's MouseRegion wrapper", () => {
+	const blankText = {
+		setCustomBgFn() {},
+		render: () => ["\u001b[3m\u001b[23m"],
+	};
+	const spacer = { setLines() {} };
+	const instance = {
+		hideThinkingBlock: true,
+		hiddenThinkingLabel: "",
+		contentContainer: { children: [
+			{ child: blankText, render: blankText.render },
+			spacer,
+		] },
+	};
+	const original = function (this: typeof instance) {
+		return this.contentContainer;
+	};
+
+	decorateMessageUpdate(original, instance, [], {
+		assistantPrefix: "│ ",
+		assistantEnabled: true,
+		collapseHiddenThinking: true,
+		hideInterimText: false,
+	});
+	assert.deepEqual(instance.contentContainer.children, []);
 });
 
 test("host-binding probe degrades to unknown when no absolute host entry exists", async () => {

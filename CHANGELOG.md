@@ -4,6 +4,10 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- Standardized user-facing shortcut hints on title-cased, configured keybindings (`Ctrl+O to expand` by default) across special-message blocks, tool previews, diffs, and the working indicator. Remapped and unbound actions now update or hide their hints instead of leaving hard-coded shortcuts behind.
+
 ## [1.0.10] - 2026-09-12
 
 ### Fixed

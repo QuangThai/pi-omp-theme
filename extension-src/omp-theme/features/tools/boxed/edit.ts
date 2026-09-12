@@ -12,6 +12,7 @@ import {
 	renderBoxedToolResult,
 } from "../../../shared/box.js";
 import { formatElapsedMs, getElapsedMs } from "../../../shared/elapsed.js";
+import { toolExpandHint } from "../../../shared/keybinding-hints.js";
 import {
 	AdaptiveDiffComponent,
 	buildSplitRows,
@@ -125,7 +126,7 @@ export const editTool: BoxedToolDefinition = {
 		// Render adaptive diff (unified/split per width) with syntax colors for small outputs.
 		const maxRows = expanded ? 160 : 36;
 		const diffView = new AdaptiveDiffComponent(theme, rows, maxRows, shouldHighlight ? language : undefined);
-		const expandHint = !expanded && diffView.hasCollapsed() ? "Ctrl+O more" : undefined;
+		const expandHint = !expanded && diffView.hasCollapsed() ? toolExpandHint() : "";
 
 		return renderBoxedToolResult(
 			theme,

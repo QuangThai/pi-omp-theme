@@ -22,6 +22,7 @@ import {
 	dropOmittedLines,
 } from "../../../shared/box.js";
 import { formatElapsedMs } from "../../../shared/elapsed.js";
+import { toolExpandHint } from "../../../shared/keybinding-hints.js";
 import { safeTruncateToWidth } from "../../../shared/render-budget.js";
 import { AdaptiveDiffComponent, buildSplitRows } from "../../../shared/split-diff.js";
 import { parseSimpleBashCommand } from "./command-shape.js";
@@ -1841,7 +1842,7 @@ export function renderGitCardLines(
 // `renderBoxedToolResult` + the same `AdaptiveDiffComponent` `Edit` uses — no
 // second diff visual language (ADR 0005 / GIT-002). The Git header lives
 // outside the box (the call panel card); each file gets its own `╭…╰` frame
-// with a `Diff · +N -M` divider and a `Ctrl+O more` expand hint when collapsed.
+// with a `Diff · +N -M` divider and the configured expand hint when collapsed.
 
 const GIT_DIFF_MAX_HIGHLIGHT_CHARS = 12000;
 const GIT_DIFF_MAX_HIGHLIGHT_ROWS = 120;
@@ -1917,7 +1918,7 @@ export function renderGitDiffResult(
 				rows.length <= GIT_DIFF_MAX_HIGHLIGHT_ROWS;
 			const maxRows = expanded ? GIT_DIFF_MAX_ROWS_EXPANDED : GIT_DIFF_MAX_ROWS_COLLAPSED;
 			const view = new AdaptiveDiffComponent(theme, rows, maxRows, shouldHighlight ? language : undefined);
-			const expandHint = !expanded && view.hasCollapsed() ? "Ctrl+O more" : undefined;
+			const expandHint = !expanded && view.hasCollapsed() ? toolExpandHint() : "";
 			fileBoxes.push({
 				topLabel,
 				resultComponent: renderBoxedToolResult(theme, view, {

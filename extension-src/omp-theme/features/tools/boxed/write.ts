@@ -6,8 +6,8 @@
 // and the metrics footer in the bottom border. The footer lives in the shared
 // renderer state — the result renderer stores it (elapsed + words), the call
 // component reads it at paint time and closes the box. The preview is capped
-// at the collapsed line budget with a `Ctrl+O for more` hint on the bottom
-// border when truncated; expanded shows the expanded budget. Errors keep the
+// at the collapsed line budget with the configured expansion hint on the
+// bottom border when truncated; expanded shows the expanded budget. Errors keep the
 // plain open call box so the boxed error result never duplicates a box.
 
 import type { Component } from "@earendil-works/pi-tui";
@@ -21,6 +21,7 @@ import {
 	renderCompactBoxedToolCall,
 	replaceTabs,
 } from "../../../shared/box.js";
+import { toolExpandHint } from "../../../shared/keybinding-hints.js";
 import { getToolsRenderConfig } from "./session-config.js";
 import {
 	type BoxedToolDefinition,
@@ -31,9 +32,6 @@ import {
 	noteExecutionStart,
 	resultFooterLines,
 } from "./shared.js";
-
-/** Right-side bottom-border hint shown when the compact preview is truncated. */
-const WRITE_EXPAND_HINT = "Ctrl+O for more";
 
 /** Partial-pass result: the compact call keeps its `◌ Running` card. */
 const EMPTY_WRITE_RESULT: Component = Object.freeze({
@@ -83,6 +81,7 @@ function renderWritePreviewBox(
 	const config = getToolsRenderConfig();
 	const budget = options.expanded ? config.maxExpandedLines : config.maxCollapsedLines;
 	const truncated = preview.length > budget;
+	const expandHint = !options.expanded && !options.isPending && truncated ? toolExpandHint() : "";
 
 	return renderCompactBoxedToolCall(theme, "Write", detailLine, {
 		...(options.state ? { state: options.state } : {}),
@@ -97,7 +96,7 @@ function renderWritePreviewBox(
 			const note = options.expanded ? `… ${omitted} more lines omitted by render budget` : `… ${omitted} more lines`;
 			return [...shown, theme.fg("muted", note)];
 		},
-		...(options.expanded || options.isPending || !truncated ? {} : { bottomRightLabel: WRITE_EXPAND_HINT }),
+		...(expandHint ? { bottomRightLabel: expandHint } : {}),
 	});
 }
 

@@ -18,6 +18,7 @@ import {
 	replaceTabs,
 	shortenPath,
 } from "../../../shared/box.js";
+import { toolExpandHint } from "../../../shared/keybinding-hints.js";
 import { safeTruncateToWidth, truncateAtCodePointBoundary } from "../../../shared/render-budget.js";
 import { parseSimpleBashCommand } from "./command-shape.js";
 import {
@@ -442,6 +443,7 @@ function renderBashFinalResult(
 		const tail = stripBashToolNoticeLines(stripAnsi(statusStripped.slice(tailStart)));
 		const totalLinesBefore = tailStart > 0 ? countNewlines(statusStripped, 0, tailStart) : 0;
 		const preview = createBashResultPreview(theme, tail, options);
+		const expandHint = totalLinesBefore > 0 ? toolExpandHint() : "";
 		return renderBoxedToolResult(
 			theme,
 			bashBodyComponent(
@@ -452,7 +454,7 @@ function renderBashFinalResult(
 				widthKey,
 				referenceLines,
 				footerLines: [footer],
-				...(totalLinesBefore > 0 ? { expandHint: "Ctrl+O for more" } : {}),
+				...(expandHint ? { expandHint } : {}),
 				isError,
 				isPartial: false,
 				...(errorLabel ? { errorLabel } : {}),

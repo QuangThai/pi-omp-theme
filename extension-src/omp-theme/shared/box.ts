@@ -16,6 +16,7 @@ import { relative, resolve } from "node:path";
 import type { Component } from "@earendil-works/pi-tui";
 import { fgHex, isHexColor, stripAnsi } from "./ansi.js";
 import { formatToolMetrics, getElapsedMs, type MetricResultLike } from "./elapsed.js";
+import { toolExpandHint } from "./keybinding-hints.js";
 import {
 	boxedResultRenderBudget,
 	clampRenderLine,
@@ -64,7 +65,7 @@ export interface BoxedRenderOptions {
 	 *  Returns an empty array for no body (blank line preserved). */
 	bodyLines?: (contentWidth: number) => string[];
 	/** Right-side label embedded in the compact box bottom border before the
-	 *  corner (e.g. an expand hint such as `Ctrl+O for more`). */
+	 *  corner (for example, the configured expansion hint). */
 	bottomRightLabel?: string;
 }
 
@@ -516,7 +517,7 @@ export function boxBorder(theme: BoxTheme, left: string, right: string, width: n
  *
  *   ╭─ ➔ Bash ✓ ────────────╮
  *   ├─ Response ────────────┤
- *   ╰─ 0.00s · ~45 words ──── Ctrl+O for more ───╯
+ *   ╰─ 0.00s · ~45 words ──── configured hint ───╯
  */
 export function boxLabeledBorder(
 	theme: BoxTheme,
@@ -896,7 +897,7 @@ export function renderBoxedToolResult(
 		renderLineBudget?: number;
 		/** Left-side label embedded in the divider between the call and the result. May be a function of the box width (e.g. for width-dependent layout labels). */
 		dividerLabel?: string | ((width: number) => string);
-		/** Hint pinned to the right of the footer row (e.g. `Ctrl+O more`). */
+		/** Configured hint pinned to the right of the footer row. */
 		expandHint?: string;
 		isError?: boolean;
 		isPartial?: boolean;
@@ -1140,9 +1141,10 @@ export function renderLines(
 	let output = lines.map(renderLine).join("\n");
 	if (omitted <= 0) return output;
 
+	const expandHint = toolExpandHint();
 	const hintText = isExpanded(options)
 		? `... ${omitted} more lines omitted by render budget`
-		: `... ${omitted} more lines, press Ctrl+o to expand`;
+		: `... ${omitted} more lines${expandHint ? `, ${expandHint}` : ""}`;
 	const hint = cfg.width ? safeTruncateToWidth(hintText, Math.max(1, cfg.width - 1), "…") : hintText;
 	output += theme.fg("muted", `\n\n${hint}`);
 

@@ -14,6 +14,7 @@ import {
 	renderBoxedToolResult,
 	selectRenderLines,
 } from "../../../shared/box.js";
+import { toolExpandHint } from "../../../shared/keybinding-hints.js";
 import { getStateElapsedMs, getToolsRenderConfig, isResultSeen } from "./session-config.js";
 import { type BoxedToolContext, noteBoxedCallState, noteBoxedResultPhase, noteExecutionStart } from "./shared.js";
 
@@ -50,6 +51,7 @@ export function renderFallbackResult(
 	const output = getTextOutput(result);
 	const elapsedMs = getStateElapsedMs(context.state);
 	const { lines, omitted } = selectRenderLines(output, maxLines);
+	const expandHint = !expanded && omitted > 0 ? toolExpandHint() : "";
 
 	if (options.isPartial) {
 		// Streaming continuation into the open call box: no Response divider and
@@ -85,7 +87,7 @@ export function renderFallbackResult(
 		{
 			footerLines: [formatBoxedFooterWithElapsed(theme, elapsedMs, output)],
 			renderLineBudget: maxLines,
-			...(expanded || omitted <= 0 ? {} : { expandHint: "Ctrl+O for more" }),
+			...(expandHint ? { expandHint } : {}),
 			isError,
 			isPartial: Boolean(options.isPartial),
 		},

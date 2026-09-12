@@ -7,7 +7,7 @@
  * the transcript above is untouched, so neither forces a full repaint.
  */
 
-import { keyText } from "@earendil-works/pi-coding-agent";
+import { displayKeyHint } from "../../shared/keybinding-hints.js";
 import { createSegmentedShimmer, type ShimmerMode, type ShimmerPalette } from "../../shared/shimmer.js";
 
 /** omp's `status` spinner set, at its 80 ms cadence. */
@@ -30,12 +30,8 @@ const WORKING_TEXT = "Working...";
  * where the whole line used to be.
  */
 function interruptHint(): string {
-	try {
-		const key = keyText("app.interrupt");
-		return key ? ` (${key} to interrupt)` : "";
-	} catch {
-		return "";
-	}
+	const hint = displayKeyHint("app.interrupt", "to interrupt");
+	return hint ? ` (${hint})` : "";
 }
 
 export interface WorkingIndicatorHost {

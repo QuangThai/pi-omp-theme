@@ -7,6 +7,7 @@ import { highlightCode } from "@earendil-works/pi-coding-agent";
 import type { Component } from "@earendil-works/pi-tui";
 
 import { RESET_BACKGROUND, stripAnsi } from "./ansi.js";
+import { toolExpandHint } from "./keybinding-hints.js";
 import { safeTruncateToWidth, safeVisibleWidth } from "./render-budget.js";
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -529,7 +530,8 @@ function formatGapLabel(hidden: number): string {
 }
 
 function formatOmittedLabel(count: number): string {
-	return `⋯ ${count} ${count === 1 ? "line" : "lines"} omitted · Ctrl+O to show full diff`;
+	const expandHint = toolExpandHint();
+	return `⋯ ${count} ${count === 1 ? "line" : "lines"} omitted${expandHint ? ` · ${expandHint}` : ""}`;
 }
 
 // ── DiffRenderContext ──────────────────────────────────────────────

@@ -6,10 +6,10 @@
 // identity on shutdown. The delegate receives the native method and falls back
 // to it whenever the theme or component shape is unavailable.
 
-import { keyText } from "@earendil-works/pi-coding-agent";
 import { Markdown, type MarkdownTheme } from "@earendil-works/pi-tui";
 import { truncateAnsi } from "../../shared/ansi.js";
 import type { BoxTheme } from "../../shared/box.js";
+import { toolExpandHint } from "../../shared/keybinding-hints.js";
 import { setFullTheme } from "../../shared/theme-extras.js";
 import { renderBoxedMessageBlock } from "./boxed-block.js";
 
@@ -115,17 +115,6 @@ function collapsedLines(theme: BoxTheme, rows: readonly string[]): (contentWidth
 			.map((row, index) => truncateAnsi(index === 0 ? row : theme.fg("dim", row), contentWidth, "…"));
 }
 
-const EXPAND_HINT = "Ctrl+O to expand";
-
-function expandHint(): string {
-	try {
-		const text = keyText("app.tools.expand");
-		return text ? `${text} to expand` : EXPAND_HINT;
-	} catch {
-		return EXPAND_HINT;
-	}
-}
-
 function createMarkdownBody(
 	text: string,
 	markdownTheme: MarkdownTheme | undefined,
@@ -171,7 +160,7 @@ function patchCompaction(instance: MessageBlockInstance, _original: () => void, 
 	const block = renderBoxedMessageBlock(theme, {
 		kind: "Compaction",
 		title: amount,
-		...(expanded ? {} : { right: expandHint() }),
+		...(expanded ? {} : { right: toolExpandHint() }),
 		body: expanded ? body : collapsedLines(theme, [compactionStat(theme, before, tokensAfter), summaryLead(summary)]),
 		icon: "⊟",
 		hasDivider: expanded,
@@ -197,7 +186,7 @@ function patchSkill(instance: MessageBlockInstance, _original: () => void, theme
 	const block = renderBoxedMessageBlock(theme, {
 		kind: "Skill",
 		title: skillName,
-		...(expanded ? {} : { right: expandHint() }),
+		...(expanded ? {} : { right: toolExpandHint() }),
 		body: expanded ? body : collapsedLines(theme, [summaryLead(content)]),
 		icon: "⊟",
 		hasDivider: expanded,
@@ -221,7 +210,7 @@ function patchBranch(instance: MessageBlockInstance, _original: () => void, them
 
 	const block = renderBoxedMessageBlock(theme, {
 		kind: "Branch",
-		...(expanded ? {} : { right: expandHint() }),
+		...(expanded ? {} : { right: toolExpandHint() }),
 		body: expanded ? body : collapsedLines(theme, [summaryLead(summary)]),
 		icon: "⑂",
 		hasDivider: expanded,

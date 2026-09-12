@@ -15,6 +15,7 @@
 import type { Component } from "@earendil-works/pi-tui";
 import { type BoxTheme, dimLine, renderBoxedToolResult } from "../../../shared/box.js";
 import { formatElapsedMs } from "../../../shared/elapsed.js";
+import { toolExpandKeyText } from "../../../shared/keybinding-hints.js";
 import { safeTruncateToWidth } from "../../../shared/render-budget.js";
 import { parseSimpleBashCommand } from "./command-shape.js";
 import { pluralForm, TREE_INDENT } from "./output-tree.js";
@@ -822,7 +823,9 @@ function renderBodyPreview(theme: BoxTheme, body: string, out: string[], width: 
 	}
 	const more = bodyLines.length - visible.length;
 	if (more > 0) {
-		out.push(safeTruncateToWidth(`  ${theme.fg("dim", `… ${more} more lines · Ctrl+O`)}`, width, "…"));
+		const expandKey = toolExpandKeyText();
+		const hint = expandKey ? ` · ${expandKey}` : "";
+		out.push(safeTruncateToWidth(`  ${theme.fg("dim", `… ${more} more lines${hint}`)}`, width, "…"));
 	}
 	return out;
 }

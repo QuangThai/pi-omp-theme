@@ -8,12 +8,11 @@
 // global tool-output toggle (Ctrl+O) expands everything again
 // (`options.expanded` is read, never written).
 //
-// Mutating tools (edit/write/quick_edit/substitute_edit/target_edit) are
-// exempt from the summary by default (`tools.collapseMutatingTools: off`):
-// their blocks are the record of what was done to the user's files, so they
-// always stay visible (compact preview) even in an ended turn — the summary
-// covers only read-only tools (read/ls/find/grep/bash). Turning the leaf on
-// restores the full collapse.
+// Record-bearing interactive tools (`ask_user_question`) never collapse: their
+// result preserves a user decision that must remain visible in the transcript.
+// Mutating tools (edit/write/quick_edit/substitute_edit/target_edit) are exempt
+// by default (`tools.collapseMutatingTools: off`); turning that leaf on restores
+// their collapse without affecting interactive decision records.
 //
 // Design notes:
 // - The registry is populated from **session content**, never from runtime
@@ -75,9 +74,18 @@ export function isMutatingTool(toolName: string): boolean {
 	return MUTATING_TOOLS.has(toolName);
 }
 
+/** Tools whose completed result is a durable interaction record. */
+const TURN_COLLAPSE_EXEMPT_TOOLS: ReadonlySet<string> = new Set(["ask_user_question"]);
+
 /** Whether the summary should also cover mutating tools (render config). */
 function mutatingCollapses(): boolean {
 	return getToolsRenderConfig().collapseMutatingTools;
+}
+
+/** Whether this tool is eligible for completed-turn collapse and aggregation. */
+export function isTurnCollapsibleTool(toolName: string): boolean {
+	if (TURN_COLLAPSE_EXEMPT_TOOLS.has(toolName)) return false;
+	return !isMutatingTool(toolName) || mutatingCollapses();
 }
 
 interface TurnEntry {
@@ -132,7 +140,7 @@ function registerTurn(
 			isError: isErrorById.get(toolCallId) === true,
 		};
 	});
-	const leader = members.find((member) => !member.isError && (!isMutatingTool(member.toolName) || mutatingCollapses()));
+	const leader = members.find((member) => !member.isError && isTurnCollapsibleTool(member.toolName));
 	const turn: TurnState = {
 		leaderId: leader?.toolCallId ?? "",
 		ended: ended && complete,
@@ -181,9 +189,7 @@ export function registerTurnFromMessage(message: unknown, toolResults: readonly 
 			isError: isErrorById.get(toolCallId) === true,
 		};
 	});
-	const leader = newMembers.find(
-		(member) => !member.isError && (!isMutatingTool(member.toolName) || mutatingCollapses()),
-	);
+	const leader = newMembers.find((member) => !member.isError && isTurnCollapsibleTool(member.toolName));
 	if (!currentRun) {
 		currentRun = {
 			leaderId: leader?.toolCallId ?? "",
@@ -353,23 +359,21 @@ export interface TurnSummaryParts {
 }
 
 /**
- * Aggregate a turn's collapsed members into summary parts (pure). Mutating
- * members are excluded unless `tools.collapseMutatingTools` is on — by default
- * their visible blocks are the record; the summary describes only what it
- * hides.
+ * Aggregate a turn's collapsed members into summary parts (pure). Durable
+ * interaction records are always excluded; mutating members are excluded unless
+ * `tools.collapseMutatingTools` is on. The summary describes only what it hides.
  */
 export function turnSummaryParts(turn: TurnState): TurnSummaryParts {
 	const counts = new Map<string, number>();
 	const order: string[] = [];
 	let failedCount = 0;
 	let elapsedMs: number | undefined;
-	const collapseMutating = mutatingCollapses();
 	for (const member of turn.members) {
 		if (member.isError) {
 			failedCount++;
 			continue;
 		}
-		if (!collapseMutating && isMutatingTool(member.toolName)) continue;
+		if (!isTurnCollapsibleTool(member.toolName)) continue;
 		if (member.elapsedMs !== undefined) elapsedMs = (elapsedMs ?? 0) + member.elapsedMs;
 		const existing = counts.get(member.toolName);
 		if (existing === undefined) {

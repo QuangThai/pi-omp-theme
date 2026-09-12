@@ -4,6 +4,10 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- Kept completed `ask_user_question` cards and their selected answers visible instead of collapsing the user's decision record into a generic `used 1 ask_user_question` turn summary.
+
 ## [1.0.11] - 2026-09-12
 
 ### Fixed

@@ -4,6 +4,12 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [1.0.10] - 2026-09-12
+
+### Fixed
+
+- Restored Pi's native, model-aware thinking-level cycle by removing the theme's hard-coded `Shift+Tab` interception. Custom keybindings and model-specific level maps now remain authoritative, non-reasoning models retain Pi's native feedback, and status updates continue through `thinking_level_select`.
+
 ## [1.0.9] - 2026-09-05
 
 ### Changed

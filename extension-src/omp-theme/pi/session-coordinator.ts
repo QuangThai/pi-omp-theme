@@ -1,5 +1,4 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { type KeyId, matchesKey } from "@earendil-works/pi-tui";
 import type { ConfigFilePort } from "../app/config-storage.js";
 import { createPiOmpThemeApp, type PiOmpThemeApp } from "../app/index.js";
 import { resolveTheme } from "../domain/theme.js";
@@ -40,11 +39,7 @@ export type CompatibilityTestHooks = {
 	paths?: (cwd: string) => { globalPath: string; projectPath: string };
 	/** Test-only capability seam; Pi's ExtensionContext does not provide a Git runner. */
 	gitRunner?: import("../domain/providers.js").GitCommandRunner;
-	/** Override the thinking-cycle key binding consumed to suppress Pi's status toast. */
-	thinkingCycleKey?: string;
 };
-
-const THINKING_CYCLE = ["off", "minimal", "low", "medium", "high", "xhigh", "max"] as const;
 
 export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: CompatibilityTestHooks = {}) {
 	const filePort = hooks.filePort ?? createPiConfigFilePort();
@@ -63,7 +58,6 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 	let cwd = process.cwd();
 	let active = false;
 	let tuiSession = false;
-	let terminalInputUnsubscribe: (() => void) | undefined;
 	let sessionTheme: unknown;
 	let sessionUi: import("@earendil-works/pi-coding-agent").ExtensionUIContext | undefined;
 	const source = createConfigSourceAdapter(
@@ -301,28 +295,11 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 					...(ctx.scopedModels && ctx.scopedModels.length > 0 ? { models: ctx.scopedModels.length } : {}),
 				},
 			);
-			terminalInputUnsubscribe?.();
-			terminalInputUnsubscribe = undefined;
-			// Consume Pi's default thinking-cycle key and re-issue it through the public API so
-			// the footer shows the level without Pi's transient "Thinking level: X" status toast.
-			const cycleKey = hooks.thinkingCycleKey ?? "shift+tab";
-			if (ctx.mode === "tui" && ctx.ui?.onTerminalInput) {
-				terminalInputUnsubscribe = ctx.ui.onTerminalInput((data) => {
-					if (!matchesKey(data, cycleKey as KeyId)) return undefined;
-					const current = pi.getThinkingLevel?.();
-					const index = Math.max(0, THINKING_CYCLE.indexOf(current as (typeof THINKING_CYCLE)[number]));
-					const next = THINKING_CYCLE[(index + 1) % THINKING_CYCLE.length];
-					pi.setThinkingLevel?.(next as never);
-					return { consume: true };
-				});
-			}
 			syncOperational(app.config);
 		},
 		shutdown(): void {
 			active = false;
 			tuiSession = false;
-			terminalInputUnsubscribe?.();
-			terminalInputUnsubscribe = undefined;
 			resetBatchRegistry();
 			resetGrepRegistry();
 			resetBashTreeRegistry();

@@ -286,6 +286,59 @@ test("session start captures project trust exactly once and reuses the decision"
 	}
 });
 
+test("session coordinator leaves Pi's thinking-cycle input unclaimed", async () => {
+	let terminalInputRegistrations = 0;
+	const pi = {
+		getFlag() {
+			return false;
+		},
+	} as unknown as ExtensionAPI;
+	const filePort: ConfigFilePort = {
+		async read() {
+			return JSON.stringify({
+				piOmpTheme: {
+					enabled: true,
+					startup: { mode: "off" },
+					statusLine: { enabled: false },
+					editor: { enabled: false },
+					theme: { autoApply: "off" },
+				},
+			});
+		},
+		async writeAtomic() {},
+	};
+	const coordinator = createPiOmpThemeSessionCoordinator(pi, {
+		filePort,
+		paths: () => ({ globalPath: "<global>", projectPath: "<project>" }),
+		gitRunner: { run: async () => ({ stdout: "", stderr: "", code: 0 }) },
+	});
+	const ctx = {
+		mode: "tui",
+		hasUI: true,
+		cwd: "D:\\Personal\\pi-omp-theme",
+		isProjectTrusted: () => true,
+		ui: {
+			onTerminalInput() {
+				terminalInputRegistrations++;
+				return () => {};
+			},
+		},
+		sessionManager: {
+			getEntries: () => [],
+			getSessionFile: () => undefined,
+			getSessionName: () => undefined,
+		},
+		getContextUsage: () => undefined,
+	} as unknown as ExtensionContext;
+
+	try {
+		await coordinator.start({ reason: "startup" }, ctx);
+		assert.equal(terminalInputRegistrations, 0);
+	} finally {
+		coordinator.shutdown();
+	}
+});
+
 function lifecycleHandlers(): Map<string, (...args: unknown[]) => unknown> {
 	const handlers = new Map<string, (...args: unknown[]) => unknown>();
 	const pi = {

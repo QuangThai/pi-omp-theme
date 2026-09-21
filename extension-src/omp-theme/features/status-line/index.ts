@@ -301,7 +301,7 @@ export function installStatusLine(options: StatusLineInstallOptions): StatusLine
 			return;
 		}
 		if (safeWidget(options.host, PRIMARY_WIDGET_KEY, factory(false), placementFor(config))) claim(PRIMARY_WIDGET_KEY);
-		if (safeWidget(options.host, SECONDARY_WIDGET_KEY, factory(true), "belowEditor")) claim(SECONDARY_WIDGET_KEY);
+		if (safeWidget(options.host, SECONDARY_WIDGET_KEY, factory(true), "aboveEditor")) claim(SECONDARY_WIDGET_KEY);
 		mountFooter();
 	};
 	function clear(key: string): void {
@@ -317,7 +317,14 @@ export function installStatusLine(options: StatusLineInstallOptions): StatusLine
 			if (disposed || options.isCurrent?.() === false) return;
 			snapshot = next;
 			primaryComponent?.invalidate();
-			secondaryComponent?.invalidate();
+			if (next.extensionStatuses?.length) {
+				// 重新注册到 above 容器末尾，让状态行紧贴输入栏，位于其他组件之后。
+				if (safeWidget(options.host, SECONDARY_WIDGET_KEY, factory(true), "aboveEditor")) {
+					claim(SECONDARY_WIDGET_KEY);
+				}
+			} else {
+				secondaryComponent?.invalidate();
+			}
 		},
 		configure(next) {
 			if (disposed || options.isCurrent?.() === false) return;

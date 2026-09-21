@@ -38,6 +38,7 @@ const theme: BoxTheme = {
 };
 
 const originalKeybindings = getKeybindings();
+const altLabel = process.platform === "darwin" ? "Option" : "Alt";
 const definitions = {
 	"app.interrupt": { defaultKeys: "escape", description: "Cancel or abort" },
 	"app.tools.expand": { defaultKeys: "ctrl+o", description: "Toggle tool output" },
@@ -286,7 +287,7 @@ test("display formatting matches Pi's title-cased UI convention", () => {
 
 test("configured remaps and unbound actions never leave a stale shortcut", () => {
 	installKeybindings({ "app.tools.expand": ["alt+x", "ctrl+shift+pageUp"] });
-	assert.equal(toolExpandHint(), "Alt+X/Ctrl+Shift+PageUp to expand");
+	assert.equal(toolExpandHint(), `${altLabel}+X/Ctrl+Shift+PageUp to expand`);
 
 	installKeybindings({ "app.tools.expand": [] });
 	assert.equal(toolExpandKeyText(), "");
@@ -304,11 +305,11 @@ test("every changed collapsed surface follows a configured remap", () => {
 	installKeybindings({ "app.tools.expand": "alt+x" });
 	for (const [name, render] of Object.entries(fullHintRenderers())) {
 		const output = render();
-		assert.match(output, /Alt\+X to expand/, `${name} should render the remapped expansion hint`);
+		assert.match(output, new RegExp(`${altLabel}\\+X to expand`), `${name} should render the remapped expansion hint`);
 		assert.doesNotMatch(output, /Ctrl\+O|ctrl\+o/, `${name} should not retain the default binding`);
 	}
 	const gh = renderGhPreview();
-	assert.match(gh, /more lines · Alt\+X/);
+	assert.match(gh, new RegExp(`more lines · ${altLabel}\\+X`));
 	assert.doesNotMatch(gh, /Ctrl\+O|ctrl\+o/);
 });
 
@@ -317,9 +318,9 @@ test("every changed collapsed surface omits the affordance when expansion is unb
 	for (const [name, render] of Object.entries(fullHintRenderers())) {
 		const output = render();
 		assert.doesNotMatch(output, /to expand/, `${name} should hide an unbound action`);
-		assert.doesNotMatch(output, /Ctrl\+O|Alt\+X|ctrl\+o/, `${name} should not invent a binding`);
+		assert.doesNotMatch(output, new RegExp(`Ctrl\\+O|${altLabel}\\+X|ctrl\\+o`), `${name} should not invent a binding`);
 	}
-	assert.doesNotMatch(renderGhPreview(), /Ctrl\+O|Alt\+X|ctrl\+o/);
+	assert.doesNotMatch(renderGhPreview(), new RegExp(`Ctrl\\+O|${altLabel}\\+X|ctrl\\+o`));
 });
 
 test("expanded surfaces do not keep a stale expansion affordance", () => {

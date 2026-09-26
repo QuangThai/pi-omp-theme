@@ -12,7 +12,7 @@ import { closeSync, openSync, readdirSync, readSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 export interface RecentSession {
-	/** Display title: generated session title when present, otherwise the opening request. */
+	/** Display title: Pi's session name, a generated title, or the opening request. */
 	readonly name: string;
 	/** Relative age, e.g. `5h ago`. */
 	readonly timeAgo: string;
@@ -57,8 +57,14 @@ function readHead(path: string, bytes: number): string {
 	}
 }
 
-/** Generated session title when present, otherwise the opening user message. */
+/** Keep metadata titles on one terminal row, like Pi's session selector. */
+function singleLineTitle(value: string): string {
+	return value.replace(/[\x00-\x1f\x7f]+/g, " ").trim();
+}
+
+/** Prefer Pi's session name, then generated state, then the opening user message. */
 function titleFrom(head: string): string | undefined {
+	let sessionTitle: string | undefined;
 	let generatedTitle: string | undefined;
 	let firstUserTitle: string | undefined;
 	for (const line of head.split("\n")) {
@@ -76,13 +82,14 @@ function titleFrom(head: string): string | undefined {
 			// A truncated final line is expected: the read stops mid-file.
 			continue;
 		}
-		if (entry.type === "session_info" && typeof entry.name === "string" && entry.name.trim()) {
-			generatedTitle = entry.name.trim();
+		if (entry.type === "session_info") {
+			// Pi treats an empty name as a clear; don't resurrect older generated state.
+			sessionTitle = typeof entry.name === "string" ? singleLineTitle(entry.name) || undefined : undefined;
+			if (!sessionTitle) generatedTitle = undefined;
 			continue;
 		}
 		if (entry.type === "custom" && entry.customType === "pi-session-title-state") {
-			const title = typeof entry.data?.title === "string" ? entry.data.title.trim() : "";
-			if (title) generatedTitle = title;
+			generatedTitle = typeof entry.data?.title === "string" ? singleLineTitle(entry.data.title) || undefined : undefined;
 			continue;
 		}
 		if (firstUserTitle) continue;
@@ -103,9 +110,9 @@ function titleFrom(head: string): string | undefined {
 			.split("\n")
 			.map((value) => value.trim())
 			.find((value) => value.length > 0 && !value.startsWith("<") && !value.startsWith("/"));
-		if (first) firstUserTitle = first;
+		if (first) firstUserTitle = singleLineTitle(first) || undefined;
 	}
-	const title = generatedTitle || firstUserTitle;
+	const title = sessionTitle || generatedTitle || firstUserTitle;
 	return title ? (title.length > MAX_NAME_LENGTH ? `${title.slice(0, MAX_NAME_LENGTH - 1)}…` : title) : undefined;
 }
 

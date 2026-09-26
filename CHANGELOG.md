@@ -4,6 +4,21 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [1.0.13] - 2026-09-26
+
+### Changed
+
+- The welcome card now prefers Pi's explicit session name, then a generated session title, then the opening user request. It scans up to 12 recent session files and reads up to 1 MiB from each to reach titles beyond large early entries.
+
+### Fixed
+
+- Clearing a session name no longer resurrects an older explicit or generated title; later generated titles can still appear.
+- Generated titles with line breaks or control characters stay on one welcome-card row instead of breaking the frame.
+
+### Added
+
+- Regression and session-start integration coverage for title precedence, clearing, long session heads, sparse histories, and welcome-card rendering.
+
 ## [1.0.12] - 2026-09-12
 
 ### Fixed

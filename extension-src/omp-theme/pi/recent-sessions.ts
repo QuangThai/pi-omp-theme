@@ -12,16 +12,16 @@ import { closeSync, openSync, readdirSync, readSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 export interface RecentSession {
-	/** Display title: the session's opening request, trimmed to one line. */
+	/** Display title: generated session title when present, otherwise the opening request. */
 	readonly name: string;
 	/** Relative age, e.g. `5h ago`. */
 	readonly timeAgo: string;
 }
 
 /** How many files to read. Each costs one open; the card shows at most four. */
-const SCAN_LIMIT = 6;
-/** Enough to reach the first user message without reading a long transcript. */
-const HEAD_BYTES = 8192;
+const SCAN_LIMIT = 12;
+/** Enough to reach generated session titles without reading long transcripts. */
+const HEAD_BYTES = 1024 * 1024;
 const MAX_NAME_LENGTH = 72;
 
 function formatAge(fromMs: number, nowMs: number): string {
@@ -57,17 +57,35 @@ function readHead(path: string, bytes: number): string {
 	}
 }
 
-/** First line of prose from a session's opening user message. */
+/** Generated session title when present, otherwise the opening user message. */
 function titleFrom(head: string): string | undefined {
+	let generatedTitle: string | undefined;
+	let firstUserTitle: string | undefined;
 	for (const line of head.split("\n")) {
 		if (!line.startsWith("{")) continue;
-		let entry: { type?: unknown; message?: { role?: unknown; content?: unknown } };
+		let entry: {
+			type?: unknown;
+			name?: unknown;
+			customType?: unknown;
+			data?: { title?: unknown };
+			message?: { role?: unknown; content?: unknown };
+		};
 		try {
 			entry = JSON.parse(line);
 		} catch {
 			// A truncated final line is expected: the read stops mid-file.
 			continue;
 		}
+		if (entry.type === "session_info" && typeof entry.name === "string" && entry.name.trim()) {
+			generatedTitle = entry.name.trim();
+			continue;
+		}
+		if (entry.type === "custom" && entry.customType === "pi-session-title-state") {
+			const title = typeof entry.data?.title === "string" ? entry.data.title.trim() : "";
+			if (title) generatedTitle = title;
+			continue;
+		}
+		if (firstUserTitle) continue;
 		const message = entry.message;
 		if (!message || message.role !== "user") continue;
 		const content = message.content;
@@ -85,9 +103,10 @@ function titleFrom(head: string): string | undefined {
 			.split("\n")
 			.map((value) => value.trim())
 			.find((value) => value.length > 0 && !value.startsWith("<") && !value.startsWith("/"));
-		if (first) return first.length > MAX_NAME_LENGTH ? `${first.slice(0, MAX_NAME_LENGTH - 1)}…` : first;
+		if (first) firstUserTitle = first;
 	}
-	return undefined;
+	const title = generatedTitle || firstUserTitle;
+	return title ? (title.length > MAX_NAME_LENGTH ? `${title.slice(0, MAX_NAME_LENGTH - 1)}…` : title) : undefined;
 }
 
 /**

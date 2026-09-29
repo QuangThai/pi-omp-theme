@@ -2,7 +2,15 @@
 
 All notable changes to this project are documented here.
 
-## [Unreleased]
+## [1.0.14] - 2026-09-29
+
+### Fixed
+
+- Framed `ask_user_question`'s own question/answer result inside the existing tool box instead of flattening it into generic machine output. This exception applies only to Ask results; todo and other tools retain their existing boxed presentation, expansion, and background handling.
+
+### Added
+
+- Regression coverage for boxed Ask result ownership, native component invalidation, narrow terminal widths, and unchanged Todo/Web Fetch expansion and background handling.
 
 ## [1.0.13] - 2026-09-26
 

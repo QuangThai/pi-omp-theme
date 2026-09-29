@@ -2,10 +2,13 @@
 // grapheme segmentation and emoji regexes per call, which dominates the per-frame
 // cost on long messages. The fast path answers plain SGR + ASCII directly and
 // falls back to Pi's for anything else, so the measure stays identical.
+import type { Component } from "@earendil-works/pi-tui";
+import { type BoxTheme, renderBoxedToolResult as frameToolResult } from "../../shared/box.js";
 import { safeVisibleWidth as visibleWidth } from "../../shared/render-budget.js";
 import { EMPTY_BATCH_COMPONENT } from "./boxed/batch.js";
 import { renderBoxedToolCall, renderBoxedToolResult } from "./boxed/index.js";
 import { clearPresentationTui, notePresentationTui } from "./boxed/render-viewport.js";
+import { type BoxedToolContext, noteBoxedResultPhase } from "./boxed/shared.js";
 
 /**
  * Batch members render zero lines. Pi's ToolExecutionComponent always adds a
@@ -461,6 +464,20 @@ export function createToolDecorationOwner(snapshot: Partial<ToolDecorationSnapsh
 					if (!valid) {
 						note(state, `${subtype}-malformed-context`);
 						return Reflect.apply(renderer, this, rendererArgs);
+					}
+					// Only Ask keeps its domain-specific result body; the theme still
+					// owns the same boxed call, framing, and background as before.
+					if (toolName === "ask_user_question" && subtype === "tool-result-renderer") {
+						const [, options, theme, context] = rendererArgs as [
+							object, { isPartial: boolean }, BoxTheme, BoxedToolContext,
+						];
+						const body = Reflect.apply(renderer, this, rendererArgs) as Component;
+						noteBoxedResultPhase(context, options.isPartial);
+						neutralizeToolContainerBackground(instance);
+						return frameToolResult(theme, body, {
+							isPartial: options.isPartial,
+							isError: context.isError,
+						});
 					}
 					const component =
 						subtype === "tool-call-renderer"

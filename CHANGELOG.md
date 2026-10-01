@@ -2,6 +2,22 @@
 
 All notable changes to this project are documented here.
 
+## [1.0.15] - 2026-10-01
+
+### Fixed
+
+- Stopped automatically re-enabling `grep/find/ls`, preserving tools deliberately disabled by other extensions (including `pi-hashline-edit-pro`) regardless of package order with the default configuration (#4).
+- Read-only tool activation now resolves configuration and project trust first and respects `enabled: false` and `PI_OMP_THEME_DISABLED=1`.
+
+### Changed
+
+- Read-only tool activation is opt-in through `piOmpTheme.readonlyTools: true`. The CLI override now requires `--pi-omp-theme-readonly-tools=true|false`; the former bare boolean flag is no longer supported. Explicit `false` works on Pi versions that coerce boolean CLI flags to `true`.
+- Opt-out leaves the existing active tool set alone. Activation runs only at session boundaries, not during presentation/configuration updates.
+
+### Added
+
+- Regression tests and an isolated, packed-package CLI E2E suite covering package order, configuration/trust/disable gates, CLI values, tool selection constraints, session changes, reload, and an anchored search-to-edit workflow.
+
 ## [1.0.14] - 2026-09-29
 
 ### Fixed

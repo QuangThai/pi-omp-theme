@@ -11,6 +11,8 @@ import { normalizeStatusLayout } from "./status-presets.js";
 export const DEFAULT_CONFIG: NormalizedPiOmpThemeConfig = Object.freeze({
 	schemaVersion: PI_OMP_THEME_SCHEMA_VERSION,
 	enabled: true,
+	// A presentation extension must not override another extension's tool selection.
+	readonlyTools: false,
 	// omp's Claude Code composer is the shipped look.
 	preset: "claude",
 	placement: "below",
@@ -169,6 +171,7 @@ export function normalizeConfig(
 	return Object.freeze({
 		schemaVersion: PI_OMP_THEME_SCHEMA_VERSION,
 		enabled: bool(value.enabled, defaults.enabled),
+		readonlyTools: bool(value.readonlyTools, defaults.readonlyTools),
 		preset: stringEnum(value.preset, PRESET_NAMES, defaults.preset),
 		placement: stringEnum(value.placement, ["above", "below", "border"], defaults.placement),
 		startup: Object.freeze({
@@ -276,6 +279,7 @@ export const ENUMS: Readonly<Record<string, readonly string[]>> = {
 };
 const BOOL_PATHS = new Set([
 	"enabled",
+	"readonlyTools",
 	"theme.cacheHighlight",
 	"theme.sessionAccent",
 	"startup.showResources",

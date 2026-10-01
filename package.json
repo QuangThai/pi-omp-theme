@@ -1,6 +1,6 @@
 {
   "name": "@nguyenquangthai/pi-omp-theme",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "description": "An OMP-inspired visual theme and TUI presentation extension for Pi.",
   "license": "MIT",
   "author": "Nguyen Quang Thai",
@@ -46,6 +46,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "node scripts/run-tests.mjs",
+    "test:e2e:readonly-tools": "npm run build && node scripts/readonly-tools-e2e.mjs",
     "depcruise": "depcruise extension-src/omp-theme --config dependency-cruiser.config.cjs",
     "build": "tsup",
     "package:smoke": "node scripts/package-smoke.mjs",

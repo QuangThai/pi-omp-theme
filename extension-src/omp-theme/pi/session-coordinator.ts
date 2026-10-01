@@ -32,6 +32,7 @@ import { createConfigSourceAdapter, readSessionAuthorization } from "./config-se
 import { describeForeignHostBinding, type HostBinding, probeHostBinding } from "./host-binding.js";
 import { buildOperationalState } from "./operational-state.js";
 import { collectToolDetails } from "./startup-resources.js";
+import { activateReadOnlyTools } from "./readonly-tools.js";
 
 export type CompatibilityTestHooks = {
 	dispose?: (report: CompatibilityProbeReport) => CompatibilityCleanupResult;
@@ -208,6 +209,9 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 			stopAllElapsedTickers();
 			active = false;
 			await app.reload();
+			// Resolve settings, project trust, and the disable gate before touching
+			// tools; do this only at session start, not on presentation changes.
+			activateReadOnlyTools(pi, app.config, ctx);
 			productGate = app.productPolicy.corePatchGate;
 			// Resolve the host binding before the first install so a foreign module
 			// graph never certifies patches against a Pi copy that does not render.

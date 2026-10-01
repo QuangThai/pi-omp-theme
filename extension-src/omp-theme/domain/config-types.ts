@@ -22,6 +22,8 @@ export interface StatusCustomItemConfig {
 
 export interface PiOmpThemeConfig {
 	enabled?: boolean;
+	/** Opt in to adding grep/find/ls at session start; never removes active tools. */
+	readonlyTools?: boolean;
 	preset?: string;
 	placement?: string;
 	startup?: { mode?: string; showResources?: boolean; alwaysExpanded?: boolean };
@@ -82,6 +84,7 @@ export interface PiOmpThemeConfig {
 export interface NormalizedPiOmpThemeConfig {
 	readonly schemaVersion: typeof PI_OMP_THEME_SCHEMA_VERSION;
 	readonly enabled: boolean;
+	readonly readonlyTools: boolean;
 	readonly preset: PresetName;
 	readonly placement: Placement;
 	readonly startup: {

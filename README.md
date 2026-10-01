@@ -137,6 +137,45 @@ defaults < global settings < trusted project settings < environment < session ov
 
 Invalid values fall back safely and appear in `/pi-omp-theme doctor`.
 
+### Read-only tool activation
+
+By default, the theme leaves Pi's active tool set unchanged. This prevents it from
+re-enabling tools intentionally disabled by extensions such as `pi-hashline-edit-pro`.
+Package order is not a workaround you need with this default.
+
+To explicitly add registered `grep`, `find`, and `ls` tools at session start:
+
+```json
+{
+  "piOmpTheme": {
+    "readonlyTools": true
+  }
+}
+```
+
+Set `readonlyTools` to `false` (the default) to leave tool selection alone. Global
+and trusted-project settings follow the normal configuration precedence. A disabled
+extension (`enabled: false` or `PI_OMP_THEME_DISABLED=1`) never activates tools.
+
+For one invocation, override the setting with an explicit CLI value:
+
+```bash
+pi --pi-omp-theme-readonly-tools=true
+pi --pi-omp-theme-readonly-tools=false
+```
+
+The space-separated forms (`--pi-omp-theme-readonly-tools true` / `false`) also work.
+**Migration from 1.0.14:** the flag now requires a value; the former bare boolean
+flag is no longer supported. A value-taking flag avoids Pi 0.99.1 interpreting
+`=false` as boolean `true`. Invalid values disable activation and emit a warning.
+
+Activation is checked at session start, including a new session or Pi's `/reload`.
+Editing settings or running `/pi-omp-theme reload` does not change active tools
+mid-session. Opting out never removes tools already enabled by you or another
+extension. Explicit opt-in can still re-enable a tool another extension disabled;
+leave it off when using replacement tools. Pi's `--exclude-tools grep` is also
+available when you need to keep native `grep` inactive while allowing `find` and `ls`.
+
 ### Environment variables
 
 | Variable | Purpose |
@@ -156,7 +195,7 @@ Invalid values fall back safely and appear in `/pi-omp-theme doctor`.
 --pi-omp-theme-message-assistant
 --pi-omp-theme-message-special-blocks
 --pi-omp-theme-tools
---pi-omp-theme-readonly-tools
+--pi-omp-theme-readonly-tools <true|false>
 --pi-omp-theme-ascii
 ```
 

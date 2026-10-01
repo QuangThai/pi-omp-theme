@@ -25,24 +25,6 @@ function usagePatch(ctx: ExtensionContext): StatusSnapshot {
 	return usage ? { usage } : {};
 }
 
-/**
- * Add Pi's read-only tools (grep/find/ls) to the active tool set if they are
- * registered. Preserves any other active tools (e.g. extension tools).
- * Only calls setActiveTools when something actually changed.
- */
-function activateReadOnlyTools(pi: ExtensionAPI): void {
-	const available = new Set(pi.getAllTools().map((tool) => tool.name));
-	const active = new Set(pi.getActiveTools());
-	let changed = false;
-	for (const name of ["grep", "find", "ls"] as const) {
-		if (available.has(name) && !active.has(name)) {
-			active.add(name);
-			changed = true;
-		}
-	}
-	if (changed) pi.setActiveTools([...active]);
-}
-
 let compatibilityTestHooks: CompatibilityTestHooks = {};
 export function __setCompatibilityTestHooks(hooks: CompatibilityTestHooks): () => void {
 	const previous = compatibilityTestHooks;
@@ -64,21 +46,19 @@ export default function piOmpThemeExtension(pi: ExtensionAPI): void {
 		["pi-omp-theme-message-assistant", "Enable pi-omp-theme assistant message prefix"],
 		["pi-omp-theme-message-special-blocks", "Enable pi-omp-theme boxed compaction/skill/branch/custom message blocks"],
 		["pi-omp-theme-tools", "Enable pi-omp-theme tool renderer decoration"],
-		["pi-omp-theme-readonly-tools", "Enable grep/find/ls read-only tools in the active tool set"],
 	] as const)
 		pi.registerFlag(name, { type: "boolean", description, default: true });
+	// A value-taking flag avoids Pi's boolean CLI coercion of `=false` to true.
+	// No default: omitted flags must leave the settings.json opt-in authoritative.
+	pi.registerFlag("pi-omp-theme-readonly-tools", {
+		type: "string",
+		description: "Add grep/find/ls at session start: true or false (overrides piOmpTheme.readonlyTools)",
+	});
 	// ASCII markers stay opt-in; unicode markers are the default.
 	pi.registerFlag("pi-omp-theme-ascii", { type: "boolean", description: "Use ASCII pi-omp-theme markers" });
 	const coordinator = createPiOmpThemeSessionCoordinator(pi, compatibilityTestHooks);
 	registerPiOmpThemeCommand(pi, coordinator.app);
 	pi.on("session_start", async (event, ctx) => {
-		// Pi only activates read/bash/edit/write by default; grep/find/ls are
-		// registered but inactive (kept out of the model's tool list to keep the
-		// core small). Activate them so the TUI shows them and the model can call
-		// them directly, mirroring Claude Code's glob/grep/read tool set.
-		if (pi.getFlag("pi-omp-theme-readonly-tools") === true) {
-			activateReadOnlyTools(pi);
-		}
 		await coordinator.start(event, ctx);
 	});
 	pi.on("agent_start", () => {

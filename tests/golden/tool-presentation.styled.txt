@@ -243,9 +243,8 @@
 {b}Git diff{/b}
   {accent}1 file{/} {toolDiffAdded}+1{/} {toolDiffRemoved}-1{/}
 {borderMuted}╭─── {/}{b}{text}notes.txt{/}{/b}{borderMuted} ────────────────────────────────────────────────────────────────{/}{borderMuted}╮{/}
-{esc}[pi-omp-theme:omit]
 {borderMuted}│{/} {dim} {/} {dim}  1{/}  alpha                                                                 {borderMuted}│{/}
-{borderMuted}│{/} {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43}{sgr:48;2;52;43;49}                                                                 {sgr:49} {borderMuted}│{/}
+{borderMuted}│{/} {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43;49}                                                                 {sgr:49} {borderMuted}│{/}
 {borderMuted}│{/} {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  2{/}  {sgr:48;2;57;96;62}BETA{sgr:48;2;45;68;53}                                                                 {sgr:49} {borderMuted}│{/}
 {borderMuted}│{/} {dim} {/} {dim}  3{/}  gamma                                                                 {borderMuted}│{/}
 {borderMuted}│{/} {dim}{text}2.2s{/}{dim} · {/}{dim}1 file{/}{/}                                                                {borderMuted}│{/}
@@ -258,7 +257,7 @@
   {muted}Body line two{/}
 
 === boxed · w80 · read/null-optional-args ===
-{b}{bashMode}▤ Read{/}{/b} {accent}src/auth.ts:1{/}
+{b}{bashMode}▤ Read{/}{/b} {accent}src/auth.ts{/}
 
 === boxed · w80 · find/current-directory ===
 ⌕ {b}Find:{/b} {text}*.ts{/} {accent}1 file{/}{dim} · in current directory{/}
@@ -269,8 +268,8 @@
 {borderMuted}│{/} {dim}$ {/}{syntaxFunction}node{/} {syntaxKeyword}-e{/} {syntaxString}"process.exit(3)"{/}                                                  {borderMuted}│{/}
 {borderMuted}├─── {/}{toolTitle}Output{/}{borderMuted} ───────────────────────────────────────────────────────────────────{/}{borderMuted}┤{/}
 {borderMuted}│{/} {error}✘ Error{/}                                                                      {borderMuted}│{/}
-{borderMuted}│{/} {text}(no output){/}                                                                  {borderMuted}│{/}
-{borderMuted}│{/} {dim}{error}Exit 3{/}{dim} · {/}{text}2.23s{/}{dim} · {/}{dim}~2 words{/}{/}                                                    {borderMuted}│{/}
+{borderMuted}│{/} {muted}Command failed without producing output{/}                                      {borderMuted}│{/}
+{borderMuted}│{/} {dim}{error}Exit 3{/}{dim} · {/}{text}2.23s{/}{/}                                                               {borderMuted}│{/}
 {borderMuted}╰──────────────────────────────────────────────────────────────────────────────╯{/}
 
 === boxed · w80 · write/trailing-newline ===
@@ -278,7 +277,6 @@
 {borderMuted}│{/} {dim}1 {/}{toolOutput}one{/}                                                                        {borderMuted}│{/}
 {borderMuted}│{/} {dim}2 {/}{toolOutput}two{/}                                                                        {borderMuted}│{/}
 {borderMuted}│{/} {dim}3 {/}{toolOutput}three{/}                                                                      {borderMuted}│{/}
-{borderMuted}│{/} {dim}4 {/}{toolOutput}{/}                                                                           {borderMuted}│{/}
 {borderMuted}│{/} {text}2.23s{/}{dim} · {/}{dim}~4 words{/}                                                             {borderMuted}│{/}
 {borderMuted}╰──────────────────────────────────────────────────────────────────────────────╯{/}
 
@@ -311,7 +309,7 @@
 === boxed · w80 · edit/diff ===
 {borderMuted}╭─── {/}{b}{bashMode}✎ Edit{/}{/b}: src/plan.txt{borderMuted} ─────────────────────────────────────────────────────{/}{borderMuted}╮{/}
 {borderMuted}│{/} {dim} {/} {dim}  1{/}  alpha                                                                 {borderMuted}│{/}
-{borderMuted}│{/} {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43}{sgr:48;2;52;43;49}                                                                 {sgr:49} {borderMuted}│{/}
+{borderMuted}│{/} {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43;49}                                                                 {sgr:49} {borderMuted}│{/}
 {borderMuted}│{/} {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  2{/}  {sgr:48;2;57;96;62}BETA{sgr:48;2;45;68;53}                                                                 {sgr:49} {borderMuted}│{/}
 {borderMuted}│{/} {dim} {/} {dim}  3{/}  gamma                                                                 {borderMuted}│{/}
 {borderMuted}│{/} {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  4{/}  delta                                                                {sgr:49} {borderMuted}│{/}
@@ -335,7 +333,7 @@
 
 === boxed · w80 · quick-edit/diff ===
 {borderMuted}╭─── {/}{b}{bashMode}✎ Quick Edit{/}{/b}: src/plan.txt{borderMuted} ───────────────────────────────────────────────{/}{borderMuted}╮{/}
-{borderMuted}│{/} {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43}{sgr:48;2;52;43;49}                                                                 {sgr:49} {borderMuted}│{/}
+{borderMuted}│{/} {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43;49}                                                                 {sgr:49} {borderMuted}│{/}
 {borderMuted}│{/} {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  2{/}  {sgr:48;2;57;96;62}BETA{sgr:48;2;45;68;53}                                                                 {sgr:49} {borderMuted}│{/}
 {borderMuted}│{/} {dim}{text}2.2s{/}{dim} · {/}{dim}1 file{/}{dim} · {/}{toolDiffAdded}+1{/} {toolDiffRemoved}-1{/}{/}                                                        {borderMuted}│{/}
 {borderMuted}╰──────────────────────────────────────────────────────────────────────────────╯{/}
@@ -398,16 +396,16 @@
 {borderMuted}╰──────────────────────────────────────────────────────────────────────────────╯{/}
 
 === boxed · w80 · turn/extension-tools ===
-{dim}➔ Read 1 file, used 1 vcc_recall, used 2 mcp, used 1 web_fetch{/}{dim} · 11.17s{/}
+{dim}➔ Read 1 file, used vcc_recall, mcp ×2 and web_fetch{/}{dim} · 11.17s{/}
 
 === boxed · w80 · turn/keeps-todos-inline ===
-{dim}➔ Read 1 file, used 1 todo_write{/}{dim} · 4.47s{/}
+{dim}➔ Read 1 file, used todo_write{/}{dim} · 4.47s{/}
 
 === boxed · w80 · turn/collapsed-run ===
-{dim}➔ Read 1 file, ran 2 shell commands, Listed 1 path{/}{dim} · 122.47s{/}
+{dim}➔ Read 1 file, ran 2 shell commands, listed 1 path{/}{dim} · 8.94s{/}
 {borderMuted}╭─── {/}{b}{bashMode}✎ Edit{/}{/b}: src/plan.txt{borderMuted} ─────────────────────────────────────────────────────{/}{borderMuted}╮{/}
 {borderMuted}│{/} {dim} {/} {dim}  1{/}  alpha                                                                 {borderMuted}│{/}
-{borderMuted}│{/} {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43}{sgr:48;2;52;43;49}                                                                 {sgr:49} {borderMuted}│{/}
+{borderMuted}│{/} {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43;49}                                                                 {sgr:49} {borderMuted}│{/}
 {borderMuted}│{/} {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  2{/}  {sgr:48;2;57;96;62}BETA{sgr:48;2;45;68;53}                                                                 {sgr:49} {borderMuted}│{/}
 {borderMuted}│{/} {dim} {/} {dim}  3{/}  gamma                                                                 {borderMuted}│{/}
 {borderMuted}│{/} {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  4{/}  delta                                                                {sgr:49} {borderMuted}│{/}
@@ -626,9 +624,8 @@
 {b}Git diff{/b}
   {accent}1 file{/} {toolDiffAdded}+1{/} {toolDiffRemoved}-1{/}
 {b}{text}notes.txt{/}{/b}                                                                       
-{esc}[pi-omp-theme:omit]
 {dim} {/} {dim}  1{/}  alpha                                                                    
-{sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43}{sgr:48;2;52;43;49}                                                                 {sgr:49}    
+{sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43;49}                                                                 {sgr:49}    
 {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  2{/}  {sgr:48;2;57;96;62}BETA{sgr:48;2;45;68;53}                                                                 {sgr:49}    
 {dim} {/} {dim}  3{/}  gamma                                                                    
 {dim}{text}2.2s{/}{dim} · {/}{dim}1 file{/}{/}                                                                   
@@ -640,7 +637,7 @@
   {muted}Body line two{/}
 
 === light · w80 · read/null-optional-args ===
-{b}{bashMode}▤ Read{/}{/b} {accent}src/auth.ts:1{/}
+{b}{bashMode}▤ Read{/}{/b} {accent}src/auth.ts{/}
 
 === light · w80 · find/current-directory ===
 ⌕ {b}Find:{/b} {text}*.ts{/} {accent}1 file{/}{dim} · in current directory{/}
@@ -650,15 +647,14 @@
 {dim}$ {/}{syntaxFunction}node{/} {syntaxKeyword}-e{/} {syntaxString}"process.exit(3)"{/}                                                     
 {toolTitle}Output{/}                                                                          
 {error}✘ Error{/}                                                                         
-{text}(no output){/}                                                                     
-{dim}{error}Exit 3{/}{dim} · {/}{text}2.23s{/}{dim} · {/}{dim}~2 words{/}{/}                                                       
+{muted}Command failed without producing output{/}                                         
+{dim}{error}Exit 3{/}{dim} · {/}{text}2.23s{/}{/}                                                                  
 
 === light · w80 · write/trailing-newline ===
 {b}{bashMode}✎ Write{/}{/b}: notes/summary.txt                                                      
 {dim}1 {/}{toolOutput}one{/}                                                                           
 {dim}2 {/}{toolOutput}two{/}                                                                           
 {dim}3 {/}{toolOutput}three{/}                                                                         
-{dim}4 {/}{toolOutput}{/}                                                                              
 {text}2.23s{/}{dim} · {/}{dim}~4 words{/}                                                                
 
 === light · w80 · read/lone ===
@@ -690,7 +686,7 @@
 === light · w80 · edit/diff ===
 {b}{bashMode}✎ Edit{/}{/b}: src/plan.txt                                                            
 {dim} {/} {dim}  1{/}  alpha                                                                    
-{sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43}{sgr:48;2;52;43;49}                                                                 {sgr:49}    
+{sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43;49}                                                                 {sgr:49}    
 {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  2{/}  {sgr:48;2;57;96;62}BETA{sgr:48;2;45;68;53}                                                                 {sgr:49}    
 {dim} {/} {dim}  3{/}  gamma                                                                    
 {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  4{/}  delta                                                                {sgr:49}    
@@ -711,7 +707,7 @@
 
 === light · w80 · quick-edit/diff ===
 {b}{bashMode}✎ Quick Edit{/}{/b}: src/plan.txt                                                      
-{sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43}{sgr:48;2;52;43;49}                                                                 {sgr:49}    
+{sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43;49}                                                                 {sgr:49}    
 {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  2{/}  {sgr:48;2;57;96;62}BETA{sgr:48;2;45;68;53}                                                                 {sgr:49}    
 {dim}{text}2.2s{/}{dim} · {/}{dim}1 file{/}{dim} · {/}{toolDiffAdded}+1{/} {toolDiffRemoved}-1{/}{/}                                                           
 
@@ -767,16 +763,16 @@
 {dim}{error}Exit 1{/}{dim} · {/}{text}2.23s{/}{dim} · {/}{dim}~2 words{/}{/}                                                       
 
 === light · w80 · turn/extension-tools ===
-{dim}➔ Read 1 file, used 1 vcc_recall, used 2 mcp, used 1 web_fetch{/}{dim} · 11.17s{/}
+{dim}➔ Read 1 file, used vcc_recall, mcp ×2 and web_fetch{/}{dim} · 11.17s{/}
 
 === light · w80 · turn/keeps-todos-inline ===
-{dim}➔ Read 1 file, used 1 todo_write{/}{dim} · 4.47s{/}
+{dim}➔ Read 1 file, used todo_write{/}{dim} · 4.47s{/}
 
 === light · w80 · turn/collapsed-run ===
-{dim}➔ Read 1 file, ran 2 shell commands, Listed 1 path{/}{dim} · 122.47s{/}
+{dim}➔ Read 1 file, ran 2 shell commands, listed 1 path{/}{dim} · 8.94s{/}
 {b}{bashMode}✎ Edit{/}{/b}: src/plan.txt                                                            
 {dim} {/} {dim}  1{/}  alpha                                                                    
-{sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43}{sgr:48;2;52;43;49}                                                                 {sgr:49}    
+{sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43;49}                                                                 {sgr:49}    
 {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  2{/}  {sgr:48;2;57;96;62}BETA{sgr:48;2;45;68;53}                                                                 {sgr:49}    
 {dim} {/} {dim}  3{/}  gamma                                                                    
 {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  4{/}  delta                                                                {sgr:49}    
@@ -823,7 +819,7 @@
 === boxed · w36 · edit/diff ===
 {borderMuted}╭─── {/}{b}{bashMode}✎ Edit{/}{/b}: src/plan.txt{borderMuted} ─────────{/}{borderMuted}╮{/}
 {borderMuted}│{/} {dim} {/} {dim}  1{/}  alpha                     {borderMuted}│{/}
-{borderMuted}│{/} {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43}{sgr:48;2;52;43;49}                     {sgr:49} {borderMuted}│{/}
+{borderMuted}│{/} {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43;49}                     {sgr:49} {borderMuted}│{/}
 {borderMuted}│{/} {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  2{/}  {sgr:48;2;57;96;62}BETA{sgr:48;2;45;68;53}                     {sgr:49} {borderMuted}│{/}
 {borderMuted}│{/} {dim} {/} {dim}  3{/}  gamma                     {borderMuted}│{/}
 {borderMuted}│{/} {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  4{/}  delta                    {sgr:49} {borderMuted}│{/}
@@ -874,7 +870,7 @@
 === light · w36 · edit/diff ===
 {b}{bashMode}✎ Edit{/}{/b}: src/plan.txt                
 {dim} {/} {dim}  1{/}  alpha                        
-{sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43}{sgr:48;2;52;43;49}                     {sgr:49}    
+{sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43;49}                     {sgr:49}    
 {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  2{/}  {sgr:48;2;57;96;62}BETA{sgr:48;2;45;68;53}                     {sgr:49}    
 {dim} {/} {dim}  3{/}  gamma                        
 {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  4{/}  delta                    {sgr:49}    

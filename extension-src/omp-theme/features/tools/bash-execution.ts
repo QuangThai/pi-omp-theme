@@ -71,8 +71,9 @@ function bashBoxTitle(theme: BoxTheme, host: BashExecutionInstance): string {
 /** Bottom-border label: live running status with elapsed, or the terminal state. */
 function bashBoxFooter(theme: BoxTheme, host: BashExecutionInstance): string {
 	if (host.status === "running") {
-		const elapsed = typeof host.piOmpThemeStart === "number" ? (Date.now() - host.piOmpThemeStart) / 1000 : undefined;
-		return formatBoxedRunningStatus(theme, elapsed);
+		// formatBoxedRunningStatus takes milliseconds.
+		const elapsedMs = typeof host.piOmpThemeStart === "number" ? Date.now() - host.piOmpThemeStart : undefined;
+		return formatBoxedRunningStatus(theme, elapsedMs);
 	}
 	if (host.status === "cancelled") return theme.fg("warning", "Cancelled");
 	if (host.status === "error") return theme.fg("error", `Exit ${host.exitCode ?? "?"}`);

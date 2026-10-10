@@ -170,6 +170,27 @@ function resolveDiffPalette(theme: SplitDiffTheme): DiffPalette {
 
 // ── ANSI background helpers ────────────────────────────────────────
 
+/**
+ * Split SGR parameters into attributes, keeping each extended colour
+ * (`38;5;n`, `48;2;r;g;b`, …) as one unit so its channel values are never read
+ * as attribute codes — a blue channel of 49 is not a background reset.
+ */
+function sgrUnits(codes: readonly string[]): string[][] {
+	const units: string[][] = [];
+	for (let index = 0; index < codes.length; index++) {
+		const code = codes[index] ?? "";
+		const mode = codes[index + 1];
+		if ((code === "38" || code === "48" || code === "58") && (mode === "5" || mode === "2")) {
+			const length = mode === "5" ? 3 : 5;
+			units.push(codes.slice(index, index + length));
+			index += length - 1;
+			continue;
+		}
+		units.push([code]);
+	}
+	return units;
+}
+
 function keepBackgroundAcrossResets(text: string, rowBgAnsi: string): string {
 	if (!text) return text;
 
@@ -177,12 +198,13 @@ function keepBackgroundAcrossResets(text: string, rowBgAnsi: string): string {
 		const split = String(rawCodes ?? "")
 			.split(";")
 			.filter(Boolean);
-		const codes = split.length > 0 ? split : ["0"]; // ESC[m == reset
-		const hasGlobalReset = codes.includes("0");
-		const hasBgReset = codes.includes("49");
+		const units = sgrUnits(split.length > 0 ? split : ["0"]); // ESC[m == reset
+		const isAttribute = (unit: string[], code: string) => unit.length === 1 && unit[0] === code;
+		const hasGlobalReset = units.some((unit) => isAttribute(unit, "0"));
+		const hasBgReset = units.some((unit) => isAttribute(unit, "49"));
 		if (!hasGlobalReset && !hasBgReset) return sequence;
 
-		const rebuiltCodes = codes.filter((code: string) => code !== "49");
+		const rebuiltCodes = units.filter((unit) => !isAttribute(unit, "49")).flat();
 		const rebuilt = rebuiltCodes.length > 0 ? `\x1b[${rebuiltCodes.join(";")}m` : "";
 		return `${rebuilt}${rowBgAnsi}`;
 	});

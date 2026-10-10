@@ -87,15 +87,21 @@ function compactionStat(theme: BoxTheme, before: number, after: number | undefin
 function summaryLead(text: string): string {
 	let heading = "";
 	for (const raw of (text ?? "").split("\n")) {
+		// Emphasis marks go; underscores inside words (snake_case, E2E_COLORS) stay.
 		const line = raw
 			.replace(/^\s*(?:[#>]+|[*\-+]|\d+\.)\s*/, "")
-			.replace(/[*_`]/g, "")
+			.replace(/[*`]/g, "")
+			.replace(/(^|[^\p{L}\p{N}_])_+|_+(?=[^\p{L}\p{N}_]|$)/gu, "$1")
 			.trim();
 		if (!line) continue;
-		// A leading `## Session summary` only names the block, which the frame
-		// already does. Prefer the first line of real prose, keeping the heading
-		// as a fallback for summaries that are nothing but a title.
-		if (/^\s*#/.test(raw)) {
+		// Pi prefixes every skill body with where its references resolve; that
+		// says nothing about the skill.
+		if (/^References are relative to /.test(line)) continue;
+		// A leading `## Session summary` (or pi-vcc's `[Session Goal]`) only names
+		// the block, which the frame already does. Prefer the first line of real
+		// prose, keeping the heading as a fallback for summaries that are nothing
+		// but a title.
+		if (/^\s*#/.test(raw) || /^\[[^\]]+\]$/.test(line)) {
 			if (!heading) heading = line;
 			continue;
 		}

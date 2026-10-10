@@ -243,7 +243,6 @@ Git status¶
 Git diff¶
   1 file +1 -1¶
 ╭─── notes.txt ────────────────────────────────────────────────────────────────╮¶
-[pi-omp-theme:omit]¶
 │     1  alpha                                                                 │¶
 │ -   2  beta                                                                  │¶
 │ +   2  BETA                                                                  │¶
@@ -258,7 +257,7 @@ PR #42 · Fixture PR¶
   Body line two¶
 
 === boxed · w80 · read/null-optional-args ===
-▤ Read src/auth.ts:1¶
+▤ Read src/auth.ts¶
 
 === boxed · w80 · find/current-directory ===
 ⌕ Find: *.ts 1 file · in current directory¶
@@ -269,8 +268,8 @@ PR #42 · Fixture PR¶
 │ $ node -e "process.exit(3)"                                                  │¶
 ├─── Output ───────────────────────────────────────────────────────────────────┤¶
 │ ✘ Error                                                                      │¶
-│ (no output)                                                                  │¶
-│ Exit 3 · 2.23s · ~2 words                                                    │¶
+│ Command failed without producing output                                      │¶
+│ Exit 3 · 2.23s                                                               │¶
 ╰──────────────────────────────────────────────────────────────────────────────╯¶
 
 === boxed · w80 · write/trailing-newline ===
@@ -278,7 +277,6 @@ PR #42 · Fixture PR¶
 │ 1 one                                                                        │¶
 │ 2 two                                                                        │¶
 │ 3 three                                                                      │¶
-│ 4                                                                            │¶
 │ 2.23s · ~4 words                                                             │¶
 ╰──────────────────────────────────────────────────────────────────────────────╯¶
 
@@ -398,13 +396,13 @@ PR #42 · Fixture PR¶
 ╰──────────────────────────────────────────────────────────────────────────────╯¶
 
 === boxed · w80 · turn/extension-tools ===
-➔ Read 1 file, used 1 vcc_recall, used 2 mcp, used 1 web_fetch · 11.17s¶
+➔ Read 1 file, used vcc_recall, mcp ×2 and web_fetch · 11.17s¶
 
 === boxed · w80 · turn/keeps-todos-inline ===
-➔ Read 1 file, used 1 todo_write · 4.47s¶
+➔ Read 1 file, used todo_write · 4.47s¶
 
 === boxed · w80 · turn/collapsed-run ===
-➔ Read 1 file, ran 2 shell commands, Listed 1 path · 122.47s¶
+➔ Read 1 file, ran 2 shell commands, listed 1 path · 8.94s¶
 ╭─── ✎ Edit: src/plan.txt ─────────────────────────────────────────────────────╮¶
 │     1  alpha                                                                 │¶
 │ -   2  beta                                                                  │¶
@@ -626,7 +624,6 @@ Git status¶
 Git diff¶
   1 file +1 -1¶
 notes.txt                                                                       ¶
-[pi-omp-theme:omit]¶
     1  alpha                                                                    ¶
 -   2  beta                                                                     ¶
 +   2  BETA                                                                     ¶
@@ -640,7 +637,7 @@ PR #42 · Fixture PR¶
   Body line two¶
 
 === light · w80 · read/null-optional-args ===
-▤ Read src/auth.ts:1¶
+▤ Read src/auth.ts¶
 
 === light · w80 · find/current-directory ===
 ⌕ Find: *.ts 1 file · in current directory¶
@@ -650,15 +647,14 @@ PR #42 · Fixture PR¶
 $ node -e "process.exit(3)"                                                     ¶
 Output                                                                          ¶
 ✘ Error                                                                         ¶
-(no output)                                                                     ¶
-Exit 3 · 2.23s · ~2 words                                                       ¶
+Command failed without producing output                                         ¶
+Exit 3 · 2.23s                                                                  ¶
 
 === light · w80 · write/trailing-newline ===
 ✎ Write: notes/summary.txt                                                      ¶
 1 one                                                                           ¶
 2 two                                                                           ¶
 3 three                                                                         ¶
-4                                                                               ¶
 2.23s · ~4 words                                                                ¶
 
 === light · w80 · read/lone ===
@@ -767,13 +763,13 @@ Output                                                                          
 Exit 1 · 2.23s · ~2 words                                                       ¶
 
 === light · w80 · turn/extension-tools ===
-➔ Read 1 file, used 1 vcc_recall, used 2 mcp, used 1 web_fetch · 11.17s¶
+➔ Read 1 file, used vcc_recall, mcp ×2 and web_fetch · 11.17s¶
 
 === light · w80 · turn/keeps-todos-inline ===
-➔ Read 1 file, used 1 todo_write · 4.47s¶
+➔ Read 1 file, used todo_write · 4.47s¶
 
 === light · w80 · turn/collapsed-run ===
-➔ Read 1 file, ran 2 shell commands, Listed 1 path · 122.47s¶
+➔ Read 1 file, ran 2 shell commands, listed 1 path · 8.94s¶
 ✎ Edit: src/plan.txt                                                            ¶
     1  alpha                                                                    ¶
 -   2  beta                                                                     ¶

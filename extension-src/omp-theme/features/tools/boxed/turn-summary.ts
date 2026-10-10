@@ -350,6 +350,12 @@ const TURN_SUMMARY_STYLE: Readonly<Record<string, { readonly verb: string; reado
 	target_edit: { verb: "Edited", unit: "file" },
 });
 
+/** `a`, `a and b`, `a, b and c`. */
+function joinNames(names: readonly string[]): string {
+	if (names.length <= 1) return names[0] ?? "";
+	return `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+}
+
 export interface TurnSummaryParts {
 	/** `Read 2 files`, `ran 4 shell commands`, ... in first-use order. */
 	readonly parts: readonly string[];
@@ -381,14 +387,33 @@ export function turnSummaryParts(turn: TurnState): TurnSummaryParts {
 			order.push(member.toolName);
 		} else counts.set(member.toolName, existing + 1);
 	}
-	const parts = order.map((toolName) => {
+	// Extension tools (TaskCreate, mcp, vcc_recall, …) share one clause in the
+	// place of the first of them: `used vcc_recall, mcp ×2 and web_fetch`.
+	const others = order.filter((toolName) => !TURN_SUMMARY_STYLE[toolName]);
+	const otherClause = others.length > 0 ? `used ${joinNames(others.map((toolName) => {
 		const count = counts.get(toolName) ?? 0;
+		return count > 1 ? `${toolName} ×${count}` : toolName;
+	}))}` : "";
+	const parts: string[] = [];
+	for (const toolName of order) {
 		const style = TURN_SUMMARY_STYLE[toolName];
-		// Unknown tools (extension tools like TaskCreate/ask_user_question) use a
-		// neutral phrasing with the invariant tool name: `used 5 TaskCreate`.
-		return style ? `${style.verb} ${count} ${pluralForm(style.unit, count)}` : `used ${count} ${toolName}`;
-	});
+		if (!style) {
+			if (toolName === others[0]) parts.push(otherClause);
+			continue;
+		}
+		const count = counts.get(toolName) ?? 0;
+		parts.push(`${style.verb} ${count} ${pluralForm(style.unit, count)}`);
+	}
 	return { parts, failedCount, elapsedMs };
+}
+
+/** `Read 2 files, ran 4 shell commands, listed 1 path`: one sentence. */
+function summarySentence(parts: readonly string[]): string {
+	return parts
+		.map((part, index) =>
+			index === 0 ? part.charAt(0).toUpperCase() + part.slice(1) : part.charAt(0).toLowerCase() + part.slice(1),
+		)
+		.join(", ");
 }
 
 function formatTurnSummaryLine(theme: BoxTheme, turn: TurnState): string {
@@ -396,8 +421,7 @@ function formatTurnSummaryLine(theme: BoxTheme, turn: TurnState): string {
 	// The summary is deliberately quiet: the whole line renders dim so completed
 	// tool work recedes behind the assistant's answer. Only the failed marker
 	// stays error-colored (errors must remain visible).
-	const parts = summary.parts.join(", ");
-	let line = `${theme.fg("dim", `➔ ${parts}`)}`;
+	let line = `${theme.fg("dim", `➔ ${summarySentence(summary.parts)}`)}`;
 	if (summary.failedCount > 0)
 		line += theme.fg("error", ` · ${summary.failedCount} ${pluralForm("failure", summary.failedCount)}`);
 	if (summary.elapsedMs !== undefined) line += theme.fg("dim", ` · ${(summary.elapsedMs / 1000).toFixed(2)}s`);

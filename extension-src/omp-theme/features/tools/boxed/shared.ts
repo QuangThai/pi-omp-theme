@@ -73,11 +73,15 @@ export function displayPath(rawPath: string, context: BoxedToolContext): string 
 
 export function pathRangeDetail(rawPath: string, offset: unknown, limit: unknown, context: BoxedToolContext): string {
 	const path = displayPath(rawPath, context);
+	// Providers send null for unset optional arguments; offset 1 without a limit
+	// is the whole file, so neither adds a range.
+	const start = offset ?? undefined;
+	const count = limit ?? undefined;
 	let range = "";
-	if (offset !== undefined || limit !== undefined) {
-		const start = offset ?? 1;
-		const end = limit !== undefined ? Number(start) + Number(limit) - 1 : "";
-		range = `:${start}${end ? `-${end}` : ""}`;
+	if (count !== undefined || (start !== undefined && Number(start) !== 1)) {
+		const first = start ?? 1;
+		const end = count !== undefined ? Number(first) + Number(count) - 1 : "";
+		range = `:${first}${end ? `-${end}` : ""}`;
 	}
 	return path ? `${path}${range}` : "(unknown)";
 }

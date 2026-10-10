@@ -15,6 +15,7 @@ import {
 	registerBatchResult,
 	renderBatchAwareCall,
 } from "./batch.js";
+import { recordExecutionEnded } from "./session-config.js";
 import { type BoxedToolDefinition, noteExecutionStart, pathRangeDetail } from "./shared.js";
 
 const READ_META: BatchToolMeta = Object.freeze({
@@ -32,6 +33,9 @@ export const readTool: BoxedToolDefinition = {
 		return renderBatchAwareCall(theme, batch);
 	},
 	result(result, options, _theme, context) {
+		// The call card owns this tool's display, so nothing else records the end
+		// of its execution; without it the turn summary counts time until collapse.
+		if (!options.isPartial) recordExecutionEnded(context.state);
 		const output = stripAnsi(getTextOutput(result)).trimEnd();
 		registerBatchResult(
 			READ_META,

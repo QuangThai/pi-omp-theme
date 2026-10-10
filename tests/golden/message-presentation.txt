@@ -76,12 +76,12 @@
 === boxed · w60 · special/compaction-pi-vcc ===
 ╭─── ⊟ Compaction · 5K tokens ─────────────────────────────╮¶
 │ 4,964 tokens compacted                                   │¶
-│ [Session Goal]                                           │¶
+│ Fix the is_expired boundary                              │¶
 ╰───────────────────────────────────── Ctrl+O to expand ───╯¶
 --- styled ---
 {borderMuted}╭─── {/}{b}{accent}⊟ Compaction · 5K tokens{/}{/b}{borderMuted} ─────────────────────────────{/}{borderMuted}╮{/}
 {borderMuted}│{/} {muted}4,964 tokens compacted{/}{sgr:0}                                   {borderMuted}│{/}
-{borderMuted}│{/} {dim}[Session Goal]{/}{sgr:0}                                           {borderMuted}│{/}
+{borderMuted}│{/} {dim}Fix the is_expired boundary{/}{sgr:0}                              {borderMuted}│{/}
 {borderMuted}╰{/}{borderMuted}─────────────────────────────────────{/}{borderMuted} {/}{dim}Ctrl+O to expand{/}{borderMuted} ───{/}{borderMuted}╯{/}
 
 === boxed · w60 · special/custom-vcc-recall ===
@@ -95,11 +95,11 @@
 
 === boxed · w60 · special/skill-pi-preamble ===
 ╭─── ⊟ Skill · release-checklist ──────────────────────────╮¶
-│ References are relative to C:\skills\release-checklist.  │¶
+│ Run the release checklist before tagging.                │¶
 ╰───────────────────────────────────── Ctrl+O to expand ───╯¶
 --- styled ---
 {borderMuted}╭─── {/}{b}{accent}⊟ Skill · release-checklist{/}{/b}{borderMuted} ──────────────────────────{/}{borderMuted}╮{/}
-{borderMuted}│{/} References are relative to C:\skills\release-checklist.{sgr:0}  {borderMuted}│{/}
+{borderMuted}│{/} Run the release checklist before tagging.{sgr:0}                {borderMuted}│{/}
 {borderMuted}╰{/}{borderMuted}─────────────────────────────────────{/}{borderMuted} {/}{dim}Ctrl+O to expand{/}{borderMuted} ───{/}{borderMuted}╯{/}
 
 === boxed · w60 · special/branch ===
@@ -154,7 +154,7 @@
 │                                                          │¶
 │ ⠋ Running...                                             │¶
 │                                                          │¶
-╰─── ◌ Running · 0.0s ─────────────────────────────────────╯¶
+╰─── ◌ Running · 12.4s ────────────────────────────────────╯¶
 --- styled ---
 
 {borderMuted}╭─── {/}{b}{bashMode}❯ Bash{/} {text}⟳{/}{/b}{borderMuted} ─────────────────────────────────────────────{/}{borderMuted}╮{/}
@@ -162,7 +162,7 @@
 {borderMuted}│{/}                                                          {borderMuted}│{/}
 {borderMuted}│{/} ⠋ Running...                                             {borderMuted}│{/}
 {borderMuted}│{/} {sgr:90}{/}                                                         {borderMuted}│{/}
-{borderMuted}╰─── {/}{dim}◌ Running{/}{text} · 0.0s{/}{borderMuted} ─────────────────────────────────────{/}{borderMuted}╯{/}
+{borderMuted}╰─── {/}{dim}◌ Running{/}{text} · 12.4s{/}{borderMuted} ────────────────────────────────────{/}{borderMuted}╯{/}
 
 === light · w60 · special/compaction ===
 ⊟ Compaction · 10K→4K                                       ¶
@@ -187,12 +187,12 @@ Run the release checklist before tagging.{sgr:0}
 === light · w60 · special/compaction-pi-vcc ===
 ⊟ Compaction · 5K tokens                                    ¶
 4,964 tokens compacted                                      ¶
-[Session Goal]                                              ¶
+Fix the is_expired boundary                                 ¶
 Ctrl+O to expand                                            ¶
 --- styled ---
 {b}{accent}⊟ Compaction · 5K tokens{/}{/b}                                    
 {muted}4,964 tokens compacted{/}{sgr:0}                                      
-{dim}[Session Goal]{/}{sgr:0}                                              
+{dim}Fix the is_expired boundary{/}{sgr:0}                                 
 {dim}Ctrl+O to expand{/}                                            
 
 === light · w60 · special/custom-vcc-recall ===
@@ -204,11 +204,11 @@ No matches for "expiry" in session history.                 ¶
 
 === light · w60 · special/skill-pi-preamble ===
 ⊟ Skill · release-checklist                                 ¶
-References are relative to C:\skills\release-checklist.     ¶
+Run the release checklist before tagging.                   ¶
 Ctrl+O to expand                                            ¶
 --- styled ---
 {b}{accent}⊟ Skill · release-checklist{/}{/b}                                 
-References are relative to C:\skills\release-checklist.{sgr:0}     
+Run the release checklist before tagging.{sgr:0}                   
 {dim}Ctrl+O to expand{/}                                            
 
 === light · w60 · special/branch ===
@@ -263,7 +263,7 @@ $ npm test -- auth                                          ¶
                                                             ¶
 ⠋ Running...                                                ¶
                                                             ¶
-◌ Running · 0.0s                                            ¶
+◌ Running · 12.4s                                           ¶
 --- styled ---
 
 {b}{bashMode}❯ Bash{/} {text}⟳{/}{/b}                                                    
@@ -271,4 +271,4 @@ $ npm test -- auth
                                                             
 ⠋ Running...                                                
 {sgr:90}{/}                                                            
-{dim}◌ Running{/}{text} · 0.0s{/}                                            
+{dim}◌ Running{/}{text} · 12.4s{/}                                           

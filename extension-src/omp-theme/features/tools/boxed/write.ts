@@ -43,14 +43,15 @@ const EMPTY_WRITE_RESULT: Component = Object.freeze({
 type NumberedLine = { number: string; content: string };
 
 /**
- * Numbered preview lines for the written content, `cat -n` style: every split
- * line keeps its number (including a trailing empty line produced by a final
- * newline), right-aligned to the widest line number.
+ * Numbered preview lines for the written content, `cat -n` style: a final
+ * newline ends the last line rather than adding an empty one, and numbers are
+ * right-aligned to the widest line number.
  */
 function numberedPreviewLines(content: string): NumberedLine[] {
 	const normalized = replaceTabs(String(content ?? "")).replace(/\r/g, "");
 	if (!normalized) return [];
 	const lines = normalized.split("\n");
+	if (lines.length > 1 && lines.at(-1) === "") lines.pop();
 	const gutterWidth = Math.max(1, String(lines.length).length);
 	return lines.map((line, index) => ({
 		number: String(index + 1).padStart(gutterWidth),

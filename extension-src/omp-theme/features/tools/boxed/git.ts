@@ -1950,7 +1950,7 @@ export function renderGitDiffResult(
 			}
 			cacheWidth = width;
 			cacheLines = dropOmittedLines(lines);
-			return lines;
+			return cacheLines;
 		},
 	};
 }

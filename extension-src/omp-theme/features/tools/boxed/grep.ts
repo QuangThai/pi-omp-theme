@@ -39,7 +39,7 @@ import {
 	SEARCH_ICON_UNICODE,
 	TREE_INDENT,
 } from "./output-tree.js";
-import { getToolsRenderConfig } from "./session-config.js";
+import { getToolsRenderConfig, recordExecutionEnded } from "./session-config.js";
 import { type BoxedToolDefinition, noteExecutionStart } from "./shared.js";
 
 const GREP_ERROR_LINES = 2;
@@ -286,6 +286,9 @@ export const grepTool: BoxedToolDefinition = {
 		return renderGrepPanel(theme, context.toolCallId, context.expanded);
 	},
 	result(result, options, _theme, context) {
+		// The call card owns this tool's display, so nothing else records the end
+		// of its execution; without it the turn summary counts time until collapse.
+		if (!options.isPartial) recordExecutionEnded(context.state);
 		const output = stripAnsi(getTextOutput(result)).trimEnd();
 		const isError = Boolean(context.isError);
 		const displayLines = isError ? [] : parseGrepDisplayOutput(output);

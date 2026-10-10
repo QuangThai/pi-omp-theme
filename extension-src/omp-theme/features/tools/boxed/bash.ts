@@ -400,7 +400,10 @@ function renderBashFinalResult(
 ): Component {
 	const isError = Boolean(context.isError);
 	const clean = stripAnsi(raw);
-	const { status, body: statusStripped } = parseBashTerminalStatus(clean);
+	const parsed = parseBashTerminalStatus(clean);
+	const status = parsed.status;
+	// Pi reports an empty run as "(no output)"; that is a state, not output.
+	const statusStripped = parsed.body.trim() === "(no output)" ? "" : parsed.body;
 	const output = stripBashToolNoticeLines(statusStripped);
 	const elapsed = getStateElapsedMs(context.state);
 	const footer = bashFooter(theme, status, elapsed, output, isError);

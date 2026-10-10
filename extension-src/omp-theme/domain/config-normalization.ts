@@ -42,6 +42,8 @@ export const DEFAULT_CONFIG: NormalizedPiOmpThemeConfig = Object.freeze({
 		// repeats. omp shows it (its transcripts carry prose between tool blocks),
 		// so the destructive reading is opt-in rather than the shipped default.
 		hideInterimText: false,
+		assistantMarker: false,
+		thinkingSummary: false,
 	}),
 	tools: Object.freeze({
 		enabled: true,
@@ -60,6 +62,7 @@ export const DEFAULT_CONFIG: NormalizedPiOmpThemeConfig = Object.freeze({
 	theme: Object.freeze({
 		nerdFonts: "auto",
 		shimmer: "classic",
+		workingElapsed: false,
 		cacheHighlight: true,
 		sessionAccent: true,
 		terminalBackgroundSync: "auto",
@@ -221,6 +224,8 @@ export function normalizeConfig(
 			specialBlocks: bool(messages.specialBlocks, defaults.messages.specialBlocks),
 			hideThinkingLabel: bool(messages.hideThinkingLabel, defaults.messages.hideThinkingLabel),
 			hideInterimText: bool(messages.hideInterimText, defaults.messages.hideInterimText),
+			assistantMarker: bool(messages.assistantMarker, defaults.messages.assistantMarker),
+			thinkingSummary: bool(messages.thinkingSummary, defaults.messages.thinkingSummary),
 		}),
 		tools: Object.freeze({
 			enabled: bool(tools.enabled, defaults.tools.enabled),
@@ -231,12 +236,13 @@ export function normalizeConfig(
 			showElapsed: bool(tools.showElapsed, defaults.tools.showElapsed),
 			collapseAfterTurn: bool(tools.collapseAfterTurn, defaults.tools.collapseAfterTurn),
 			batchQuietCalls: bool(tools.batchQuietCalls, defaults.tools.batchQuietCalls),
-			chrome: stringEnum(tools.chrome, ["boxed", "light"], defaults.tools.chrome),
+			chrome: stringEnum(tools.chrome, ["boxed", "light", "inline"], defaults.tools.chrome),
 			collapseMutatingTools: bool(tools.collapseMutatingTools, defaults.tools.collapseMutatingTools),
 		}),
 		theme: Object.freeze({
 			nerdFonts: stringEnum(theme.nerdFonts, ["auto", "on", "off"], defaults.theme.nerdFonts),
 			shimmer: stringEnum(theme.shimmer, ["classic", "kitt", "off"], defaults.theme.shimmer),
+			workingElapsed: bool(theme.workingElapsed, defaults.theme.workingElapsed),
 			cacheHighlight: bool(theme.cacheHighlight, defaults.theme.cacheHighlight),
 			sessionAccent: bool(theme.sessionAccent, defaults.theme.sessionAccent),
 			terminalBackgroundSync: stringEnum(
@@ -265,7 +271,17 @@ export function resolveConfig(sources: ConfigSources): NormalizedPiOmpThemeConfi
 	return resolveConfigDetailed(sources).config;
 }
 
-export const PRESET_NAMES = ["default", "minimal", "compact", "full", "ascii", "native", "claude", "omp"] as const;
+export const PRESET_NAMES = [
+	"default",
+	"minimal",
+	"compact",
+	"full",
+	"ascii",
+	"native",
+	"claude",
+	"claude-code",
+	"omp",
+] as const;
 export const ENUMS: Readonly<Record<string, readonly string[]>> = {
 	preset: PRESET_NAMES,
 	placement: ["above", "below", "border"],
@@ -274,7 +290,7 @@ export const ENUMS: Readonly<Record<string, readonly string[]>> = {
 	"editor.frame": ["auto", "halfblock", "line", "solid", "outline", "rounded", "claude", "native"],
 	"theme.nerdFonts": ["auto", "on", "off"],
 	"theme.shimmer": ["classic", "kitt", "off"],
-	"tools.chrome": ["boxed", "light"],
+	"tools.chrome": ["boxed", "light", "inline"],
 	"theme.terminalBackgroundSync": ["auto", "on", "off"],
 };
 const BOOL_PATHS = new Set([
@@ -282,6 +298,7 @@ const BOOL_PATHS = new Set([
 	"readonlyTools",
 	"theme.cacheHighlight",
 	"theme.sessionAccent",
+	"theme.workingElapsed",
 	"startup.showResources",
 	"startup.alwaysExpanded",
 	"statusLine.enabled",
@@ -292,6 +309,8 @@ const BOOL_PATHS = new Set([
 	"messages.specialBlocks",
 	"messages.hideThinkingLabel",
 	"messages.hideInterimText",
+	"messages.assistantMarker",
+	"messages.thinkingSummary",
 	"tools.enabled",
 	"tools.showElapsed",
 	"tools.dimOutput",

@@ -8,6 +8,7 @@ import {
 	type BoxTheme,
 	formatBoxedRunningStatus,
 	getTextOutput,
+	isInlineChrome,
 	renderBoxedToolCall,
 	renderBoxedToolResult,
 } from "../../../shared/box.js";
@@ -20,6 +21,13 @@ import {
 	extractEditedPath,
 	firstText,
 } from "../../../shared/split-diff.js";
+import {
+	inlineFileApplying,
+	inlineFileDiff,
+	inlineFileError,
+	inlineFilePlain,
+	renderInlineFileCall,
+} from "./inline-edit.js";
 import { isResultSeen } from "./session-config.js";
 import {
 	type BoxedToolContext,
@@ -67,6 +75,7 @@ export const editTool: BoxedToolDefinition = {
 		noteExecutionStart(context);
 		noteBoxedCallState(context);
 		const detail = displayPath(String(args?.path ?? args?.file_path ?? ""), context);
+		if (isInlineChrome()) return renderInlineFileCall(theme, "Edit", detail, context);
 		return renderBoxedToolCall(theme, "Edit", [], {
 			headerDetail: detail,
 			isError: Boolean(context.isError),
@@ -80,6 +89,7 @@ export const editTool: BoxedToolDefinition = {
 		// applying hint (no Response divider until the tool settles).
 		if (options.isPartial) {
 			const firstResultPass = noteBoxedResultPhase(context, options.isPartial);
+			if (isInlineChrome()) return inlineFileApplying(theme, "Applying edit", context);
 			if (firstResultPass) return EMPTY_EDIT_RESULT;
 			return renderBoxedToolResult(theme, () => [`${theme.fg("dim", "↳")} ${theme.fg("muted", "Applying edit...")}`], {
 				showDivider: false,
@@ -90,6 +100,7 @@ export const editTool: BoxedToolDefinition = {
 		// Handle errors
 		if (context.isError) {
 			const output = getTextOutput(result);
+			if (isInlineChrome()) return inlineFileError(theme, output, context);
 			return renderBoxedToolResult(theme, () => [theme.fg("error", stripAnsi(output).trim() || "Error")], {
 				footerLines: resultFooterLines(theme, result, context),
 				isError: true,
@@ -102,6 +113,7 @@ export const editTool: BoxedToolDefinition = {
 
 		if (!diff) {
 			const output = stripAnsi(getTextOutput(result)).trim();
+			if (isInlineChrome()) return inlineFilePlain(theme, output || "Edit applied", context);
 			const fallback = `↳ ${output || "Edit applied"}`;
 			return renderBoxedToolResult(theme, () => [theme.fg("dim", fallback)], {
 				footerLines: resultFooterLines(theme, result, context),
@@ -124,6 +136,7 @@ export const editTool: BoxedToolDefinition = {
 		// Render adaptive diff (unified/split per width) with syntax colors for small outputs.
 		const maxRows = expanded ? 160 : 36;
 		const diffView = new AdaptiveDiffComponent(theme, rows, maxRows, shouldHighlight ? language : undefined);
+		if (isInlineChrome()) return inlineFileDiff(theme, diffView, stats, expanded, context);
 		const expandHint = !expanded && diffView.hasCollapsed() ? toolExpandHint() : "";
 
 		return renderBoxedToolResult(

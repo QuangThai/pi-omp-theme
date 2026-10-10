@@ -22,6 +22,27 @@ export const CONFIG_PRESETS: Readonly<Record<PresetName, Readonly<PiOmpThemeConf
 		startup: { mode: "compact" },
 	}),
 	/**
+	 * The `claude` composer plus Claude Code's transcript: `● Tool(args)` calls
+	 * with a `⎿` result gutter, marked assistant text, one-line thinking and a
+	 * timed working row.
+	 */
+	"claude-code": Object.freeze({
+		placement: "below",
+		editor: { style: "dock", frame: "claude", showMetadata: false },
+		statusLine: {
+			separator: "|",
+			layout: {
+				left: ["model_effort", "path", "git", "claude_context"],
+				right: [],
+				secondary: [],
+			},
+		},
+		startup: { mode: "compact" },
+		messages: { assistantMarker: true, thinkingSummary: true },
+		tools: { chrome: "inline", maxCollapsedLines: 4 },
+		theme: { workingElapsed: true },
+	}),
+	/**
 	 * omp's default composer: a rounded box whose top border carries the status
 	 * segments and whose remaining span is a context gauge. Distinct from the
 	 * `claude` preset, which draws two bare rules and keeps the status on its own

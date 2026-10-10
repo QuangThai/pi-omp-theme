@@ -413,22 +413,36 @@ export function dimLine(text: string): string {
  * each glyph becomes a space of the same width, so labels and content stay in
  * exactly the columns the boxed layout put them in.
  */
-let boxChrome: "boxed" | "light" = "boxed";
+let boxChrome: "boxed" | "light" | "inline" = "boxed";
 
 /** Set by the session coordinator; `shared` never reads feature config directly. */
-export function setBoxChrome(mode: "boxed" | "light"): void {
+export function setBoxChrome(mode: "boxed" | "light" | "inline"): void {
 	boxChrome = mode;
 }
 
+/**
+ * Inline chrome renders tools as a Claude Code transcript (shared/inline.ts).
+ * Surfaces without an inline form keep using these primitives and draw them
+ * frameless, exactly as light chrome does.
+ */
+export function isInlineChrome(): boolean {
+	return boxChrome === "inline";
+}
+
+/** Light and inline chrome draw no frame; only boxed chrome does. */
+function frameless(): boolean {
+	return boxChrome !== "boxed";
+}
+
 function boxFrameText(theme: BoxTheme, text: string): string {
-	if (boxChrome === "light") return " ".repeat(safeVisibleWidth(text));
+	if (frameless()) return " ".repeat(safeVisibleWidth(text));
 	return theme.fg("borderMuted", text);
 }
 
 export function boxBorder(theme: BoxTheme, left: string, right: string, width: number): string {
 	// An unlabelled rule is pure chrome, so light mode drops the row outright
 	// rather than paying a blank line for a frame it does not draw.
-	if (boxChrome === "light") return BOX_OMITTED_LINE;
+	if (frameless()) return BOX_OMITTED_LINE;
 	const renderedWidth = boxWidth(width);
 	const innerWidth = renderedWidth - 2;
 	return boxFrameText(theme, `${left}${BOX_HORIZONTAL.repeat(innerWidth)}${right}`);
@@ -490,7 +504,7 @@ export function boxLabeledBorder(
 	// mixed brightness.
 	// Light chrome draws no rule: the labels are the line. Left label at column 0,
 	// right label flush right, so these rows share the transcript's left margin.
-	if (boxChrome === "light") {
+	if (frameless()) {
 		const head = left || right;
 		if (!head) return " ".repeat(renderedWidth);
 		const tail = left && right ? right : "";
@@ -550,7 +564,7 @@ export function boxLine(theme: BoxTheme, content: string, width: number): string
 	// hanging a few columns right of the boxless renderers (Read, Grep, List) and
 	// the transcript would have two left margins. Start at column 0 instead and put
 	// the slack on the right; the rendered width is unchanged either way.
-	if (boxChrome === "light") {
+	if (frameless()) {
 		const truncated = safeTruncateToWidth(content, renderedWidth, "…");
 		return `${truncated}${" ".repeat(Math.max(0, renderedWidth - safeVisibleWidth(truncated)))}`;
 	}

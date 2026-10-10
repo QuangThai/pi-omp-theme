@@ -5,10 +5,23 @@ export type Placement = "above" | "below" | "border";
 export type NerdFontsMode = "auto" | "on" | "off";
 /** Sweep style for the working-message shimmer. */
 export type ShimmerMode = "classic" | "kitt" | "off";
-/** How much frame a tool block draws around itself. */
-export type ToolChrome = "boxed" | "light";
+/**
+ * How much frame a tool block draws around itself: "boxed" frames, "light" keeps
+ * the boxed layout without the frame, "inline" is the Claude Code transcript
+ * (`● Tool(args)` header and a `⎿` result gutter).
+ */
+export type ToolChrome = "boxed" | "light" | "inline";
 export type ToggleMode = "auto" | "on" | "off";
-export type PresetName = "default" | "minimal" | "compact" | "full" | "ascii" | "native" | "claude" | "omp";
+export type PresetName =
+	| "default"
+	| "minimal"
+	| "compact"
+	| "full"
+	| "ascii"
+	| "native"
+	| "claude"
+	| "claude-code"
+	| "omp";
 export type EditorStyle = "compact" | "boxed" | "dock" | "native";
 export type EditorFrame = "auto" | "halfblock" | "line" | "solid" | "outline" | "rounded" | "claude" | "native";
 
@@ -45,6 +58,10 @@ export interface PiOmpThemeConfig {
 		specialBlocks?: boolean;
 		hideThinkingLabel?: boolean;
 		hideInterimText?: boolean;
+		/** Mark each assistant text block with a `●` and hang its lines under it. */
+		assistantMarker?: boolean;
+		/** Show hidden thinking as one `● Thought for 6s` line instead of no trace. */
+		thinkingSummary?: boolean;
 	};
 	tools?: {
 		enabled?: boolean;
@@ -63,6 +80,8 @@ export interface PiOmpThemeConfig {
 	theme?: {
 		nerdFonts?: string;
 		shimmer?: string;
+		/** Show the run's elapsed time on the working row (`Working… (14s · …)`). */
+		workingElapsed?: boolean;
 		cacheHighlight?: boolean;
 		sessionAccent?: boolean;
 		terminalBackgroundSync?: string;
@@ -110,6 +129,10 @@ export interface NormalizedPiOmpThemeConfig {
 		specialBlocks: boolean;
 		hideThinkingLabel: boolean;
 		hideInterimText: boolean;
+		/** Mark each assistant text block with a `●` and hang its lines under it. */
+		assistantMarker: boolean;
+		/** Show hidden thinking as one `● Thought for 6s` line instead of no trace. */
+		thinkingSummary: boolean;
 	};
 	readonly tools: {
 		enabled: boolean;
@@ -122,7 +145,7 @@ export interface NormalizedPiOmpThemeConfig {
 		collapseAfterTurn: boolean;
 		/** Group back-to-back read/ls/find calls into one panel. */
 		batchQuietCalls: boolean;
-		/** "boxed" draws a full frame per tool; "light" keeps the layout without it. */
+		/** "boxed" draws a full frame per tool; "light" keeps the layout without it; "inline" is the Claude Code transcript. */
 		chrome: ToolChrome;
 		/** Also collapse mutating tools (edit/write/…) into the summary; off keeps them visible. */
 		collapseMutatingTools: boolean;
@@ -131,6 +154,8 @@ export interface NormalizedPiOmpThemeConfig {
 		nerdFonts: NerdFontsMode;
 		/** Working-message sweep: "classic" cosine band, "kitt" scanner, "off" static. */
 		shimmer: ShimmerMode;
+		/** Show the run's elapsed time on the working row. */
+		workingElapsed: boolean;
 		/** Memoize Pi's syntax highlighting across streaming deltas. */
 		cacheHighlight: boolean;
 		/** Tint a named session's editor border with a colour derived from its name. */

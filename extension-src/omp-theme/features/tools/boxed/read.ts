@@ -23,14 +23,24 @@ const READ_META: BatchToolMeta = Object.freeze({
 	label: "Read",
 });
 
+/** Lines of file content in a read result, without Pi's trailing `[…]` notice. */
+function contentLineCount(output: string): number {
+	if (!output) return 0;
+	const lines = output.split("\n");
+	const last = lines.at(-1) ?? "";
+	if (lines.length >= 2 && /^\[.*\]$/.test(last.trim()) && lines.at(-2)?.trim() === "") lines.splice(-2);
+	return lines.length;
+}
+
 export const readTool: BoxedToolDefinition = {
 	call(args, theme, context) {
 		noteExecutionStart(context);
 		const rawPath = String(args?.path ?? args?.file_path ?? "");
+		// Inline headers drop `:1`: an offset of 1 without a limit is the whole file.
 		const detail = pathRangeDetail(rawPath, args?.offset, args?.limit, context);
 		const { isLeader, batch } = registerBatchCall(READ_META, detail, context);
 		if (!isLeader) return EMPTY_BATCH_COMPONENT;
-		return renderBatchAwareCall(theme, batch);
+		return renderBatchAwareCall(theme, batch, context.expanded);
 	},
 	result(result, options, _theme, context) {
 		// The call card owns this tool's display, so nothing else records the end
@@ -43,6 +53,7 @@ export const readTool: BoxedToolDefinition = {
 				isPartial: Boolean(options.isPartial),
 				isError: Boolean(context.isError),
 				errorText: context.isError ? output || undefined : undefined,
+				...(context.isError || options.isPartial ? {} : { lineCount: contentLineCount(output) }),
 			},
 			context,
 		);

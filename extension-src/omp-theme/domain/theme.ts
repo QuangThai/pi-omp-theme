@@ -121,6 +121,13 @@ const GLYPHS = {
 		host: "\uf109",
 		session: "\u{f0051}",
 		auto: "\u{f0068}",
+		// Inline (Claude Code) transcript: block marker, result gutter, checklist
+		// states and the collapsed-thinking marker.
+		toolMarker: "●",
+		resultGutter: "⎿",
+		todoDone: "☒",
+		todoOpen: "☐",
+		thinkingMarker: "●",
 	},
 	// Font-independent set (the default). Values mirror omp's `unicode` symbol
 	// preset so the look matches without requiring a Nerd Font.
@@ -146,6 +153,13 @@ const GLYPHS = {
 		host: "🖥",
 		session: "🆔",
 		auto: "⟲",
+		// Inline (Claude Code) transcript: block marker, result gutter, checklist
+		// states and the collapsed-thinking marker.
+		toolMarker: "●",
+		resultGutter: "⎿",
+		todoDone: "☒",
+		todoOpen: "☐",
+		thinkingMarker: "●",
 	},
 	ascii: {
 		pi: "pi",
@@ -169,6 +183,13 @@ const GLYPHS = {
 		host: "host",
 		session: "sess",
 		auto: "auto",
+		// Inline (Claude Code) transcript: block marker, result gutter, checklist
+		// states and the collapsed-thinking marker.
+		toolMarker: "*",
+		resultGutter: "|",
+		todoDone: "[x]",
+		todoOpen: "[ ]",
+		thinkingMarker: "~",
 	},
 } as const;
 

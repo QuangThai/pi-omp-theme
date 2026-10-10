@@ -47,6 +47,7 @@ pi install npm:@nguyenquangthai/pi-omp-theme
 - Responsive status segments for model, effort, path, Git, context, usage, cost, time, and session state.
 - Compact startup header or optional welcome card.
 - Boxed tool rendering, quiet-call batching, adaptive diffs, elapsed time, and completed-turn summaries.
+- Optional Claude Code transcript (`claude-code` preset): `● Tool(args)` calls with a `⎿` result gutter, marked answers, one-line thinking, and a timed working row.
 - Optional message/tool compatibility patches with per-surface identity checks and native fallback.
 - Titanium dark/light themes, Nerd Font/Unicode/ASCII modes, shimmer, syntax-highlight caching, and session accents.
 
@@ -107,7 +108,50 @@ The shipped configuration uses the `claude` preset with a dock editor, a status 
 
 ## Presets
 
-`claude`, `omp`, `default`, `minimal`, `compact`, `full`, `ascii`, and `native`.
+`claude`, `claude-code`, `omp`, `default`, `minimal`, `compact`, `full`, `ascii`, and `native`.
+
+### Claude Code transcript
+
+The `claude-code` preset keeps the `claude` composer and status row and renders the transcript the way Claude Code does:
+
+```text
+● The expiry check compared with < instead of <=.
+
+● Thought for 6.2s · Ctrl+T to show
+
+● Bash(npm test -- auth)
+  ⎿  … +18 earlier lines · Ctrl+O to expand
+     ✕ rejects expired tokens (12 ms)
+     ✘ Exit 1 · 2.2s · ~41 words
+
+● Edit(src/auth.ts)
+  ⎿  +1 −1 · 0.2s
+     -  42  if (exp < now) return true;
+     +  42  if (exp <= now) return true;
+
+● Read 1 file, ran 2 shell commands · 6.7s · Ctrl+O to expand
+
+⣾ Working... (14s · Escape to interrupt)
+```
+
+```json
+{
+  "piOmpTheme": {
+    "preset": "claude-code"
+  }
+}
+```
+
+Each part is an ordinary option, so it can also be enabled on its own:
+
+| Option | Effect |
+|---|---|
+| `tools.chrome: "inline"` | Tool calls render as `● Name(args)` with a `⎿` result gutter instead of a frame. The marker colour shows the status (running, done, failed); todo lists render as a checklist. |
+| `messages.assistantMarker: true` | Each assistant answer starts with `●`, its lines hanging under it. Replaces the `messages.assistantPrefix` gutter. |
+| `messages.thinkingSummary: true` | Hidden thinking reads `● Thinking…` while it streams and `● Thought for 6s` afterwards; click it or press the thinking toggle to show it. Restored sessions show `● Thought`. |
+| `theme.workingElapsed: true` | The working row shows the run time: `Working... (14s · Escape to interrupt)`. |
+
+The preset also lowers `tools.maxCollapsedLines` to 4. Glyphs follow the Nerd Font/Unicode/ASCII mode and can be overridden through `theme.glyphs` (`toolMarker`, `resultGutter`, `todoDone`, `todoOpen`, `thinkingMarker`); ASCII mode uses `*`, `|`, `[x]`, `[ ]`, and `~`. Message blocks (compaction, skills, branches) and user `!commands` follow the same `●`/`⎿` form, todo lists render as checklists and stay visible after a turn collapses, and the `git diff`/`gh run` views hang under the gutter without frames.
 
 ## Configuration
 

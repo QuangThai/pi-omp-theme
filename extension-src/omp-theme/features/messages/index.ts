@@ -2,7 +2,10 @@
 // grapheme segmentation and emoji regexes per call, which dominates the per-frame
 // cost on long messages. The fast path answers plain SGR + ASCII directly and
 // falls back to Pi's for anything else, so the measure stays identical.
+import { formatElapsedMs } from "../../shared/elapsed.js";
+import { displayKeyHint } from "../../shared/keybinding-hints.js";
 import { safeVisibleWidth as visibleWidth } from "../../shared/render-budget.js";
+import { thinkingDurationMs } from "./thinking-timing.js";
 
 const OSC133_ZONE_START = "\x1b]133;A\x07";
 const OSC133_ZONE_END = "\x1b]133;B\x07";
@@ -184,6 +187,10 @@ export type MessageDecorationSnapshot = Readonly<{
 	collapseHiddenThinking: boolean;
 	/** Hide the text of assistant messages that also carry tool calls (interim narration). */
 	hideInterimText: boolean;
+	/** Mark each assistant text block with the assistant marker, lines hanging under it. */
+	assistantMarker?: boolean;
+	/** Replace the hidden-thinking label with `● Thinking…` / `● Thought for 6s`. */
+	thinkingSummary?: boolean;
 }>;
 
 export function decorateMessageRender(
@@ -332,7 +339,136 @@ export function decorateMessageUpdate(
 			if (children.every((child) => isSpacerChild(child))) children.length = 0;
 		}
 	}
+	const children = target.contentContainer?.children;
+	if (children && snapshot.thinkingSummary) decorateThinkingRuns(children, target, args[0]);
+	if (children && snapshot.assistantMarker) {
+		for (let index = 0; index < children.length; index++) {
+			if (isInterimTextChild(children[index]))
+				children[index] = markedChild(children[index] as MarkableChild, messageStyle.assistantMarker);
+		}
+	}
 	return result;
+}
+
+// ── Inline message style (Claude Code transcript) ────────────────────────────
+
+interface MessageTheme {
+	fg(color: string, text: string): string;
+}
+
+interface MessageStyle {
+	theme: MessageTheme | undefined;
+	/** Leading marker of an assistant text block (`●`). */
+	assistantMarker: string;
+	/** Leading marker of a thinking run (`●`, accent-coloured). */
+	thinkingMarker: string;
+}
+
+let messageStyle: MessageStyle = { theme: undefined, assistantMarker: "●", thinkingMarker: "●" };
+
+/** Set by the session coordinator: the session theme and resolved glyphs. */
+export function setMessageDecorationStyle(style: Partial<MessageStyle>): void {
+	messageStyle = { ...messageStyle, ...style };
+}
+
+/** The hidden-thinking label the session hands Pi while summaries are on. */
+export const THINKING_SUMMARY_LABEL = "● Thinking…";
+
+type MarkableChild = {
+	render(width: number): string[];
+	invalidate?(): void;
+	handleMouse?(event: unknown): unknown;
+};
+
+/**
+ * A block with a marker in the first column and every line hanging after it.
+ * Mouse events pass straight through, so a thinking run still toggles on click.
+ */
+function markedChild(child: MarkableChild, marker: string): MarkableChild {
+	const markerWidth = Math.max(1, visibleWidth(marker));
+	const hang = " ".repeat(markerWidth);
+	return {
+		render(width: number): string[] {
+			if (width <= markerWidth + 1) return child.render(width);
+			const lines = child.render(width - markerWidth);
+			// Pi pads its blocks one column from the edge; the marker takes that slot's
+			// neighbour, so content keeps the column it had.
+			return lines.map((line, index) => `${index === 0 ? marker : hang}${line}`);
+		},
+		invalidate() {
+			child.invalidate?.();
+		},
+		handleMouse(event: unknown) {
+			return child.handleMouse?.(event);
+		},
+	};
+}
+
+/** Pi wraps each thinking run (hidden label or visible text) in a click region. */
+function isThinkingRegion(child: unknown): boolean {
+	const candidate = child as { child?: unknown; onMouse?: unknown } | undefined;
+	return typeof candidate?.onMouse === "function" && candidate.child !== undefined;
+}
+
+type MessageContent = { type?: unknown; text?: unknown; thinking?: unknown };
+
+function isVisibleContent(item: MessageContent): boolean {
+	if (item.type === "text") return typeof item.text === "string" && item.text.trim() !== "";
+	if (item.type === "thinking") return typeof item.thinking === "string" && item.thinking.trim() !== "";
+	return item.type === "toolCall";
+}
+
+/** Thinking runs as Pi renders them: consecutive blocks with any non-blank text. */
+function thinkingRuns(content: readonly MessageContent[]): Array<{ indices: number[]; last: number }> {
+	const runs: Array<{ indices: number[]; last: number }> = [];
+	for (let index = 0; index < content.length; index++) {
+		if (content[index]?.type !== "thinking") continue;
+		const indices: number[] = [];
+		while (index < content.length && content[index]?.type === "thinking") indices.push(index++);
+		index--;
+		if (indices.some((at) => isVisibleContent(content[at] ?? {}))) runs.push({ indices, last: indices.at(-1) ?? 0 });
+	}
+	return runs;
+}
+
+function thinkingSummaryText(message: unknown, run: { indices: number[]; last: number }, streaming: boolean): string {
+	const content = ((message as { content?: unknown })?.content ?? []) as MessageContent[];
+	const inProgress = streaming && !content.slice(run.last + 1).some(isVisibleContent);
+	if (inProgress) return "Thinking…";
+	const duration = thinkingDurationMs(message, run.indices);
+	const label = duration === undefined ? "Thought" : `Thought for ${formatElapsedMs(duration)}`;
+	const hint = displayKeyHint("app.thinking.toggle", "to show");
+	return hint ? `${label} · ${hint}` : label;
+}
+
+/**
+ * Collapsed thinking reads `● Thought for 6s · Ctrl+T to show`; shown thinking
+ * keeps its text with the same marker. Pi's own label (the session sets
+ * THINKING_SUMMARY_LABEL) is rewritten in place, so its styling, click toggle
+ * and spacing stay native.
+ */
+function decorateThinkingRuns(children: unknown[], target: { hiddenThinkingLabel?: string; isStreaming?: boolean }, message: unknown): void {
+	const content = ((message as { content?: unknown })?.content ?? []) as MessageContent[];
+	if (!Array.isArray(content)) return;
+	const runs = thinkingRuns(content);
+	const label = target.hiddenThinkingLabel ?? "";
+	const theme = messageStyle.theme;
+	// The same dot as answers and tools, told apart by colour: a three-dot ∴ at
+	// thinkingText weight all but disappears in common terminal fonts.
+	const marker = theme ? theme.fg("accent", messageStyle.thinkingMarker) : messageStyle.thinkingMarker;
+	let runIndex = 0;
+	for (let index = 0; index < children.length; index++) {
+		const child = children[index];
+		if (!isThinkingRegion(child)) continue;
+		const run = runs[runIndex++];
+		const inner = unwrapPresentationChild(child) as { text?: unknown; setText?: (text: string) => void };
+		if (run && label && typeof inner?.text === "string" && typeof inner.setText === "function") {
+			if (contentText(inner.text).trim() === label.trim()) {
+				inner.setText(inner.text.replace(label, thinkingSummaryText(message, run, target.isStreaming === true)));
+			}
+		}
+		children[index] = markedChild(child as MarkableChild, marker);
+	}
 }
 
 // Special private layouts are intentionally not installed; their prototypes remain native.

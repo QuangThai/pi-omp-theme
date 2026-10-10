@@ -20,10 +20,13 @@ import {
 	type BoxTheme,
 	dimLine,
 	getTextOutput,
+	isInlineChrome,
 	replaceTabs,
 	resolveAbsolutePath,
 	shortenPath,
 } from "../../../shared/box.js";
+import { inlineContentWidth, inlineGutterLines, inlineHeaderLine, type InlineStatus } from "../../../shared/inline.js";
+import { toolExpandHint } from "../../../shared/keybinding-hints.js";
 import { safeTruncateToWidth } from "../../../shared/render-budget.js";
 import {
 	GREP_COLLAPSED_LINE_LIMIT,
@@ -213,6 +216,7 @@ function grepLineBudget(expanded: boolean): number {
 }
 
 function renderGrepPanelLines(theme: BoxTheme, state: GrepPanelState, width: number, expanded: boolean): string[] {
+	if (isInlineChrome()) return renderInlineGrepLines(theme, state, width, expanded);
 	const safeWidth = Math.max(1, width);
 	const header = safeTruncateToWidth(formatGrepHeader(theme, state), safeWidth, "…");
 	if (state.isError) {
@@ -232,6 +236,52 @@ function renderGrepPanelLines(theme: BoxTheme, state: GrepPanelState, width: num
 		withIcons: getToolsRenderConfig().nerdFonts,
 		link: (styledText, file, line) => linkFile(state, styledText, file, line),
 	});
+}
+
+// ── Inline presentation ──────────────────────────────────────────────────────
+// `● Grep(pattern in path)` with the match summary opening the gutter and the
+// same budgeted file/match tree hanging under it.
+
+function inlineGrepStatus(state: GrepPanelState): InlineStatus {
+	if (state.isError) return "error";
+	return state.matches === undefined || state.isPartial ? "running" : "success";
+}
+
+function renderInlineGrepLines(theme: BoxTheme, state: GrepPanelState, width: number, expanded: boolean): string[] {
+	const scope = state.pathLabel && state.pathLabel !== "current directory" ? ` in ${flattened(state.pathLabel)}` : "";
+	const header = inlineHeaderLine(theme, inlineGrepStatus(state), "Grep", `${flattened(state.pattern)}${scope}`, width);
+	if (state.isError) {
+		const rows = stripAnsi(state.errorText ?? "")
+			.split("\n")
+			.map((line) => line.trim())
+			.filter(Boolean)
+			.slice(0, GREP_ERROR_LINES)
+			.map((line) => theme.fg("error", line));
+		return [header, ...inlineGutterLines(theme, rows.length > 0 ? rows : [theme.fg("error", "Failed")], width)];
+	}
+	if (state.matches === undefined) return [header];
+	if (state.matches.length === 0) return [header, ...inlineGutterLines(theme, [theme.fg("dim", "No matches")], width)];
+	const matchCount = state.matches.length;
+	const fileCount = groupMatchesByFile(state.matches).length;
+	const truncated = state.truncationLabel ? theme.fg("warning", ` · ${state.truncationLabel}`) : "";
+	const hint = expanded ? "" : toolExpandHint();
+	const summary = `${theme.fg(
+		"dim",
+		`${matchCount} ${pluralForm("match", matchCount)} in ${fileCount} ${pluralForm("file", fileCount)}`,
+	)}${truncated}${hint ? theme.fg("dim", ` · ${hint}`) : ""}`;
+	// The tree indents itself by TREE_INDENT; under the gutter that column is
+	// already taken, so it is painted wider and the indent dropped.
+	const treeWidth = inlineContentWidth(width) + TREE_INDENT.length;
+	const tree = renderGrepTree(theme, "", state.matches, treeWidth, {
+		lineBudget: grepLineBudget(expanded),
+		expanded,
+		...(state.displayLines ? { displayLines: state.displayLines } : {}),
+		withIcons: getToolsRenderConfig().nerdFonts,
+		link: (styledText, file, line) => linkFile(state, styledText, file, line),
+	})
+		.slice(1)
+		.map((line) => (line.startsWith(TREE_INDENT) ? line.slice(TREE_INDENT.length) : line));
+	return [header, ...inlineGutterLines(theme, [summary, ...tree], width)];
 }
 
 /** Live panel component reading the registry on every render pass. The state

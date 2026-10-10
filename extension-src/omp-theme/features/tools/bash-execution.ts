@@ -11,6 +11,7 @@
 // shape is unsupported. Nothing about the native instance is mutated — the
 // box is computed per render from the live component state.
 
+import { stripAnsi } from "../../shared/ansi.js";
 import type { BoxTheme } from "../../shared/box.js";
 import {
 	boxBlankLine,
@@ -20,7 +21,10 @@ import {
 	boxWidth,
 	formatBoxedRunningStatus,
 	dropOmittedLines,
+	isInlineChrome,
 } from "../../shared/box.js";
+import { inlineContentWidth, inlineGutterLines, inlineMarker, type InlineStatus } from "../../shared/inline.js";
+import { safeTruncateToWidth } from "../../shared/render-budget.js";
 import { getThemeExtra } from "../../shared/theme-extras.js";
 
 let cachedTheme: BoxTheme | undefined;
@@ -94,6 +98,7 @@ export function renderBashExecutionBox(instance: unknown, args: unknown[]): stri
 	if (!content || typeof content.render !== "function") return undefined;
 	try {
 		if (host.piOmpThemeStart === undefined) host.piOmpThemeStart = Date.now();
+		if (isInlineChrome()) return renderInlineBashExecution(theme, host, width);
 		const renderedWidth = boxWidth(width);
 		const inner = boxInnerWidth(renderedWidth);
 		// The native Text children render one leading padding space per line;
@@ -112,4 +117,31 @@ export function renderBashExecutionBox(instance: unknown, args: unknown[]): stri
 	} catch {
 		return undefined;
 	}
+}
+
+function inlineExecutionStatus(host: BashExecutionInstance): InlineStatus {
+	if (host.status === "running") return "running";
+	return host.status === "complete" ? "success" : "error";
+}
+
+/**
+ * Inline chrome: `● ! npm test` with Pi's own output, truncation note and exit
+ * status under the result gutter. The native command header row is dropped
+ * (the block header already names the command) along with the blank row Pi
+ * puts between it and the output.
+ */
+function renderInlineBashExecution(theme: BoxTheme, host: BashExecutionInstance, width: number): string[] {
+	const bold = boldOf(theme);
+	const command = host.command.replace(/\s*\n\s*/g, " ").trim();
+	const header = `${inlineMarker(theme, inlineExecutionStatus(host))} ${bold(theme.fg(bashTitleColor(theme), "!"))} ${theme.fg("text", command)}`;
+	// Pi pads its rows one column; paint one wider and drop that column.
+	const rows = host.contentContainer
+		.render(inlineContentWidth(width) + 1)
+		.slice(1)
+		.map((line) => (line.startsWith(" ") ? line.slice(1) : line));
+	// Pi styles empty rows too, so blankness is judged on the visible text.
+	const blank = (row: string | undefined) => stripAnsi(row ?? "").trim() === "";
+	while (rows.length > 0 && blank(rows[0])) rows.shift();
+	while (rows.length > 0 && blank(rows.at(-1))) rows.pop();
+	return ["", safeTruncateToWidth(header, Math.max(1, width), "…"), ...inlineGutterLines(theme, rows, width)];
 }

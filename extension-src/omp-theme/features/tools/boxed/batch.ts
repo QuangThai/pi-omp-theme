@@ -31,7 +31,15 @@
 
 import type { Component } from "@earendil-works/pi-tui";
 import { stripAnsi } from "../../../shared/ansi.js";
-import { type BoxTheme, dimLine, formatToolTitlePrefix } from "../../../shared/box.js";
+import { type BoxTheme, dimLine, formatToolTitlePrefix, isInlineChrome } from "../../../shared/box.js";
+import {
+	type InlineStatus,
+	inlineGutterLines,
+	inlineHeaderLine,
+	inlineMarker,
+	inlineMoreRow,
+} from "../../../shared/inline.js";
+import { toolExpandHint } from "../../../shared/keybinding-hints.js";
 import { safeTruncateToWidth } from "../../../shared/render-budget.js";
 import {
 	fileIcon,
@@ -78,6 +86,8 @@ export interface BatchMember {
 	 *  the result is registered; an empty array means a successful zero-entry
 	 *  result (e.g. an empty directory). */
 	outputEntries?: string[];
+	/** Lines of content a settled read returned (inline summary). */
+	lineCount?: number;
 }
 
 export interface BatchState {
@@ -193,6 +203,8 @@ export interface BatchResultData {
 	readonly errorText: string | undefined;
 	/** Parsed output entries (ls/find) stored on the member for tree rendering. */
 	readonly entries?: string[];
+	/** Lines of content a read returned. */
+	readonly lineCount?: number;
 }
 
 /**
@@ -215,6 +227,7 @@ export function registerBatchResult(
 		if (member.isError && data.errorText !== undefined) member.errorText = data.errorText;
 		else delete member.errorText;
 		if (data.entries !== undefined) member.outputEntries = data.entries;
+		if (data.lineCount !== undefined) member.lineCount = data.lineCount;
 	}
 	if (batch.completedAt === undefined && batch.members.every((entry) => entry.status === "done")) {
 		batch.completedAt = performance.now();
@@ -444,7 +457,14 @@ function renderLoneReadPanel(theme: BoxTheme, batch: BatchState, status: BatchSt
 	return out;
 }
 
-function renderBatchPanelLines(theme: BoxTheme, batch: BatchState, status: BatchStatus, width: number): string[] {
+function renderBatchPanelLines(
+	theme: BoxTheme,
+	batch: BatchState,
+	status: BatchStatus,
+	width: number,
+	expanded: boolean,
+): string[] {
+	if (isInlineChrome()) return renderInlineBatchLines(theme, batch, status, width, expanded);
 	// Lone read collapses to a single inline line; batched reads and lone
 	// ls/find calls keep their tree panels.
 	if (isLoneRead(batch)) return renderLoneReadPanel(theme, batch, status, width);
@@ -461,13 +481,97 @@ function renderBatchPanelLines(theme: BoxTheme, batch: BatchState, status: Batch
  * Leader call component: renders the live batch panel (header + tree) reading
  * the registry on every render pass. Members render EMPTY_BATCH_COMPONENT.
  */
-export function renderBatchAwareCall(theme: BoxTheme, batch: BatchState): Component {
+export function renderBatchAwareCall(theme: BoxTheme, batch: BatchState, expanded = false): Component {
 	return {
 		invalidate() {},
 		render(width: number): string[] {
-			return renderBatchPanelLines(theme, batch, batchStatus(batch), width);
+			return renderBatchPanelLines(theme, batch, batchStatus(batch), width, expanded);
 		},
 	};
+}
+
+// ── Inline presentation ──────────────────────────────────────────────────────
+// A lone call reads `● Read(path)` with a one-row summary under the gutter;
+// a batch reads `● Read 3 files` with one gutter row per member.
+
+function memberInlineStatus(member: BatchMember): InlineStatus {
+	if (member.isError) return "error";
+	if (member.status === "done") return "success";
+	return member.status === "running" ? "running" : "pending";
+}
+
+function plural(count: number, noun: string): string {
+	return `${count} ${pluralForm(noun, count)}`;
+}
+
+function inlineErrorRows(theme: BoxTheme, errorText: string | undefined): string[] {
+	const rows = stripAnsi(errorText ?? "")
+		.split("\n")
+		.map((line) => line.trim())
+		.filter(Boolean);
+	if (rows.length === 0) return [theme.fg("error", "Failed")];
+	const shown = rows.slice(0, BATCH_ERROR_LINES).map((line) => theme.fg("error", line));
+	return rows.length > BATCH_ERROR_LINES ? [...shown, theme.fg("error", "…")] : shown;
+}
+
+/** Settled summary of a lone member: `Read 120 lines`, `Listed 3 paths`, … */
+function inlineLoneRows(theme: BoxTheme, meta: BatchToolMeta, member: BatchMember, expanded: boolean): string[] {
+	if (member.isError) return inlineErrorRows(theme, member.errorText);
+	if (member.status !== "done") return [];
+	if (meta.toolName === "read") return [theme.fg("dim", `Read ${plural(member.lineCount ?? 0, "line")}`)];
+	const entries = member.outputEntries ?? [];
+	const noun = meta.toolName === "find" ? "file" : "path";
+	const summary = `${meta.toolName === "find" ? "Found" : "Listed"} ${plural(entries.length, noun)}`;
+	if (!expanded || entries.length === 0) {
+		const hint = entries.length > 0 ? toolExpandHint() : "";
+		return [theme.fg("dim", hint ? `${summary} · ${hint}` : summary)];
+	}
+	const budget = Math.max(1, getToolsRenderConfig().maxExpandedLines);
+	const shown = entries.slice(0, budget).map((entry) => theme.fg("toolOutput", entry));
+	return entries.length > budget ? [...shown, inlineMoreRow(theme, entries.length - budget, true, noun)] : shown;
+}
+
+function batchTitle(meta: BatchToolMeta, count: number): string {
+	if (meta.toolName === "read") return `Read ${plural(count, "file")}`;
+	if (meta.toolName === "find") return `Find ${plural(count, "pattern")}`;
+	return `List ${plural(count, "path")}`;
+}
+
+function memberInlineRows(theme: BoxTheme, meta: BatchToolMeta, member: BatchMember): string[] {
+	const status = memberInlineStatus(member);
+	const marker = status === "success" ? "" : `${inlineMarker(theme, status)} `;
+	const label = theme.fg(member.isError ? "error" : "text", member.detail);
+	if (member.isError) return [`${marker}${label}`, ...inlineErrorRows(theme, member.errorText).slice(0, 1)];
+	let detail = "";
+	if (member.status === "done" && meta.toolName === "read" && member.lineCount !== undefined)
+		detail = theme.fg("dim", ` · ${plural(member.lineCount, "line")}`);
+	else if (member.status === "done" && member.outputEntries !== undefined)
+		detail = theme.fg("dim", ` · ${plural(member.outputEntries.length, meta.toolName === "find" ? "file" : "path")}`);
+	return [`${marker}${label}${detail}`];
+}
+
+function renderInlineBatchLines(
+	theme: BoxTheme,
+	batch: BatchState,
+	status: BatchStatus,
+	width: number,
+	expanded: boolean,
+): string[] {
+	const meta = batch.meta;
+	if (batch.members.length === 1) {
+		const member = batch.members[0];
+		if (!member) return [];
+		const label = meta.headerLabel ?? meta.label;
+		const header = inlineHeaderLine(theme, memberInlineStatus(member), label, member.detail, width);
+		return [header, ...inlineGutterLines(theme, inlineLoneRows(theme, meta, member, expanded), width)];
+	}
+	const mark: InlineStatus = status.failed > 0 ? "error" : status.allDone ? "success" : "running";
+	const header = inlineHeaderLine(theme, mark, batchTitle(meta, batch.members.length), "", width);
+	const limit = expanded ? batch.members.length : BATCH_TREE_HEAD_LIMIT;
+	const rows = batch.members.slice(0, limit).flatMap((member) => memberInlineRows(theme, meta, member));
+	const more = batch.members.length - Math.min(limit, batch.members.length);
+	if (more > 0) rows.push(inlineMoreRow(theme, more, false, meta.toolName === "read" ? "file" : "path"));
+	return [header, ...inlineGutterLines(theme, rows, width)];
 }
 
 /**

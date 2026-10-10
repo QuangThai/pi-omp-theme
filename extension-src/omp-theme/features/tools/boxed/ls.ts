@@ -6,7 +6,7 @@
 // without output fall back to a path row.
 
 import { stripAnsi } from "../../../shared/ansi.js";
-import { getTextOutput, shortenPath } from "../../../shared/box.js";
+import { getTextOutput, isInlineChrome, shortenPath } from "../../../shared/box.js";
 import {
 	type BatchToolMeta,
 	EMPTY_BATCH_COMPONENT,
@@ -27,7 +27,7 @@ const LIST_META: BatchToolMeta = Object.freeze({
 
 function displayPath(rawPath: string): string {
 	const path = String(rawPath ?? ".");
-	if (path === "." || path === "") return "current directory";
+	if (path === "." || path === "") return isInlineChrome() ? "." : "current directory";
 	return shortenPath(path);
 }
 
@@ -38,7 +38,7 @@ export const lsTool: BoxedToolDefinition = {
 		const detail = displayPath(rawPath);
 		const { isLeader, batch } = registerBatchCall(LIST_META, detail, context, { pathLabel: detail });
 		if (!isLeader) return EMPTY_BATCH_COMPONENT;
-		return renderBatchAwareCall(theme, batch);
+		return renderBatchAwareCall(theme, batch, context.expanded);
 	},
 	result(result, options, _theme, context) {
 		// The call card owns this tool's display, so nothing else records the end

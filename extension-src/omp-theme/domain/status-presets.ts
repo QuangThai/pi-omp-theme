@@ -39,6 +39,11 @@ export const STATUS_PRESETS: Readonly<Record<PresetName, StatusLayout>> = Object
 		right: [],
 		secondary: [],
 	}),
+	"claude-code": Object.freeze({
+		left: ["model_effort", "path", "git", "claude_context"],
+		right: [],
+		secondary: [],
+	}),
 });
 
 function unique(values: readonly unknown[]): StatusSegmentId[] {

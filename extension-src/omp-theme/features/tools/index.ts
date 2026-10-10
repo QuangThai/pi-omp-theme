@@ -3,10 +3,10 @@
 // cost on long messages. The fast path answers plain SGR + ASCII directly and
 // falls back to Pi's for anything else, so the measure stays identical.
 import type { Component } from "@earendil-works/pi-tui";
-import { type BoxTheme, renderBoxedToolResult as frameToolResult } from "../../shared/box.js";
+import type { BoxTheme } from "../../shared/box.js";
 import { safeVisibleWidth as visibleWidth } from "../../shared/render-budget.js";
 import { EMPTY_BATCH_COMPONENT } from "./boxed/batch.js";
-import { renderBoxedToolCall, renderBoxedToolResult } from "./boxed/index.js";
+import { frameNativeToolResult, renderBoxedToolCall, renderBoxedToolResult } from "./boxed/index.js";
 import { clearPresentationTui, notePresentationTui } from "./boxed/render-viewport.js";
 import { type BoxedToolContext, noteBoxedResultPhase } from "./boxed/shared.js";
 
@@ -474,7 +474,7 @@ export function createToolDecorationOwner(snapshot: Partial<ToolDecorationSnapsh
 						const body = Reflect.apply(renderer, this, rendererArgs) as Component;
 						noteBoxedResultPhase(context, options.isPartial);
 						neutralizeToolContainerBackground(instance);
-						return frameToolResult(theme, body, { isError: context.isError });
+						return frameNativeToolResult(theme, body, { isError: context.isError });
 					}
 					const component =
 						subtype === "tool-call-renderer"

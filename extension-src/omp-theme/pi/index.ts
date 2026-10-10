@@ -1,5 +1,6 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import type { StatusSnapshot } from "../domain/status.js";
+import { noteThinkingEvent } from "../features/messages/thinking-timing.js";
 import { closeActiveBatch } from "../features/tools/boxed/batch.js";
 import { stopAllElapsedTickers } from "../features/tools/boxed/session-config.js";
 import {
@@ -110,7 +111,11 @@ export default function piOmpThemeExtension(pi: ExtensionAPI): void {
 		// their state so Pi re-renders of previous messages (scroll/resume) stay
 		// intact. Only session boundaries reset them (session-coordinator).
 	});
-	pi.on("message_update", () => coordinator.app.update({}, "coalesced"));
+	pi.on("message_update", (event) => {
+		// Thinking start/end times feed the collapsed `● Thought for 6s` line.
+		noteThinkingEvent(event.message, event.assistantMessageEvent);
+		coordinator.app.update({}, "coalesced");
+	});
 	// Usage (tokens + cost) is aggregated from finalized session entries at
 	// message/turn boundaries, mirroring Pi's native footer; per-chunk updates
 	// stay usage-free to keep streaming cheap.

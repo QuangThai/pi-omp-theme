@@ -70,8 +70,10 @@ export function createCompatibilityCoordinator(dispose = disposePiCompatibilityP
 		},
 		state(config) {
 			const version = detectPiVersion();
+			const assistantConfigured =
+				config.messages.assistantPrefix || config.messages.assistantMarker || config.messages.thinkingSummary;
 			const messagesConfigured =
-				config.enabled && config.messages.enabled && (config.messages.assistantPrefix || config.messages.specialBlocks);
+				config.enabled && config.messages.enabled && (assistantConfigured || config.messages.specialBlocks);
 			const toolsConfigured = config.enabled && config.tools.enabled;
 			const surface = (
 				configured: boolean,
@@ -112,7 +114,7 @@ export function createCompatibilityCoordinator(dispose = disposePiCompatibilityP
 				// Pi that never renders (see host-binding.ts).
 				hostBinding: hostBinding ?? { status: "unknown", reason: "not probed yet" },
 				assistantMessage: surface(
-					config.enabled && config.messages.enabled && config.messages.assistantPrefix,
+					config.enabled && config.messages.enabled && assistantConfigured,
 					Boolean(authorization?.assistant),
 					ASSISTANT_MESSAGE_SUBTYPES,
 				),
@@ -154,7 +156,25 @@ export function createCompatibilityCoordinator(dispose = disposePiCompatibilityP
 					surface: "specialBlocks",
 					config,
 				});
-			const messagesEnabled = (assistantEnabled || specialBlocksEnabled) && config.messages.enabled;
+			// The inline message style (Claude Code transcript) decorates the same
+			// updateContent surface, under the same gates as the thinking collapse.
+			const inlineMessagesAuthorized = Boolean(
+				authorization.assistant &&
+					config.messages.enabled &&
+					isTierCAuthorized({
+						coreFlag: authorization.core,
+						surfaceFlag: true,
+						surface: "messages",
+						config,
+					}),
+			);
+			const thinkingSummaryEnabled = inlineMessagesAuthorized && config.messages.thinkingSummary;
+			const assistantMarkerEnabled = inlineMessagesAuthorized && config.messages.assistantMarker;
+			// The marker replaces the gutter prefix; both would stack on one line.
+			const assistantPrefixEnabled = assistantEnabled && !assistantMarkerEnabled;
+			const messagesEnabled =
+				(assistantEnabled || specialBlocksEnabled || thinkingSummaryEnabled || assistantMarkerEnabled) &&
+				config.messages.enabled;
 			// The hidden-thinking collapse is an assistant-message surface patch: it needs
 			// the assistant flag and `messages.hideThinkingLabel`, independent of the
 			// assistant prefix feature.
@@ -180,8 +200,10 @@ export function createCompatibilityCoordinator(dispose = disposePiCompatibilityP
 					messages: {
 						...config.messages,
 						enabled: messagesEnabled,
-						assistantPrefix: assistantEnabled,
+						assistantPrefix: assistantPrefixEnabled,
 						hideThinkingLabel: thinkingCollapseEnabled,
+						thinkingSummary: thinkingSummaryEnabled,
+						assistantMarker: assistantMarkerEnabled,
 						specialBlocks: messagesEnabled && config.messages.specialBlocks && specialBlocksEnabled,
 					},
 					tools: {
@@ -191,9 +213,11 @@ export function createCompatibilityCoordinator(dispose = disposePiCompatibilityP
 				},
 				messageSnapshot: {
 					assistantPrefix: authorization.ascii ? "[assistant] " : "│ ",
-					assistantEnabled,
-					collapseHiddenThinking: thinkingCollapseEnabled,
+					assistantEnabled: assistantPrefixEnabled,
+					collapseHiddenThinking: thinkingCollapseEnabled && !thinkingSummaryEnabled,
 					hideInterimText: config.messages.hideInterimText && messagesEnabled,
+					thinkingSummary: thinkingSummaryEnabled,
+					assistantMarker: assistantMarkerEnabled,
 				},
 				toolSnapshot: {
 					callMarker: "[tool] ",

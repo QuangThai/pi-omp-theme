@@ -17,7 +17,9 @@ import {
 	decorateMessageRender,
 	decorateMessageUpdate,
 	type MessageDecorationSnapshot,
+	THINKING_SUMMARY_LABEL,
 } from "../extension-src/omp-theme/features/messages/index.js";
+import { noteThinkingEvent, resetThinkingTimings } from "../extension-src/omp-theme/features/messages/thinking-timing.js";
 import {
 	renderSpecialMessageBlock,
 	setSpecialBlockTheme,
@@ -74,6 +76,8 @@ interface MessageCase {
 	readonly hiddenThinkingLabel?: string;
 	readonly isStreaming?: boolean;
 	readonly snapshot?: Partial<MessageDecorationSnapshot>;
+	/** Recorded thinking span of content block 0, as message_update reports it. */
+	readonly thinkingSpan?: readonly [number, number];
 	readonly timestamp?: number;
 }
 
@@ -128,6 +132,48 @@ const MESSAGE_CASES: readonly MessageCase[] = [
 		],
 	},
 	{ id: "assistant/aborted", content: [{ type: "text", text: "Partial answer" }], stopReason: "aborted" },
+	// Inline (Claude Code) message style.
+	{ id: "inline/text-marked", content: [{ type: "text", text: ANSWER }], snapshot: { assistantMarker: true } },
+	{
+		id: "inline/thinking-summary-timed",
+		content: [{ type: "thinking", thinking: THINKING }, { type: "text", text: ANSWER }],
+		hideThinkingBlock: true,
+		hiddenThinkingLabel: THINKING_SUMMARY_LABEL,
+		snapshot: { assistantMarker: true, thinkingSummary: true },
+		thinkingSpan: [1000, 7200],
+		timestamp: 2,
+	},
+	{
+		id: "inline/thinking-summary-restored",
+		content: [{ type: "thinking", thinking: THINKING }, { type: "text", text: ANSWER }],
+		hideThinkingBlock: true,
+		hiddenThinkingLabel: THINKING_SUMMARY_LABEL,
+		snapshot: { assistantMarker: true, thinkingSummary: true },
+		timestamp: 3,
+	},
+	{
+		id: "inline/thinking-summary-streaming",
+		content: [{ type: "thinking", thinking: THINKING }],
+		hideThinkingBlock: true,
+		hiddenThinkingLabel: THINKING_SUMMARY_LABEL,
+		isStreaming: true,
+		snapshot: { assistantMarker: true, thinkingSummary: true },
+		timestamp: 4,
+	},
+	{
+		id: "inline/thinking-visible-marked",
+		content: [{ type: "thinking", thinking: THINKING }, { type: "text", text: ANSWER }],
+		snapshot: { assistantMarker: true, thinkingSummary: true },
+		timestamp: 5,
+	},
+	{
+		id: "inline/interim-text-marked",
+		content: [
+			{ type: "text", text: "Let me run the tests." },
+			{ type: "toolCall", id: "call-1", name: "bash", arguments: { command: "npm test" } },
+		],
+		snapshot: { assistantMarker: true },
+	},
 ];
 
 function renderMessage(entry: MessageCase): string[] {
@@ -139,6 +185,10 @@ function renderMessage(entry: MessageCase): string[] {
 		entry.hiddenThinkingLabel ?? "Thinking...",
 	);
 	const message = assistant(entry.content, entry.stopReason, entry.errorMessage, entry.timestamp);
+	if (entry.thinkingSpan) {
+		noteThinkingEvent(message, { type: "thinking_start", contentIndex: 0 }, entry.thinkingSpan[0]);
+		noteThinkingEvent(message, { type: "thinking_end", contentIndex: 0 }, entry.thinkingSpan[1]);
+	}
 	decorateMessageUpdate(
 		AssistantMessageComponent.prototype.updateContent,
 		component,
@@ -205,6 +255,7 @@ const SPECIAL_CASES: ReadonlyArray<{ id: string; render(): string[] }> = [
 			renderSpecial("native-compaction-message", {
 				message: {
 					tokensBefore: 4_964,
+					// Emphasis marks go; the underscore inside is_expired stays.
 					summary: "[Session Goal]\n- Fix the __is_expired__ boundary\n\n[Files And Changes]\n- Read: src/auth.ts",
 				},
 			}),
@@ -281,6 +332,7 @@ before(() => {
 });
 
 after(() => {
+	resetThinkingTimings();
 	setBoxChrome("boxed");
 	setBoxTheme(undefined);
 	setSpecialBlockTheme(undefined);
@@ -309,7 +361,7 @@ for (const entry of MESSAGE_CASES) {
 	test(`golden: ${key}`, () => check(key, renderMessage(entry), false));
 }
 
-for (const chrome of ["boxed", "light"] as const) {
+for (const chrome of ["boxed", "light", "inline"] as const) {
 	for (const entry of [...SPECIAL_CASES, ...USER_BASH_CASES]) {
 		const key = `${chrome} · w${WIDTH} · ${entry.id}`;
 		knownKeys.add(key);

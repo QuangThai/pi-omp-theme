@@ -338,6 +338,7 @@ const TOOL_CASES: readonly GoldenCase[] = [
 		result: text("Fix: Use <=\nScope: auth.ts"),
 	}),
 	{
+		// A failed tool stays on its own row; the summary of the rest stays green.
 		id: "turn/with-failure",
 		render(width) {
 			const steps: ToolStep[] = [
@@ -368,6 +369,7 @@ const TOOL_CASES: readonly GoldenCase[] = [
 		},
 	},
 	{
+		// Extension tools share one summary clause: `used vcc_recall, mcp ×2 and web_fetch`.
 		id: "turn/extension-tools",
 		render(width) {
 			const steps: ToolStep[] = [
@@ -396,6 +398,7 @@ const TOOL_CASES: readonly GoldenCase[] = [
 		},
 	},
 	{
+		// Inline keeps the todo checklist in place; boxed folds it into the summary.
 		id: "turn/keeps-todos-inline",
 		render(width) {
 			const steps: ToolStep[] = [
@@ -461,19 +464,23 @@ const TOOL_CASES: readonly GoldenCase[] = [
 const NARROW_IDS = new Set(["fallback/settled", "bash/settled", "bash/exit-1", "edit/diff", "write/settled", "grep/settled"]);
 
 interface Variant {
-	readonly chrome: "boxed" | "light";
+	readonly chrome: "boxed" | "light" | "inline";
 	readonly width: number;
 }
 
 const VARIANTS: readonly Variant[] = [
 	{ chrome: "boxed", width: 80 },
 	{ chrome: "light", width: 80 },
+	{ chrome: "inline", width: 80 },
 	{ chrome: "boxed", width: 36 },
 	{ chrome: "light", width: 36 },
+	{ chrome: "inline", width: 36 },
 ];
 
-function toolsConfigFor(_variant: Variant) {
-	const { config } = resolveConfigDetailed({ global: { preset: "claude" }, projectTrusted: true });
+/** Inline chrome ships with the claude-code preset; the frames with claude. */
+function toolsConfigFor(variant: Variant) {
+	const preset = variant.chrome === "inline" ? "claude-code" : "claude";
+	const { config } = resolveConfigDetailed({ global: { preset }, projectTrusted: true });
 	return { ...config.tools, batchOpenGlyph: "●", nerdFonts: false };
 }
 

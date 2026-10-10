@@ -28,6 +28,7 @@ const surfaces = new Set(["status", "editor", "startup", "messages", "tools"]);
 const presets = ENUMS.preset ?? [];
 const styles = ENUMS["editor.style"] ?? [];
 const frames = ENUMS["editor.frame"] ?? [];
+const toolChromes = ENUMS["tools.chrome"] ?? [];
 const startupModes = ["off", "compact", "overlay"];
 const allowedPaths = new Set([
 	"enabled",
@@ -53,8 +54,11 @@ const allowedPaths = new Set([
 	"messages.specialBlocks",
 	"messages.hideThinkingLabel",
 	"messages.hideInterimText",
+	"messages.assistantMarker",
+	"messages.thinkingSummary",
 	"tools.enabled",
 	"tools.style",
+	"tools.chrome",
 	"tools.maxCollapsedLines",
 	"tools.maxExpandedLines",
 	"tools.dimOutput",
@@ -62,6 +66,7 @@ const allowedPaths = new Set([
 	"tools.collapseAfterTurn",
 	"tools.collapseMutatingTools",
 	"theme.nerdFonts",
+	"theme.workingElapsed",
 	"theme.terminalBackgroundSync",
 	"theme.autoApply",
 	"theme.colors",
@@ -86,6 +91,9 @@ function validatePathValue(path: string, value: unknown): boolean {
 			"messages.specialBlocks",
 			"messages.hideThinkingLabel",
 			"messages.hideInterimText",
+			"messages.assistantMarker",
+			"messages.thinkingSummary",
+			"theme.workingElapsed",
 			"tools.enabled",
 			"tools.showElapsed",
 			"tools.dimOutput",
@@ -104,6 +112,7 @@ function validatePathValue(path: string, value: unknown): boolean {
 	if (path === "startup.mode") return typeof value === "string" && startupModes.includes(value);
 	if (path === "editor.style") return typeof value === "string" && styles.includes(value);
 	if (path === "editor.frame") return typeof value === "string" && frames.includes(value);
+	if (path === "tools.chrome") return typeof value === "string" && toolChromes.includes(value);
 	if (path === "theme.autoApply") return typeof value === "string" && value !== "";
 	if (["theme.nerdFonts", "theme.terminalBackgroundSync", "statusLine.separator", "tools.style"].includes(path))
 		return typeof value === "string";

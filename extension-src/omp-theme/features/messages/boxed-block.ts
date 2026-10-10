@@ -5,7 +5,19 @@
 
 import type { Component } from "@earendil-works/pi-tui";
 import type { BoxTheme } from "../../shared/box.js";
-import { boxBlankLine, boxBorder, boxInnerWidth, boxLabeledBorder, boxLine, boxWidth, dropOmittedLines } from "../../shared/box.js";
+import {
+	boxBlankLine,
+	boxBorder,
+	boxInnerWidth,
+	boxLabeledBorder,
+	boxLine,
+	boxWidth,
+	dropOmittedLines,
+	formatToolName,
+	isInlineChrome,
+} from "../../shared/box.js";
+import { inlineContentWidth, inlineGlyphs, inlineGutterLines } from "../../shared/inline.js";
+import { safeTruncateToWidth } from "../../shared/render-budget.js";
 
 export type MessageBlockOptions = {
 	kind: string;
@@ -36,6 +48,7 @@ function formatMessageBlockTitle(theme: BoxTheme, kind: string, title?: string, 
  * that would create a double-background conflict.
  */
 export function renderBoxedMessageBlock(theme: BoxTheme, options: MessageBlockOptions): Component {
+	if (isInlineChrome()) return renderInlineMessageBlock(theme, options);
 	const { kind, title, right, body, icon = "➔", cache: shouldCache = true } = options;
 	let cache: { width: number; lines: string[] } | null = null;
 
@@ -66,6 +79,34 @@ export function renderBoxedMessageBlock(theme: BoxTheme, options: MessageBlockOp
 			const visible = dropOmittedLines(lines);
 			if (shouldCache) cache = { width, lines: visible };
 			return visible;
+		},
+	};
+}
+
+/**
+ * Inline chrome: `● Compaction · 10K→4K` with the body under the result gutter
+ * and the expand hint as its last row, the way tool blocks read.
+ */
+function renderInlineMessageBlock(theme: BoxTheme, options: MessageBlockOptions): Component {
+	const { kind, title, right, body, cache: shouldCache = true } = options;
+	let cache: { width: number; lines: string[] } | null = null;
+	return {
+		invalidate() {
+			cache = null;
+		},
+		render(width: number): string[] {
+			if (shouldCache && cache?.width === width) return cache.lines;
+			// An extension message reads by its own type (`vcc-recall` → `Vcc Recall`),
+			// not as a generic `Custom · vcc-recall`.
+			const custom = kind === "Custom" && title;
+			const label = custom ? formatToolName(title) : kind;
+			const name = typeof theme.bold === "function" ? theme.bold(theme.fg("text", label)) : theme.fg("text", label);
+			const subtitle = title && !custom ? theme.fg("dim", ` · ${title}`) : "";
+			const header = `${theme.fg("accent", inlineGlyphs().marker)} ${name}${subtitle}`;
+			const rows = [...body(inlineContentWidth(width)), ...(right ? [theme.fg("dim", right)] : [])];
+			const lines = [safeTruncateToWidth(header, Math.max(1, width), "…"), ...inlineGutterLines(theme, rows, width)];
+			if (shouldCache) cache = { width, lines };
+			return lines;
 		},
 	};
 }

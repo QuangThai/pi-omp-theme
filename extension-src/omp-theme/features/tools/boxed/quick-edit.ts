@@ -6,12 +6,20 @@ import {
 	type BoxTheme,
 	formatBoxedRunningStatus,
 	getTextOutput,
+	isInlineChrome,
 	renderBoxedToolCall,
 	renderBoxedToolResult,
 } from "../../../shared/box.js";
 import { formatElapsedMs, getElapsedMs } from "../../../shared/elapsed.js";
 import { toolExpandHint } from "../../../shared/keybinding-hints.js";
 import { AdaptiveDiffComponent, buildSplitRows, countDiffStats } from "../../../shared/split-diff.js";
+import {
+	inlineFileApplying,
+	inlineFileDiff,
+	inlineFileError,
+	inlineFilePlain,
+	renderInlineFileCall,
+} from "./inline-edit.js";
 import { getStateElapsedMs, isResultSeen } from "./session-config.js";
 import {
 	type BoxedToolContext,
@@ -142,6 +150,7 @@ function renderQuickEditResult(
 ) {
 	if (options.isPartial) {
 		const firstResultPass = noteBoxedResultPhase(context, options.isPartial);
+		if (isInlineChrome()) return inlineFileApplying(theme, `Applying ${config.applyingLabel}`, context);
 		if (firstResultPass) return EMPTY_QUICK_EDIT_RESULT;
 		return renderBoxedToolResult(
 			theme,
@@ -152,6 +161,7 @@ function renderQuickEditResult(
 
 	const output = getTextOutput(result);
 	if (context.isError) {
+		if (isInlineChrome()) return inlineFileError(theme, output, context);
 		return renderBoxedToolResult(theme, () => [theme.fg("error", stripAnsi(output).trim() || "Error")], {
 			footerLines: [quickEditFooter(theme, context)],
 			isError: true,
@@ -161,6 +171,7 @@ function renderQuickEditResult(
 	const diff = extractQuickEditDiff(output);
 	if (!diff) {
 		const fallback = stripAnsi(output).trim() || config.fallbackLabel;
+		if (isInlineChrome()) return inlineFilePlain(theme, fallback, context);
 		return renderBoxedToolResult(theme, () => [`${theme.fg("dim", "↳")} ${theme.fg("muted", fallback)}`], {
 			footerLines: [quickEditFooter(theme, context)],
 		});
@@ -176,6 +187,7 @@ function renderQuickEditResult(
 
 	const maxRows = expanded ? 160 : 36;
 	const diffView = new AdaptiveDiffComponent(theme, rows, maxRows, shouldHighlight ? language : undefined);
+	if (isInlineChrome()) return inlineFileDiff(theme, diffView, stats, expanded, context);
 	const expandHint = !expanded && diffView.hasCollapsed() ? toolExpandHint() : "";
 
 	return renderBoxedToolResult(
@@ -210,6 +222,7 @@ export function quickEditTool(config: QuickEditToolConfig): BoxedToolDefinition 
 			noteExecutionStart(context);
 			noteBoxedCallState(context);
 			const detail = displayPath(String(args?.path ?? ""), context);
+			if (isInlineChrome()) return renderInlineFileCall(theme, config.toolLabel, detail, context);
 			return renderBoxedToolCall(theme, config.toolLabel, [], {
 				headerDetail: detail,
 				isError: Boolean(context.isError),

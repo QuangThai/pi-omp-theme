@@ -2,8 +2,11 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 import type { ConfigFilePort } from "../app/config-storage.js";
 import { createPiOmpThemeApp, type PiOmpThemeApp } from "../app/index.js";
 import { resolveTheme } from "../domain/theme.js";
+import { setMessageDecorationStyle, THINKING_SUMMARY_LABEL } from "../features/messages/index.js";
 import { setSpecialBlockTheme } from "../features/messages/special-blocks.js";
+import { resetThinkingTimings } from "../features/messages/thinking-timing.js";
 import { setBoxChrome, setBoxTheme } from "../shared/box.js";
+import { setInlineGlyphs } from "../shared/inline.js";
 import { WELCOME_SESSION_SLOTS } from "../features/startup/welcome.js";
 import { readRecentSessions } from "./recent-sessions.js";
 import { setBashExecutionTheme } from "../features/tools/bash-execution.js";
@@ -19,6 +22,7 @@ import { rebuildTurnRegistryFromEntries, resetTurnRegistry } from "../features/t
 import {
 	configureWorkingShimmer,
 	installWorkingIndicator,
+	setWorkingElapsed,
 	restoreWorkingIndicator,
 } from "../features/working-indicator/index.js";
 import { createCompatibilityCoordinator } from "./compatibility-coordinator.js";
@@ -102,12 +106,19 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 	};
 	/** Render-scoped tool config: line budgets + the resolved open-tree glyph. */
 	const applyToolsRenderConfig = (config: import("../domain/config-types.js").NormalizedPiOmpThemeConfig) => {
+		const resolved = resolveTheme(sessionTheme as never, config, process.env);
 		setBoxChrome(config.tools.chrome);
 		setBoxTheme(sessionTheme as never);
+		setInlineGlyphs({
+			marker: resolved.glyph("toolMarker"),
+			gutter: resolved.glyph("resultGutter"),
+			done: resolved.glyph("todoDone"),
+			open: resolved.glyph("todoOpen"),
+		});
 		setToolsRenderConfig({
 			...config.tools,
-			batchOpenGlyph: resolveTheme(sessionTheme as never, config, process.env).glyph("batchOpen"),
-			nerdFonts: resolveTheme(sessionTheme as never, config, process.env).mode === "nerd",
+			batchOpenGlyph: resolved.glyph("batchOpen"),
+			nerdFonts: resolved.mode === "nerd",
 		} satisfies ToolsRenderConfig);
 	};
 	/**
@@ -116,7 +127,20 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 	 * Passing undefined restores the default label.
 	 */
 	const applyMessagesConfig = (config: import("../domain/config-types.js").NormalizedPiOmpThemeConfig) => {
-		sessionUi?.setHiddenThinkingLabel?.(config.messages.hideThinkingLabel ? "" : undefined);
+		// A thinking summary rewrites Pi's label per message, so Pi must render one;
+		// the collapse blanks it; otherwise Pi's default label returns.
+		const label = config.messages.thinkingSummary
+			? THINKING_SUMMARY_LABEL
+			: config.messages.hideThinkingLabel
+				? ""
+				: undefined;
+		sessionUi?.setHiddenThinkingLabel?.(label);
+		const resolved = resolveTheme(sessionTheme as never, config, process.env);
+		setMessageDecorationStyle({
+			theme: sessionTheme as never,
+			assistantMarker: resolved.glyph("toolMarker"),
+			thinkingMarker: resolved.glyph("thinkingMarker"),
+		});
 	};
 	/**
 	 * Auto-apply the configured pi-omp-theme theme (default "titanium") once per TUI
@@ -153,6 +177,7 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 			// effect immediately (line budgets, dimOutput, open-tree glyph, …).
 			applyToolsRenderConfig(config);
 			applyMessagesConfig(config);
+			setWorkingElapsed(config.theme.workingElapsed);
 			if (compatibility.report) {
 				const cleanup = compatibility.dispose();
 				if (!cleanup.complete) {
@@ -203,6 +228,7 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 			// restored/forked history renders collapsed before the first render pass
 			// (deterministic; no in-process turn_end events needed).
 			resetTurnRegistry();
+			resetThinkingTimings();
 			rebuildTurnRegistryFromEntries(ctx.sessionManager.getEntries());
 			// Stop any 1s elapsed re-render ticker left by a tool that was still
 			// running when the session ended.
@@ -245,15 +271,20 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 					);
 				};
 				installWorkingIndicator(ctx.ui, resolveWorkingTheme().mode === "ascii");
-				configureWorkingShimmer(ctx.ui, app.config.theme.shimmer, () => {
-					const resolved = resolveWorkingTheme();
-					return {
-						low: resolved.color("dim"),
-						mid: resolved.color("muted"),
-						high: resolved.color("accent"),
-						bold: true,
-					};
-				});
+				configureWorkingShimmer(
+					ctx.ui,
+					app.config.theme.shimmer,
+					() => {
+						const resolved = resolveWorkingTheme();
+						return {
+							low: resolved.color("dim"),
+							mid: resolved.color("muted"),
+							high: resolved.color("accent"),
+							bold: true,
+						};
+					},
+					{ elapsed: app.config.theme.workingElapsed },
+				);
 			} else restoreWorkingIndicator(ctx.ui);
 			const toolDetails = collectToolDetails(pi.getActiveTools?.(), pi.getAllTools?.());
 			// Pi exposes only the live session, so the welcome card's recent list is
@@ -308,6 +339,7 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 			resetGrepRegistry();
 			resetBashTreeRegistry();
 			resetTurnRegistry();
+			resetThinkingTimings();
 			stopAllElapsedTickers();
 			app.sessionShutdown();
 			// Tier C prototype patches stay installed across session switches. Pi renders

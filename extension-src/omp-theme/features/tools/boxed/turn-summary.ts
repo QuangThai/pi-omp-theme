@@ -31,7 +31,9 @@
 //   surface stays untouched when the turn is not collapsed.
 
 import type { Component } from "@earendil-works/pi-tui";
-import type { BoxTheme } from "../../../shared/box.js";
+import { type BoxTheme, isInlineChrome } from "../../../shared/box.js";
+import { inlineElapsed, inlineMarker } from "../../../shared/inline.js";
+import { toolExpandHint } from "../../../shared/keybinding-hints.js";
 import { safeTruncateToWidth } from "../../../shared/render-budget.js";
 import { pluralForm } from "./output-tree.js";
 import { resetToolRowHints, toolRowPlacement } from "./render-viewport.js";
@@ -82,9 +84,18 @@ function mutatingCollapses(): boolean {
 	return getToolsRenderConfig().collapseMutatingTools;
 }
 
+/**
+ * Inline transcripts keep todo lists in place, as Claude Code keeps its
+ * "Update Todos" blocks: the checklist is the run's plan, and it is short.
+ */
+function isInlineChecklistTool(toolName: string): boolean {
+	return isInlineChrome() && /todo/i.test(toolName);
+}
+
 /** Whether this tool is eligible for completed-turn collapse and aggregation. */
 export function isTurnCollapsibleTool(toolName: string): boolean {
 	if (TURN_COLLAPSE_EXEMPT_TOOLS.has(toolName)) return false;
+	if (isInlineChecklistTool(toolName)) return false;
 	return !isMutatingTool(toolName) || mutatingCollapses();
 }
 
@@ -416,8 +427,24 @@ function summarySentence(parts: readonly string[]): string {
 		.join(", ");
 }
 
+/** Inline: `● Read 2 files, ran 4 shell commands · 3.1s · Ctrl+O to expand`. */
+function formatInlineTurnSummaryLine(theme: BoxTheme, summary: TurnSummaryParts): string {
+	const sentence = summarySentence(summary.parts);
+	const failures =
+		summary.failedCount > 0
+			? theme.fg("error", ` · ${summary.failedCount} ${pluralForm("failure", summary.failedCount)}`)
+			: "";
+	const elapsed = inlineElapsed(summary.elapsedMs);
+	const hint = toolExpandHint();
+	const tail = [elapsed, hint].filter(Boolean).map((part) => theme.fg("dim", ` · ${part}`)).join("");
+	// The tools this line stands for all succeeded: failed ones stay visible on
+	// their own (red) rows, so only the failure count is red here.
+	return `${inlineMarker(theme, "success")} ${theme.fg("text", sentence)}${failures}${tail}`;
+}
+
 function formatTurnSummaryLine(theme: BoxTheme, turn: TurnState): string {
 	const summary = turnSummaryParts(turn);
+	if (isInlineChrome()) return formatInlineTurnSummaryLine(theme, summary);
 	// The summary is deliberately quiet: the whole line renders dim so completed
 	// tool work recedes behind the assistant's answer. Only the failed marker
 	// stays error-colored (errors must remain visible).

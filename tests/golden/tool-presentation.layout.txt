@@ -778,6 +778,309 @@ Exit 1 · 2.23s · ~2 words                                                     
 +   4  delta                                                                    ¶
 2.2s · 1 file · +2 -1                                                           ¶
 
+=== inline · w80 · fallback/pending ===
+● Exa: Web Search Exa(query: pi coding agent, numResults: 5)¶
+
+=== inline · w80 · fallback/running ===
+● Exa: Web Search Exa(query: pi coding agent, numResults: 5)¶
+  ⎿  Running…¶
+
+=== inline · w80 · fallback/streaming ===
+● Exa: Web Search Exa(query: pi coding agent, numResults: 5)¶
+  ⎿  Result 1¶
+     Result 2¶
+     Running… 1.4s¶
+
+=== inline · w80 · fallback/settled ===
+● Exa: Web Search Exa(query: pi coding agent, numResults: 5)¶
+  ⎿  Result 1¶
+     Result 2¶
+     Result 3¶
+     2.2s · ~6 words¶
+
+=== inline · w80 · fallback/error ===
+● Exa: Web Search Exa(query: pi coding agent, numResults: 5)¶
+  ⎿  Request failed: 429 Too Many Requests¶
+     ✘ Error · 2.2s · ~6 words¶
+
+=== inline · w80 · fallback/empty ===
+● Todo Write(0 items)¶
+  ⎿  (No output)¶
+     2.2s¶
+
+=== inline · w80 · fallback/long-collapsed ===
+● Exa: Web Search Exa(query: pi coding agent, numResults: 5)¶
+  ⎿  result 1¶
+     result 2¶
+     result 3¶
+     result 4¶
+     … +10 lines · Ctrl+O to expand¶
+     2.2s · ~28 words¶
+
+=== inline · w80 · fallback/long-expanded ===
+● Exa: Web Search Exa(query: pi coding agent, numResults: 5)¶
+  ⎿  result 1¶
+     result 2¶
+     result 3¶
+     result 4¶
+     result 5¶
+     result 6¶
+     result 7¶
+     result 8¶
+     result 9¶
+     result 10¶
+     result 11¶
+     result 12¶
+     result 13¶
+     result 14¶
+     2.2s · ~28 words¶
+
+=== inline · w80 · todo/settled ===
+● Todo Write¶
+  ⎿  ☒ Reproduce the failure¶
+     ☐ Fix the expiry check¶
+     ☐ Run the full suite¶
+
+=== inline · w80 · todo/update-from-details ===
+● Todo Update(1 item)¶
+  ⎿  ☒ Reproduce the failure¶
+     ☒ Fix the expiry check¶
+     ☒ Drop the legacy path¶
+     ☐ Run the full suite¶
+
+=== inline · w80 · bash/pending ===
+● Bash(npm run check)¶
+
+=== inline · w80 · bash/running ===
+● Bash(npm run check)¶
+  ⎿  Running…¶
+
+=== inline · w80 · bash/streaming ===
+● Bash(npm run check)¶
+  ⎿  typecheck passed¶
+     Running… 1.4s¶
+
+=== inline · w80 · bash/settled ===
+● Bash(npm run check)¶
+  ⎿  typecheck passed¶
+     tests 24 passed¶
+     build complete¶
+     2.2s · ~7 words¶
+
+=== inline · w80 · bash/exit-1 ===
+● Bash(npm test)¶
+  ⎿  1 failing¶
+     ✘ Exit 1 · 2.2s · ~2 words¶
+
+=== inline · w80 · bash/timeout ===
+● Bash(sleep 400)¶
+  ⎿  partial output¶
+     ✘ Timed out after 300s · ~2 words¶
+
+=== inline · w80 · bash/empty ===
+● Bash(true)¶
+  ⎿  (no output)¶
+     2.2s¶
+
+=== inline · w80 · bash/multiline-command ===
+● Bash(cd /repo …)¶
+  ⎿  built¶
+     2.2s · ~1 word¶
+
+=== inline · w80 · bash/long-collapsed ===
+● Bash(seq 30)¶
+  ⎿  … +26 earlier lines · Ctrl+O to expand¶
+     line 27¶
+     line 28¶
+     line 29¶
+     line 30¶
+     2.2s · ~60 words¶
+
+=== inline · w80 · bash/long-expanded ===
+● Bash(seq 30)¶
+  ⎿  line 1¶
+     line 2¶
+     line 3¶
+     line 4¶
+     line 5¶
+     line 6¶
+     line 7¶
+     line 8¶
+     line 9¶
+     line 10¶
+     line 11¶
+     line 12¶
+     line 13¶
+     line 14¶
+     line 15¶
+     line 16¶
+     line 17¶
+     line 18¶
+     line 19¶
+     line 20¶
+     line 21¶
+     line 22¶
+     line 23¶
+     line 24¶
+     line 25¶
+     line 26¶
+     line 27¶
+     line 28¶
+     line 29¶
+     line 30¶
+     2.2s · ~60 words¶
+
+=== inline · w80 · bash/git-status ===
+● Git status¶
+  2 modified · 1 untracked¶
+  main · ahead 2¶
+  ├─ M  src/a.ts¶
+  ├─ D  src/old.ts¶
+  └─ ?  notes.txt¶
+
+=== inline · w80 · bash/git-diff ===
+● Git diff¶
+  1 file +1 -1¶
+  ⎿  notes.txt                                                                  ¶
+         1  alpha                                                               ¶
+     -   2  beta                                                                ¶
+     +   2  BETA                                                                ¶
+         3  gamma                                                               ¶
+     2.2s · 1 file                                                              ¶
+
+=== inline · w80 · bash/gh-pr-view ===
+● PR #42 · Fixture PR¶
+  OPEN¶
+  Body line one¶
+  Body line two¶
+
+=== inline · w80 · read/null-optional-args ===
+● Read(src/auth.ts)¶
+  ⎿  Read 2 lines¶
+
+=== inline · w80 · find/current-directory ===
+● Find(*.ts)¶
+  ⎿  Found 1 file · Ctrl+O to expand¶
+
+=== inline · w80 · bash/no-output-exit-3 ===
+● Bash(node -e "process.exit(3)")¶
+  ⎿  (no output)¶
+     ✘ Exit 3 · 2.2s¶
+
+=== inline · w80 · write/trailing-newline ===
+● Write(notes/summary.txt)¶
+  ⎿  Wrote 3 lines · 2.2s¶
+     1 one¶
+     2 two¶
+     3 three¶
+
+=== inline · w80 · read/lone ===
+● Read(docs/decisions/D-9cpa.md:10-29)¶
+  ⎿  Read 1 line¶
+
+=== inline · w80 · read/error ===
+● Read(missing.md)¶
+  ⎿  ENOENT: no such file or directory¶
+
+=== inline · w80 · ls/lone ===
+● List(src)¶
+  ⎿  Listed 3 paths · Ctrl+O to expand¶
+
+=== inline · w80 · find/lone ===
+● Find(*.ts in src)¶
+  ⎿  Found 2 files · Ctrl+O to expand¶
+
+=== inline · w80 · grep/settled ===
+● Grep(renderStatus in src)¶
+  ⎿  3 matches in 2 files · Ctrl+O to expand¶
+     ├─ src/a.ts¶
+     │  * 4│ import { renderStatus } from './status.js'¶
+     │  *54│ export function renderStatus(¶
+     └─ … 1 more match · 1 more file¶
+
+=== inline · w80 · edit/diff ===
+● Edit(src/plan.txt)¶
+  ⎿  +2 −1 · 2.2s¶
+         1  alpha                                                               ¶
+     -   2  beta                                                                ¶
+     +   2  BETA                                                                ¶
+         3  gamma                                                               ¶
+     +   4  delta                                                               ¶
+
+=== inline · w80 · edit/error ===
+● Edit(src/plan.txt)¶
+  ⎿  Could not find the exact text in src/plan.txt¶
+     ✘ Error · 2.2s¶
+
+=== inline · w80 · edit/no-diff ===
+● Edit(src/plan.txt)¶
+  ⎿  Edit applied · 2.2s¶
+
+=== inline · w80 · quick-edit/diff ===
+● Quick Edit(src/plan.txt)¶
+  ⎿  +1 −1 · 2.2s¶
+     -   2  beta                                                                ¶
+     +   2  BETA                                                                ¶
+
+=== inline · w80 · write/settled ===
+● Write(notes/todo.txt)¶
+  ⎿  Wrote 3 lines · 2.2s¶
+     1 one¶
+     2 two¶
+     3 three¶
+
+=== inline · w80 · write/long-collapsed ===
+● Write(notes/long.txt)¶
+  ⎿  Wrote 20 lines · 2.2s¶
+      1 line 1¶
+      2 line 2¶
+      3 line 3¶
+      4 line 4¶
+     … +16 lines · Ctrl+O to expand¶
+
+=== inline · w80 · write/error ===
+● Write(notes/todo.txt)¶
+  ⎿  EACCES: permission denied¶
+     ✘ Error · 2.2s¶
+
+=== inline · w80 · read/batch-of-three ===
+● Read 3 files¶
+  ⎿  src/a.ts · 1 line¶
+     src/b.ts · 1 line¶
+     src/c.ts · 1 line¶
+
+=== inline · w80 · ask/header-labels ===
+● Ask User Question(Fix, Scope)¶
+  ⎿  Fix: Use <=¶
+     Scope: auth.ts¶
+     2.2s · ~5 words¶
+
+=== inline · w80 · turn/with-failure ===
+● Read 1 file · 1 failure · 2.2s · Ctrl+O to expand¶
+● Bash(npm test)¶
+  ⎿  1 failing¶
+     ✘ Exit 1 · 2.2s · ~2 words¶
+
+=== inline · w80 · turn/extension-tools ===
+● Read 1 file, used vcc_recall, mcp ×2 and web_fetch · 11s · Ctrl+O to expand¶
+
+=== inline · w80 · turn/keeps-todos-inline ===
+● Read 1 file · 2.2s · Ctrl+O to expand¶
+● Todo Write¶
+  ⎿  ☒ Reproduce the failure¶
+     ☐ Fix the expiry check¶
+     ☐ Run the full suite¶
+
+=== inline · w80 · turn/collapsed-run ===
+● Read 1 file, ran 2 shell commands, listed 1 path · 8.9s · Ctrl+O to expand¶
+● Edit(src/plan.txt)¶
+  ⎿  +2 −1 · 2.2s¶
+         1  alpha                                                               ¶
+     -   2  beta                                                                ¶
+     +   2  BETA                                                                ¶
+         3  gamma                                                               ¶
+     +   4  delta                                                               ¶
+
 === boxed · w36 · fallback/settled ===
 ╭─── ⌕ Exa: Web Search Exa ────────╮¶
 │ Query: pi coding agent           │¶
@@ -882,3 +1185,46 @@ Exit 1 · 2.23s · ~2 words           ¶
 2 two                               ¶
 3 three                             ¶
 2.23s · ~8 words                    ¶
+
+=== inline · w36 · fallback/settled ===
+● Exa: Web Search Exa(query: pi co…)¶
+  ⎿  Result 1¶
+     Result 2¶
+     Result 3¶
+     2.2s · ~6 words¶
+
+=== inline · w36 · bash/settled ===
+● Bash(npm run check)¶
+  ⎿  typecheck passed¶
+     tests 24 passed¶
+     build complete¶
+     2.2s · ~7 words¶
+
+=== inline · w36 · bash/exit-1 ===
+● Bash(npm test)¶
+  ⎿  1 failing¶
+     ✘ Exit 1 · 2.2s · ~2 words¶
+
+=== inline · w36 · grep/settled ===
+● Grep(renderStatus in src)¶
+  ⎿  3 matches in 2 files · Ctrl+O …¶
+     ├─ src/a.ts¶
+     │  * 4│ import { renderStatus …¶
+     │  *54│ export function render…¶
+     └─ … 1 more match · 1 more file¶
+
+=== inline · w36 · edit/diff ===
+● Edit(src/plan.txt)¶
+  ⎿  +2 −1 · 2.2s¶
+         1  alpha                   ¶
+     -   2  beta                    ¶
+     +   2  BETA                    ¶
+         3  gamma                   ¶
+     +   4  delta                   ¶
+
+=== inline · w36 · write/settled ===
+● Write(notes/todo.txt)¶
+  ⎿  Wrote 3 lines · 2.2s¶
+     1 one¶
+     2 two¶
+     3 three¶

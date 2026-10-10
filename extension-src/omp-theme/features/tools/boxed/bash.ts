@@ -1,5 +1,9 @@
 // Boxed bash tool renderer
 // (renderCall/renderResult only).
+//
+// Inline chrome reuses the same parsing (terminal status, notices, semantic
+// classes) and only swaps the presentation: `● Bash(command)` and a `⎿`
+// gutter carrying the output tail and a dim status/elapsed row.
 
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -12,11 +16,22 @@ import {
 	formatBoxedWords,
 	formatToolOutputLine,
 	getTextOutput,
+	isInlineChrome,
 	renderBoxedToolCall,
 	renderBoxedToolResult,
 	replaceTabs,
 	shortenPath,
 } from "../../../shared/box.js";
+import {
+	inlineBlock,
+	inlineElapsed,
+	inlineGutterComponent,
+	inlineMarker,
+	inlineMeta,
+	inlineMoreRow,
+	inlineRunningRow,
+	inlineStatus,
+} from "../../../shared/inline.js";
 import { toolExpandHint } from "../../../shared/keybinding-hints.js";
 import { safeTruncateToWidth, truncateAtCodePointBoundary } from "../../../shared/render-budget.js";
 import { parseSimpleBashCommand } from "./command-shape.js";
@@ -198,6 +213,7 @@ function stripBashToolNoticeLines(text: string): string {
 }
 
 function renderBoxedBashCall(theme: BoxTheme, commandLines: string[], context: BoxedToolContext): Component {
+	if (isInlineChrome()) return renderInlineBashCall(theme, commandLines, context);
 	const maxCommandLines = 5;
 	const shownCount = Math.min(commandLines.length, maxCommandLines + 1);
 	const detailLines: string[] = [];
@@ -385,6 +401,13 @@ function renderBashStreamingResult(
 		emptyLines.push(theme.fg("dim", "The process may be waiting for terminal input"));
 	}
 	const preview = createBashResultPreview(theme, body, options);
+	if (isInlineChrome()) {
+		// The first empty row says what the running row already says.
+		return inlineBlock(theme, undefined, (contentWidth) => [
+			...(hasOutput ? preview.render(contentWidth) : emptyLines.slice(1)),
+			inlineRunningRow(theme, elapsed),
+		]);
+	}
 	return renderBoxedToolResult(theme, bashBodyComponent(preview, hasOutput ? undefined : emptyLines), {
 		dividerLabel: "Output",
 		showDivider: hasOutput,
@@ -408,6 +431,7 @@ function renderBashFinalResult(
 	const elapsed = getStateElapsedMs(context.state);
 	const footer = bashFooter(theme, status, elapsed, output, isError);
 	const errorLabel = isError ? (bashErrorLabel(status) ?? "✘ Error") : undefined;
+	if (isInlineChrome()) return renderInlineBashFinalResult(theme, output, status, options, context);
 
 	if (!options.expanded) {
 		// Collapsed: only process the tail of the output (notices stripped per line).
@@ -558,6 +582,73 @@ function createBashResultPreview(
 	};
 }
 
+// ── Inline presentation ──────────────────────────────────────────────────────
+
+/** Inline chrome hangs a semantic result body under the result gutter. */
+function hangInline(theme: BoxTheme, component: Component): Component {
+	return isInlineChrome() ? inlineGutterComponent(theme, component) : component;
+}
+
+/** First command line, marked when more lines follow. */
+function inlineCommandArgs(commandLines: readonly string[]): string {
+	const lines = commandLines.map((line) => line.trim()).filter(Boolean);
+	const first = lines[0] ?? "";
+	return lines.length > 1 ? `${first} …` : first;
+}
+
+function renderInlineBashCall(theme: BoxTheme, commandLines: string[], context: BoxedToolContext): Component {
+	return inlineBlock(theme, { status: inlineStatus(context), name: "Bash", args: inlineCommandArgs(commandLines) }, () =>
+		// Painted after Pi built the result renderer of the same pass, so a result
+		// that took over the running row is already recorded.
+		context.isPartial && context.executionStarted && !isResultSeen(context.state)
+			? [inlineRunningRow(theme, getStateElapsedMs(context.state))]
+			: [],
+	);
+}
+
+function inlineBashStatus(theme: BoxTheme, status: BashTerminalStatus | undefined, isError: boolean): string | undefined {
+	if (status?.kind === "timeout") {
+		const seconds = Number.isFinite(status.seconds) && status.seconds > 0 ? ` after ${status.seconds}s` : "";
+		return theme.fg("warning", `✘ Timed out${seconds}`);
+	}
+	if (status?.kind === "cancelled") return theme.fg("warning", "✘ Cancelled");
+	if (status?.kind === "exit" && status.exitCode !== 0) return theme.fg("error", `✘ Exit ${status.exitCode}`);
+	return isError ? theme.fg("error", "✘ Failed") : undefined;
+}
+
+function renderInlineBashFinalResult(
+	theme: BoxTheme,
+	output: string,
+	status: BashTerminalStatus | undefined,
+	options: { expanded: boolean },
+	context: BoxedToolContext,
+): Component {
+	const isError = Boolean(context.isError);
+	const expanded = Boolean(options.expanded);
+	const config = getToolsRenderConfig();
+	// The preview shows the tail; collapsed, the earlier lines are counted here
+	// (expanded, the preview itself notes the lines beyond its budget).
+	const totalLines = output ? countNewlines(output, 0, output.length) + 1 : 0;
+	const omitted = expanded ? 0 : Math.max(0, totalLines - config.maxCollapsedLines);
+	const preview = createBashResultPreview(theme, output, { expanded });
+	const elapsed = status?.kind === "timeout" ? undefined : inlineElapsed(getStateElapsedMs(context.state));
+	return inlineBlock(theme, undefined, (contentWidth) => {
+		const rows: string[] = [];
+		if (omitted > 0) rows.push(inlineMoreRow(theme, omitted, false, "earlier line"));
+		const lines = preview.render(contentWidth);
+		// The status row already says why there is nothing; stay short.
+		rows.push(...(lines.length > 0 ? lines : [theme.fg("dim", "(no output)")]));
+		rows.push(
+			inlineMeta(theme, [
+				inlineBashStatus(theme, status, isError),
+				elapsed,
+				output.trim() ? formatBoxedWords(output) : undefined,
+			]),
+		);
+		return rows;
+	});
+}
+
 // ── ls/find/grep/rg command detection ───────────────────────────────────────
 // A bash command whose real command is ls/find/grep/rg (after env assignments,
 // sudo/env/time prefixes, and path stripping), with no shell metacharacters
@@ -683,7 +774,9 @@ function bashTreeHeader(theme: BoxTheme, cls: BashTreeClass, counts?: { files?: 
 	const label = cls.kind === "find" ? "Find" : cls.kind === "ls" ? "List" : "Grep";
 	const hasDetail = Boolean(cls.pattern) || Boolean(counts);
 	// ls/find/grep headers carry the magnifying-glass icon in Nerd Font mode.
-	const icon = getToolsRenderConfig().nerdFonts ? `${theme.fg("toolTitle", SEARCH_ICON)} ` : "";
+	// Inline chrome leads the row with its status marker instead.
+	const icon =
+		getToolsRenderConfig().nerdFonts && !isInlineChrome() ? `${theme.fg("toolTitle", SEARCH_ICON)} ` : "";
 	const prefixText = hasDetail ? `${label}:` : label;
 	const prefix = theme.fg("toolTitle", typeof theme?.bold === "function" ? theme.bold(prefixText) : prefixText);
 	const patternPart = cls.pattern ? ` ${theme.fg("muted", cls.pattern.replace(/\r\n?|\n/g, " "))}` : "";
@@ -904,6 +997,25 @@ const EMPTY_BASH_TREE_RESULT: Component = {
  *  captured at creation so a registry clear on session reset/resume does not
  *  blank already-rendered panels. */
 function renderSemanticPanel(theme: BoxTheme, toolCallId: string, context: BoxedToolContext): Component {
+	const panel = renderSemanticPanelBody(theme, toolCallId, context);
+	if (!isInlineChrome()) return panel;
+	const state = semanticStates.get(toolCallId);
+	return {
+		invalidate() {
+			panel.invalidate();
+		},
+		render(width: number): string[] {
+			const lines = panel.render(width);
+			// The unparsed fallback already renders an inline Bash block.
+			if (lines.length === 0 || state?.fallback) return lines;
+			const [head = "", ...rest] = lines;
+			const marked = `${inlineMarker(theme, inlineStatus(context))} ${head}`;
+			return [safeTruncateToWidth(marked, Math.max(1, width), "…"), ...rest];
+		},
+	};
+}
+
+function renderSemanticPanelBody(theme: BoxTheme, toolCallId: string, context: BoxedToolContext): Component {
 	const state = semanticStates.get(toolCallId);
 	return {
 		invalidate() {},
@@ -974,10 +1086,10 @@ export const bashTool: BoxedToolDefinition = {
 					// other semantic class renders its whole panel in the call card, so the
 					// result adds nothing.
 					if (isGitDiffClass(cls)) {
-						return renderGitDiffResult(theme, parsed as GitDiffParsed, options, context);
+						return hangInline(theme, renderGitDiffResult(theme, parsed as GitDiffParsed, options, context));
 					}
 					if (isGhRunJobClass(cls)) {
-						return renderGhRunJobResult(theme, parsed as GhRunJobParsed, options, context);
+						return hangInline(theme, renderGhRunJobResult(theme, parsed as GhRunJobParsed, options, context));
 					}
 					return EMPTY_BASH_TREE_RESULT;
 				}
@@ -996,7 +1108,9 @@ export const bashTool: BoxedToolDefinition = {
 		if (options.isPartial) {
 			// First partial pass: the running call card stands alone. Later passes
 			// stream output into the open continuation without a Response divider.
-			if (firstResultPass) return EMPTY_BASH_RESULT;
+			// Inline chrome has no open frame to keep: its call drops the running row
+			// once a result renderer exists, so the first pass carries it instead.
+			if (firstResultPass && !isInlineChrome()) return EMPTY_BASH_RESULT;
 			return renderBashStreamingResult(theme, raw, options, context);
 		}
 		return renderBashFinalResult(theme, raw, options, context);

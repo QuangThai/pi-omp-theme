@@ -5,7 +5,8 @@
 // tool decoration owner when tools.style === "compact-box".
 
 import type { Component } from "@earendil-works/pi-tui";
-import type { BoxTheme } from "../../../shared/box.js";
+import { type BoxTheme, renderBoxedToolResult as frameBoxedResult, isInlineChrome } from "../../../shared/box.js";
+import { inlineGutterComponent } from "../../../shared/inline.js";
 import { bashSettledResultLivesInCall, bashTool } from "./bash.js";
 import { closeActiveBatch, EMPTY_BATCH_COMPONENT, isBatchableTool } from "./batch.js";
 import { editTool } from "./edit.js";
@@ -144,6 +145,14 @@ export function renderBoxedToolCall(
 	// wrapping it would leave a stray placeholder row per member.
 	if (component === EMPTY_BATCH_COMPONENT) return component;
 	return viewportStableCall(toolName, context, component);
+}
+
+/**
+ * Frame a result body a tool renders itself (Ask's question/answer record) in
+ * the active chrome: the boxed result frame, or the inline `⎿` gutter.
+ */
+export function frameNativeToolResult(theme: BoxTheme, body: Component, options: { isError: boolean }): Component {
+	return isInlineChrome() ? inlineGutterComponent(theme, body) : frameBoxedResult(theme, body, options);
 }
 
 export function renderBoxedToolResult(

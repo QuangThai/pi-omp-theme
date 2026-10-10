@@ -29,9 +29,18 @@ const WORKING_TEXT = "Working...";
  * Repainting the row every frame would otherwise drop it, leaving the bare word
  * where the whole line used to be.
  */
-function interruptHint(): string {
+function interruptHint(elapsed = ""): string {
 	const hint = displayKeyHint("app.interrupt", "to interrupt");
-	return hint ? ` (${hint})` : "";
+	const parts = [elapsed, hint].filter(Boolean);
+	return parts.length > 0 ? ` (${parts.join(" · ")})` : "";
+}
+
+/** Run time as Claude Code shows it: `14s`, `2m 5s`; nothing before the first second. */
+export function formatRunElapsed(ms: number): string {
+	const seconds = Math.floor(Math.max(0, ms) / 1000);
+	if (seconds < 1) return "";
+	if (seconds < 60) return `${seconds}s`;
+	return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
 }
 
 export interface WorkingIndicatorHost {
@@ -83,6 +92,11 @@ interface ShimmerState {
 	palette: () => ShimmerPalette;
 	render?: (time: number) => string;
 	animated: boolean;
+	/** Show the run's elapsed time inside the hint (`(14s · Escape to interrupt)`). */
+	elapsed: boolean;
+	/** Run start (agent_start) and the elapsed text the current renderer was built for. */
+	startedAt?: number;
+	elapsedText?: string;
 	timer?: ReturnType<typeof setInterval> | undefined;
 }
 
@@ -96,8 +110,8 @@ interface ShimmerState {
  * early for the same kind of reason. Compiling here still happens once per run,
  * not once per frame, and it picks up a theme the user switched to mid-session.
  */
-function buildRowRenderer(state: ShimmerState): (time: number) => string {
-	const hint = interruptHint();
+function buildRowRenderer(state: ShimmerState, elapsed = ""): (time: number) => string {
+	const hint = interruptHint(elapsed);
 	const palette = state.palette();
 	// The hint sits one tier below the message so it reads as an aside; the same
 	// wave still passes through it, as omp lights the row.
@@ -125,29 +139,46 @@ export function configureWorkingShimmer(
 	ui: WorkingIndicatorHost | undefined,
 	mode: ShimmerMode,
 	palette: () => ShimmerPalette,
+	options: { elapsed?: boolean } = {},
 ): void {
 	disposeWorkingShimmer();
 	if (!ui || typeof ui.setWorkingMessage !== "function") return;
-	shimmer = { host: ui, mode, palette, animated: mode !== "off" };
+	shimmer = { host: ui, mode, palette, animated: mode !== "off", elapsed: options.elapsed === true };
+}
+
+/** Follow a live config change; the next run picks it up. */
+export function setWorkingElapsed(enabled: boolean): void {
+	if (shimmer) shimmer.elapsed = enabled;
 }
 
 /** Begin sweeping. Safe to call repeatedly; a second call does not stack timers. */
 export function startWorkingShimmer(): void {
 	const state = shimmer;
 	if (!state || state.timer) return;
-	const render = buildRowRenderer(state);
-	state.render = render;
+	state.startedAt = Date.now();
+	state.elapsedText = "";
+	state.render = buildRowRenderer(state);
 	const paint = () => {
 		try {
-			state.host.setWorkingMessage?.(render(Date.now()));
+			const now = Date.now();
+			if (state.elapsed) {
+				// The text changes once a second; only then is the row recompiled.
+				const elapsed = formatRunElapsed(now - (state.startedAt ?? now));
+				if (elapsed !== state.elapsedText) {
+					state.elapsedText = elapsed;
+					state.render = buildRowRenderer(state, elapsed);
+				}
+			}
+			state.host.setWorkingMessage?.(state.render?.(now) ?? WORKING_TEXT);
 		} catch {
 			stopWorkingShimmer();
 		}
 	};
 	paint();
-	// A static palette needs no timer: one paint holds the color for the whole run.
-	if (!state.animated) return;
-	state.timer = setInterval(paint, SHIMMER_INTERVAL_MS);
+	// A static palette needs no timer unless the run time ticks: one paint holds
+	// the color for the whole run.
+	if (!state.animated && !state.elapsed) return;
+	state.timer = setInterval(paint, state.animated ? SHIMMER_INTERVAL_MS : 1000);
 	// Never hold the process open for a decoration.
 	state.timer.unref?.();
 }

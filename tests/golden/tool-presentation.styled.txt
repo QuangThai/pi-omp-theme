@@ -778,6 +778,309 @@
 {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  4{/}  delta                                                                {sgr:49}    
 {dim}{text}2.2s{/}{dim} · {/}{dim}1 file{/}{dim} · {/}{toolDiffAdded}+2{/} {toolDiffRemoved}-1{/}{/}                                                           
 
+=== inline · w80 · fallback/pending ===
+{dim}●{/} {b}{toolTitle}Exa: Web Search Exa{/}{/b}{dim}({/}{text}query: pi coding agent, numResults: 5{/}{dim}){/}
+
+=== inline · w80 · fallback/running ===
+{accent}●{/} {b}{toolTitle}Exa: Web Search Exa{/}{/b}{dim}({/}{text}query: pi coding agent, numResults: 5{/}{dim}){/}
+  {dim}⎿{/}  {dim}Running…{/}
+
+=== inline · w80 · fallback/streaming ===
+{accent}●{/} {b}{toolTitle}Exa: Web Search Exa{/}{/b}{dim}({/}{text}query: pi coding agent, numResults: 5{/}{dim}){/}
+  {dim}⎿{/}  {toolOutput}Result 1{/}
+     {toolOutput}Result 2{/}
+     {dim}Running… 1.4s{/}
+
+=== inline · w80 · fallback/settled ===
+{success}●{/} {b}{toolTitle}Exa: Web Search Exa{/}{/b}{dim}({/}{text}query: pi coding agent, numResults: 5{/}{dim}){/}
+  {dim}⎿{/}  {toolOutput}Result 1{/}
+     {toolOutput}Result 2{/}
+     {toolOutput}Result 3{/}
+     {dim}2.2s{/}{dim} · {/}{dim}~6 words{/}
+
+=== inline · w80 · fallback/error ===
+{error}●{/} {b}{error}Exa: Web Search Exa{/}{/b}{dim}({/}{text}query: pi coding agent, numResults: 5{/}{dim}){/}
+  {dim}⎿{/}  {error}Request failed: 429 Too Many Requests{/}
+     {error}✘ Error{/}{dim} · {/}{dim}2.2s{/}{dim} · {/}{dim}~6 words{/}
+
+=== inline · w80 · fallback/empty ===
+{success}●{/} {b}{toolTitle}Todo Write{/}{/b}{dim}({/}{text}0 items{/}{dim}){/}
+  {dim}⎿{/}  {dim}(No output){/}
+     {dim}2.2s{/}
+
+=== inline · w80 · fallback/long-collapsed ===
+{success}●{/} {b}{toolTitle}Exa: Web Search Exa{/}{/b}{dim}({/}{text}query: pi coding agent, numResults: 5{/}{dim}){/}
+  {dim}⎿{/}  {toolOutput}result 1{/}
+     {toolOutput}result 2{/}
+     {toolOutput}result 3{/}
+     {toolOutput}result 4{/}
+     {dim}… +10 lines · Ctrl+O to expand{/}
+     {dim}2.2s{/}{dim} · {/}{dim}~28 words{/}
+
+=== inline · w80 · fallback/long-expanded ===
+{success}●{/} {b}{toolTitle}Exa: Web Search Exa{/}{/b}{dim}({/}{text}query: pi coding agent, numResults: 5{/}{dim}){/}
+  {dim}⎿{/}  {toolOutput}result 1{/}
+     {toolOutput}result 2{/}
+     {toolOutput}result 3{/}
+     {toolOutput}result 4{/}
+     {toolOutput}result 5{/}
+     {toolOutput}result 6{/}
+     {toolOutput}result 7{/}
+     {toolOutput}result 8{/}
+     {toolOutput}result 9{/}
+     {toolOutput}result 10{/}
+     {toolOutput}result 11{/}
+     {toolOutput}result 12{/}
+     {toolOutput}result 13{/}
+     {toolOutput}result 14{/}
+     {dim}2.2s{/}{dim} · {/}{dim}~28 words{/}
+
+=== inline · w80 · todo/settled ===
+{success}●{/} {b}{toolTitle}Todo Write{/}{/b}
+  {dim}⎿{/}  {success}☒{/} {dim}Reproduce the failure{/}
+     {accent}☐{/} {b}{text}Fix the expiry check{/}{/b}
+     {dim}☐{/} {text}Run the full suite{/}
+
+=== inline · w80 · todo/update-from-details ===
+{success}●{/} {b}{toolTitle}Todo Update{/}{/b}{dim}({/}{text}1 item{/}{dim}){/}
+  {dim}⎿{/}  {success}☒{/} {dim}Reproduce the failure{/}
+     {success}☒{/} {dim}Fix the expiry check{/}
+     {dim}☒{/} {dim}Drop the legacy path{/}
+     {accent}☐{/} {b}{text}Run the full suite{/}{/b}
+
+=== inline · w80 · bash/pending ===
+{dim}●{/} {b}{toolTitle}Bash{/}{/b}{dim}({/}{text}npm run check{/}{dim}){/}
+
+=== inline · w80 · bash/running ===
+{accent}●{/} {b}{toolTitle}Bash{/}{/b}{dim}({/}{text}npm run check{/}{dim}){/}
+  {dim}⎿{/}  {dim}Running…{/}
+
+=== inline · w80 · bash/streaming ===
+{accent}●{/} {b}{toolTitle}Bash{/}{/b}{dim}({/}{text}npm run check{/}{dim}){/}
+  {dim}⎿{/}  {text}typecheck passed{/}
+     {dim}Running… 1.4s{/}
+
+=== inline · w80 · bash/settled ===
+{success}●{/} {b}{toolTitle}Bash{/}{/b}{dim}({/}{text}npm run check{/}{dim}){/}
+  {dim}⎿{/}  {text}typecheck passed{/}
+     {text}tests 24 passed{/}
+     {text}build complete{/}
+     {dim}2.2s{/}{dim} · {/}{dim}~7 words{/}
+
+=== inline · w80 · bash/exit-1 ===
+{error}●{/} {b}{error}Bash{/}{/b}{dim}({/}{text}npm test{/}{dim}){/}
+  {dim}⎿{/}  {text}1 failing{/}
+     {error}✘ Exit 1{/}{dim} · {/}{dim}2.2s{/}{dim} · {/}{dim}~2 words{/}
+
+=== inline · w80 · bash/timeout ===
+{error}●{/} {b}{error}Bash{/}{/b}{dim}({/}{text}sleep 400{/}{dim}){/}
+  {dim}⎿{/}  {text}partial output{/}
+     {warning}✘ Timed out after 300s{/}{dim} · {/}{dim}~2 words{/}
+
+=== inline · w80 · bash/empty ===
+{success}●{/} {b}{toolTitle}Bash{/}{/b}{dim}({/}{text}true{/}{dim}){/}
+  {dim}⎿{/}  {dim}(no output){/}
+     {dim}2.2s{/}
+
+=== inline · w80 · bash/multiline-command ===
+{success}●{/} {b}{toolTitle}Bash{/}{/b}{dim}({/}{text}cd /repo …{/}{dim}){/}
+  {dim}⎿{/}  {text}built{/}
+     {dim}2.2s{/}{dim} · {/}{dim}~1 word{/}
+
+=== inline · w80 · bash/long-collapsed ===
+{success}●{/} {b}{toolTitle}Bash{/}{/b}{dim}({/}{text}seq 30{/}{dim}){/}
+  {dim}⎿{/}  {dim}… +26 earlier lines · Ctrl+O to expand{/}
+     {text}line 27{/}
+     {text}line 28{/}
+     {text}line 29{/}
+     {text}line 30{/}
+     {dim}2.2s{/}{dim} · {/}{dim}~60 words{/}
+
+=== inline · w80 · bash/long-expanded ===
+{success}●{/} {b}{toolTitle}Bash{/}{/b}{dim}({/}{text}seq 30{/}{dim}){/}
+  {dim}⎿{/}  {text}line 1{/}
+     {text}line 2{/}
+     {text}line 3{/}
+     {text}line 4{/}
+     {text}line 5{/}
+     {text}line 6{/}
+     {text}line 7{/}
+     {text}line 8{/}
+     {text}line 9{/}
+     {text}line 10{/}
+     {text}line 11{/}
+     {text}line 12{/}
+     {text}line 13{/}
+     {text}line 14{/}
+     {text}line 15{/}
+     {text}line 16{/}
+     {text}line 17{/}
+     {text}line 18{/}
+     {text}line 19{/}
+     {text}line 20{/}
+     {text}line 21{/}
+     {text}line 22{/}
+     {text}line 23{/}
+     {text}line 24{/}
+     {text}line 25{/}
+     {text}line 26{/}
+     {text}line 27{/}
+     {text}line 28{/}
+     {text}line 29{/}
+     {text}line 30{/}
+     {dim}2.2s{/}{dim} · {/}{dim}~60 words{/}
+
+=== inline · w80 · bash/git-status ===
+{success}●{/} {b}Git status{/b}
+  {accent}2 modified{/}{dim} · {/}{warning}1 untracked{/}
+  {text}main{/}{dim} · {/}{accent}ahead 2{/}
+  {dim}├─{/} {toolOutput}M{/}  {toolOutput}src/a.ts{/}
+  {dim}├─{/} {toolOutput}D{/}  {toolOutput}src/old.ts{/}
+  {dim}└─{/} {warning}?{/}  {toolOutput}notes.txt{/}
+
+=== inline · w80 · bash/git-diff ===
+{success}●{/} {b}Git diff{/b}
+  {accent}1 file{/} {toolDiffAdded}+1{/} {toolDiffRemoved}-1{/}
+  {dim}⎿{/}  {b}{text}notes.txt{/}{/b}                                                                  
+     {dim} {/} {dim}  1{/}  alpha                                                               
+     {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43;49}                                                            {sgr:49}    
+     {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  2{/}  {sgr:48;2;57;96;62}BETA{sgr:48;2;45;68;53}                                                            {sgr:49}    
+     {dim} {/} {dim}  3{/}  gamma                                                               
+     {dim}{text}2.2s{/}{dim} · {/}{dim}1 file{/}{/}                                                              
+
+=== inline · w80 · bash/gh-pr-view ===
+{success}●{/} {b}PR #42 · Fixture PR{/b}
+  {accent}OPEN{/}
+  {muted}Body line one{/}
+  {muted}Body line two{/}
+
+=== inline · w80 · read/null-optional-args ===
+{success}●{/} {b}{toolTitle}Read{/}{/b}{dim}({/}{text}src/auth.ts{/}{dim}){/}
+  {dim}⎿{/}  {dim}Read 2 lines{/}
+
+=== inline · w80 · find/current-directory ===
+{success}●{/} {b}{toolTitle}Find{/}{/b}{dim}({/}{text}*.ts{/}{dim}){/}
+  {dim}⎿{/}  {dim}Found 1 file · Ctrl+O to expand{/}
+
+=== inline · w80 · bash/no-output-exit-3 ===
+{error}●{/} {b}{error}Bash{/}{/b}{dim}({/}{text}node -e "process.exit(3)"{/}{dim}){/}
+  {dim}⎿{/}  {dim}(no output){/}
+     {error}✘ Exit 3{/}{dim} · {/}{dim}2.2s{/}
+
+=== inline · w80 · write/trailing-newline ===
+{success}●{/} {b}{toolTitle}Write{/}{/b}{dim}({/}{text}notes/summary.txt{/}{dim}){/}
+  {dim}⎿{/}  {dim}Wrote 3 lines{/}{dim} · {/}{dim}2.2s{/}
+     {dim}1 {/}{toolOutput}one{/}
+     {dim}2 {/}{toolOutput}two{/}
+     {dim}3 {/}{toolOutput}three{/}
+
+=== inline · w80 · read/lone ===
+{success}●{/} {b}{toolTitle}Read{/}{/b}{dim}({/}{text}docs/decisions/D-9cpa.md:10-29{/}{dim}){/}
+  {dim}⎿{/}  {dim}Read 1 line{/}
+
+=== inline · w80 · read/error ===
+{error}●{/} {b}{error}Read{/}{/b}{dim}({/}{text}missing.md{/}{dim}){/}
+  {dim}⎿{/}  {error}ENOENT: no such file or directory{/}
+
+=== inline · w80 · ls/lone ===
+{success}●{/} {b}{toolTitle}List{/}{/b}{dim}({/}{text}src{/}{dim}){/}
+  {dim}⎿{/}  {dim}Listed 3 paths · Ctrl+O to expand{/}
+
+=== inline · w80 · find/lone ===
+{success}●{/} {b}{toolTitle}Find{/}{/b}{dim}({/}{text}*.ts in src{/}{dim}){/}
+  {dim}⎿{/}  {dim}Found 2 files · Ctrl+O to expand{/}
+
+=== inline · w80 · grep/settled ===
+{success}●{/} {b}{toolTitle}Grep{/}{/b}{dim}({/}{text}renderStatus in src{/}{dim}){/}
+  {dim}⎿{/}  {dim}3 matches in 2 files{/}{dim} · Ctrl+O to expand{/}
+     {dim}├─{/} {accent}src/a.ts{/}
+     {dim}│ {/} {dim}* 4{/}{dim}│{/} {toolOutput}import { renderStatus } from './status.js'{/}
+     {dim}│ {/} {dim}*54{/}{dim}│{/} {toolOutput}export function renderStatus({/}
+     {dim}└─{/} {dim}… 1 more match · 1 more file{/}
+
+=== inline · w80 · edit/diff ===
+{success}●{/} {b}{toolTitle}Edit{/}{/b}{dim}({/}{text}src/plan.txt{/}{dim}){/}
+  {dim}⎿{/}  {toolDiffAdded}+2{/} {toolDiffRemoved}−1{/}{dim} · {/}{dim}2.2s{/}
+     {dim} {/} {dim}  1{/}  alpha                                                               
+     {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43;49}                                                                {sgr:49}
+     {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  2{/}  {sgr:48;2;57;96;62}BETA{sgr:48;2;45;68;53}                                                                {sgr:49}
+     {dim} {/} {dim}  3{/}  gamma                                                               
+     {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  4{/}  delta                                                               {sgr:49}
+
+=== inline · w80 · edit/error ===
+{error}●{/} {b}{error}Edit{/}{/b}{dim}({/}{text}src/plan.txt{/}{dim}){/}
+  {dim}⎿{/}  {error}Could not find the exact text in src/plan.txt{/}
+     {error}✘ Error{/}{dim} · {/}{dim}2.2s{/}
+
+=== inline · w80 · edit/no-diff ===
+{success}●{/} {b}{toolTitle}Edit{/}{/b}{dim}({/}{text}src/plan.txt{/}{dim}){/}
+  {dim}⎿{/}  {dim}Edit applied{/}{dim} · {/}{dim}2.2s{/}
+
+=== inline · w80 · quick-edit/diff ===
+{success}●{/} {b}{toolTitle}Quick Edit{/}{/b}{dim}({/}{text}src/plan.txt{/}{dim}){/}
+  {dim}⎿{/}  {toolDiffAdded}+1{/} {toolDiffRemoved}−1{/}{dim} · {/}{dim}2.2s{/}
+     {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43;49}                                                                {sgr:49}
+     {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  2{/}  {sgr:48;2;57;96;62}BETA{sgr:48;2;45;68;53}                                                                {sgr:49}
+
+=== inline · w80 · write/settled ===
+{success}●{/} {b}{toolTitle}Write{/}{/b}{dim}({/}{text}notes/todo.txt{/}{dim}){/}
+  {dim}⎿{/}  {dim}Wrote 3 lines{/}{dim} · {/}{dim}2.2s{/}
+     {dim}1 {/}{toolOutput}one{/}
+     {dim}2 {/}{toolOutput}two{/}
+     {dim}3 {/}{toolOutput}three{/}
+
+=== inline · w80 · write/long-collapsed ===
+{success}●{/} {b}{toolTitle}Write{/}{/b}{dim}({/}{text}notes/long.txt{/}{dim}){/}
+  {dim}⎿{/}  {dim}Wrote 20 lines{/}{dim} · {/}{dim}2.2s{/}
+     {dim} 1 {/}{toolOutput}line 1{/}
+     {dim} 2 {/}{toolOutput}line 2{/}
+     {dim} 3 {/}{toolOutput}line 3{/}
+     {dim} 4 {/}{toolOutput}line 4{/}
+     {dim}… +16 lines · Ctrl+O to expand{/}
+
+=== inline · w80 · write/error ===
+{error}●{/} {b}{error}Write{/}{/b}{dim}({/}{text}notes/todo.txt{/}{dim}){/}
+  {dim}⎿{/}  {error}EACCES: permission denied{/}
+     {error}✘ Error{/}{dim} · {/}{dim}2.2s{/}
+
+=== inline · w80 · read/batch-of-three ===
+{success}●{/} {b}{toolTitle}Read 3 files{/}{/b}
+  {dim}⎿{/}  {text}src/a.ts{/}{dim} · 1 line{/}
+     {text}src/b.ts{/}{dim} · 1 line{/}
+     {text}src/c.ts{/}{dim} · 1 line{/}
+
+=== inline · w80 · ask/header-labels ===
+{success}●{/} {b}{toolTitle}Ask User Question{/}{/b}{dim}({/}{text}Fix, Scope{/}{dim}){/}
+  {dim}⎿{/}  {toolOutput}Fix: Use <={/}
+     {toolOutput}Scope: auth.ts{/}
+     {dim}2.2s{/}{dim} · {/}{dim}~5 words{/}
+
+=== inline · w80 · turn/with-failure ===
+{success}●{/} {text}Read 1 file{/}{error} · 1 failure{/}{dim} · 2.2s{/}{dim} · Ctrl+O to expand{/}
+{error}●{/} {b}{error}Bash{/}{/b}{dim}({/}{text}npm test{/}{dim}){/}
+  {dim}⎿{/}  {text}1 failing{/}
+     {error}✘ Exit 1{/}{dim} · {/}{dim}2.2s{/}{dim} · {/}{dim}~2 words{/}
+
+=== inline · w80 · turn/extension-tools ===
+{success}●{/} {text}Read 1 file, used vcc_recall, mcp ×2 and web_fetch{/}{dim} · 11s{/}{dim} · Ctrl+O to expand{/}
+
+=== inline · w80 · turn/keeps-todos-inline ===
+{success}●{/} {text}Read 1 file{/}{dim} · 2.2s{/}{dim} · Ctrl+O to expand{/}
+{success}●{/} {b}{toolTitle}Todo Write{/}{/b}
+  {dim}⎿{/}  {success}☒{/} {dim}Reproduce the failure{/}
+     {accent}☐{/} {b}{text}Fix the expiry check{/}{/b}
+     {dim}☐{/} {text}Run the full suite{/}
+
+=== inline · w80 · turn/collapsed-run ===
+{success}●{/} {text}Read 1 file, ran 2 shell commands, listed 1 path{/}{dim} · 8.9s{/}{dim} · Ctrl+O to expand{/}
+{success}●{/} {b}{toolTitle}Edit{/}{/b}{dim}({/}{text}src/plan.txt{/}{dim}){/}
+  {dim}⎿{/}  {toolDiffAdded}+2{/} {toolDiffRemoved}−1{/}{dim} · {/}{dim}2.2s{/}
+     {dim} {/} {dim}  1{/}  alpha                                                               
+     {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43;49}                                                                {sgr:49}
+     {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  2{/}  {sgr:48;2;57;96;62}BETA{sgr:48;2;45;68;53}                                                                {sgr:49}
+     {dim} {/} {dim}  3{/}  gamma                                                               
+     {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  4{/}  delta                                                               {sgr:49}
+
 === boxed · w36 · fallback/settled ===
 {borderMuted}╭─── {/}{b}{bashMode}⌕ Exa: Web Search Exa{/}{/b}{borderMuted} ────────{/}{borderMuted}╮{/}
 {borderMuted}│{/} {dim}Query:{/} {text}pi coding agent{/}           {borderMuted}│{/}
@@ -882,3 +1185,46 @@
 {dim}2 {/}{toolOutput}two{/}                               
 {dim}3 {/}{toolOutput}three{/}                             
 {text}2.23s{/}{dim} · {/}{dim}~8 words{/}                    
+
+=== inline · w36 · fallback/settled ===
+{success}●{/} {b}{toolTitle}Exa: Web Search Exa{/}{/b}{dim}({/}{text}query: pi co…{/}{dim}){/}
+  {dim}⎿{/}  {toolOutput}Result 1{/}
+     {toolOutput}Result 2{/}
+     {toolOutput}Result 3{/}
+     {dim}2.2s{/}{dim} · {/}{dim}~6 words{/}
+
+=== inline · w36 · bash/settled ===
+{success}●{/} {b}{toolTitle}Bash{/}{/b}{dim}({/}{text}npm run check{/}{dim}){/}
+  {dim}⎿{/}  {text}typecheck passed{/}
+     {text}tests 24 passed{/}
+     {text}build complete{/}
+     {dim}2.2s{/}{dim} · {/}{dim}~7 words{/}
+
+=== inline · w36 · bash/exit-1 ===
+{error}●{/} {b}{error}Bash{/}{/b}{dim}({/}{text}npm test{/}{dim}){/}
+  {dim}⎿{/}  {text}1 failing{/}
+     {error}✘ Exit 1{/}{dim} · {/}{dim}2.2s{/}{dim} · {/}{dim}~2 words{/}
+
+=== inline · w36 · grep/settled ===
+{success}●{/} {b}{toolTitle}Grep{/}{/b}{dim}({/}{text}renderStatus in src{/}{dim}){/}
+  {dim}⎿{/}  {dim}3 matches in 2 files{/}{dim} · Ctrl+O {sgr:0}…{sgr:0}
+     {dim}├─{/} {accent}src/a.ts{/}
+     {dim}│ {/} {dim}* 4{/}{dim}│{/} {toolOutput}import { renderStatus {sgr:0}…{sgr:0}
+     {dim}│ {/} {dim}*54{/}{dim}│{/} {toolOutput}export function render{sgr:0}…{sgr:0}
+     {dim}└─{/} {dim}… 1 more match · 1 more file{/}
+
+=== inline · w36 · edit/diff ===
+{success}●{/} {b}{toolTitle}Edit{/}{/b}{dim}({/}{text}src/plan.txt{/}{dim}){/}
+  {dim}⎿{/}  {toolDiffAdded}+2{/} {toolDiffRemoved}−1{/}{dim} · {/}{dim}2.2s{/}
+     {dim} {/} {dim}  1{/}  alpha                   
+     {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43;49}                    {sgr:49}
+     {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  2{/}  {sgr:48;2;57;96;62}BETA{sgr:48;2;45;68;53}                    {sgr:49}
+     {dim} {/} {dim}  3{/}  gamma                   
+     {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  4{/}  delta                   {sgr:49}
+
+=== inline · w36 · write/settled ===
+{success}●{/} {b}{toolTitle}Write{/}{/b}{dim}({/}{text}notes/todo.txt{/}{dim}){/}
+  {dim}⎿{/}  {dim}Wrote 3 lines{/}{dim} · {/}{dim}2.2s{/}
+     {dim}1 {/}{toolOutput}one{/}
+     {dim}2 {/}{toolOutput}two{/}
+     {dim}3 {/}{toolOutput}three{/}

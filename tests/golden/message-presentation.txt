@@ -53,6 +53,45 @@
 ¶
  Operation aborted                                          ¶
 
+=== w60 · inline/text-marked ===
+¶
+● The expiry check compared with < instead of <=, so tokens ¶
+  expiring this very millisecond were still accepted. I     ¶
+  changed the comparison and added a regression test.       ¶
+
+=== w60 · inline/thinking-summary-timed ===
+¶
+● Thought for 6.2s · Ctrl+T to show                         ¶
+¶
+● The expiry check compared with < instead of <=, so tokens ¶
+  expiring this very millisecond were still accepted. I     ¶
+  changed the comparison and added a regression test.       ¶
+
+=== w60 · inline/thinking-summary-restored ===
+¶
+● Thought · Ctrl+T to show                                  ¶
+¶
+● The expiry check compared with < instead of <=, so tokens ¶
+  expiring this very millisecond were still accepted. I     ¶
+  changed the comparison and added a regression test.       ¶
+
+=== w60 · inline/thinking-summary-streaming ===
+¶
+● Thinking…                                                 ¶
+
+=== w60 · inline/thinking-visible-marked ===
+¶
+● The failing test is about expiry. Let me look at the      ¶
+  comparison in auth.ts before changing anything.           ¶
+¶
+● The expiry check compared with < instead of <=, so tokens ¶
+  expiring this very millisecond were still accepted. I     ¶
+  changed the comparison and added a regression test.       ¶
+
+=== w60 · inline/interim-text-marked ===
+¶
+● Let me run the tests.                                     ¶
+
 === boxed · w60 · special/compaction ===
 ╭─── ⊟ Compaction · 10K→4K ────────────────────────────────╮¶
 │ 10,000 → 4,000 tokens · 60% smaller                      │¶
@@ -272,3 +311,88 @@ $ npm test -- auth
 ⠋ Running...                                                
 {sgr:90}{/}                                                            
 {dim}◌ Running{/}{text} · 12.4s{/}                                           
+
+=== inline · w60 · special/compaction ===
+● Compaction · 10K→4K¶
+  ⎿  10,000 → 4,000 tokens · 60% smaller¶
+     Compacted test context.¶
+     Ctrl+O to expand¶
+--- styled ---
+{accent}●{/} {b}{text}Compaction{/}{/b}{dim} · 10K→4K{/}
+  {dim}⎿{/}  {muted}10,000 → 4,000 tokens{/}{dim} · {/}{success}60% smaller{/}{sgr:0}
+     {dim}Compacted test context.{/}{sgr:0}
+     {dim}Ctrl+O to expand{/}
+
+=== inline · w60 · special/skill ===
+● Skill · release-checklist¶
+  ⎿  Run the release checklist before tagging.¶
+     Ctrl+O to expand¶
+--- styled ---
+{accent}●{/} {b}{text}Skill{/}{/b}{dim} · release-checklist{/}
+  {dim}⎿{/}  Run the release checklist before tagging.{sgr:0}
+     {dim}Ctrl+O to expand{/}
+
+=== inline · w60 · special/compaction-pi-vcc ===
+● Compaction · 5K tokens¶
+  ⎿  4,964 tokens compacted¶
+     Fix the is_expired boundary¶
+     Ctrl+O to expand¶
+--- styled ---
+{accent}●{/} {b}{text}Compaction{/}{/b}{dim} · 5K tokens{/}
+  {dim}⎿{/}  {muted}4,964 tokens compacted{/}{sgr:0}
+     {dim}Fix the is_expired boundary{/}{sgr:0}
+     {dim}Ctrl+O to expand{/}
+
+=== inline · w60 · special/custom-vcc-recall ===
+● Vcc Recall¶
+  ⎿  No matches for "expiry" in session history.            ¶
+--- styled ---
+{accent}●{/} {b}{text}Vcc Recall{/}{/b}
+  {dim}⎿{/}  {customMessageText}No matches for "expiry" in session history.{/}            
+
+=== inline · w60 · special/skill-pi-preamble ===
+● Skill · release-checklist¶
+  ⎿  Run the release checklist before tagging.¶
+     Ctrl+O to expand¶
+--- styled ---
+{accent}●{/} {b}{text}Skill{/}{/b}{dim} · release-checklist{/}
+  {dim}⎿{/}  Run the release checklist before tagging.{sgr:0}
+     {dim}Ctrl+O to expand{/}
+
+=== inline · w60 · special/branch ===
+● Branch¶
+  ⎿  Prepared a test branch.¶
+     Ctrl+O to expand¶
+--- styled ---
+{accent}●{/} {b}{text}Branch{/}{/b}
+  {dim}⎿{/}  Prepared a test branch.{sgr:0}
+     {dim}Ctrl+O to expand{/}
+
+=== inline · w60 · user-bash/complete ===
+¶
+● ! npm test -- auth¶
+  ⎿  ✓ 12 passed¶
+--- styled ---
+
+{success}●{/} {b}{bashMode}!{/}{/b} {text}npm test -- auth{/}
+  {dim}⎿{/}  ✓ 12 passed
+
+=== inline · w60 · user-bash/error ===
+¶
+● ! npm test -- auth¶
+  ⎿  ✕ rejects expired tokens¶
+     (exit 1)¶
+--- styled ---
+
+{error}●{/} {b}{bashMode}!{/}{/b} {text}npm test -- auth{/}
+  {dim}⎿{/}  ✕ rejects expired tokens
+     (exit 1)
+
+=== inline · w60 · user-bash/running ===
+¶
+● ! npm test -- auth¶
+  ⎿  ⠋ Running...¶
+--- styled ---
+
+{accent}●{/} {b}{bashMode}!{/}{/b} {text}npm test -- auth{/}
+  {dim}⎿{/}  ⠋ Running...

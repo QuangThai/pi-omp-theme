@@ -16,11 +16,13 @@ import {
 	type BoxTheme,
 	dimLine,
 	getTextOutput,
+	isInlineChrome,
 	renderBoxedToolResult,
 	renderCompactBoxedToolCall,
 	replaceTabs,
 } from "../../../shared/box.js";
 import { toolExpandHint } from "../../../shared/keybinding-hints.js";
+import { inlineFileApplying, inlineFileError, inlineFileWritten, renderInlineFileCall } from "./inline-edit.js";
 import { getToolsRenderConfig } from "./session-config.js";
 import {
 	type BoxedToolDefinition,
@@ -28,6 +30,8 @@ import {
 	compactCall,
 	compactFooterWithState,
 	displayPath,
+	noteBoxedCallState,
+	noteBoxedResultPhase,
 	noteExecutionStart,
 	resultFooterLines,
 } from "./shared.js";
@@ -100,10 +104,31 @@ function renderWritePreviewBox(
 	});
 }
 
+/** Inline write result: `Wrote N lines` and the numbered head of the content. */
+function renderInlineWriteResult(
+	theme: BoxTheme,
+	result: { content?: readonly unknown[]; details?: unknown },
+	options: { expanded: boolean; isPartial: boolean },
+	context: Parameters<BoxedToolDefinition["result"]>[3],
+): Component {
+	noteBoxedResultPhase(context, options.isPartial);
+	if (options.isPartial) return inlineFileApplying(theme, "Writing", context);
+	if (context.isError) return inlineFileError(theme, getTextOutput(result), context);
+	const preview = numberedPreviewLines(String(context.args?.content ?? ""));
+	const config = getToolsRenderConfig();
+	const budget = options.expanded ? config.maxExpandedLines : config.maxCollapsedLines;
+	const rows = preview.slice(0, budget).map((line) => formatNumberedLine(theme, line));
+	return inlineFileWritten(theme, rows, preview.length, options.expanded, context);
+}
+
 export const writeTool: BoxedToolDefinition = {
 	call(args, theme, context) {
 		noteExecutionStart(context);
 		const detailLine = displayPath(String(args?.path ?? args?.file_path ?? ""), context);
+		if (isInlineChrome()) {
+			noteBoxedCallState(context);
+			return renderInlineFileCall(theme, "Write", detailLine, context);
+		}
 		// On error keep the plain open box: the result renderer continues it with
 		// the boxed error body, so call and result never duplicate a box.
 		if (context.isError) return compactCall(theme, "Write", detailLine, context);
@@ -116,6 +141,7 @@ export const writeTool: BoxedToolDefinition = {
 		});
 	},
 	result(result, options, theme, context) {
+		if (isInlineChrome()) return renderInlineWriteResult(theme, result, options, context);
 		clearFooterState(context);
 		const output = getTextOutput(result);
 

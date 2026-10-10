@@ -70,6 +70,7 @@ export const DEFAULT_CONFIG: NormalizedPiOmpThemeConfig = Object.freeze({
 		colors: {},
 		glyphs: {},
 	}),
+	widgets: Object.freeze({ hide: [] }),
 	compatibility: Object.freeze({
 		allowSafePatches: true,
 		allowCorePatches: false,
@@ -160,6 +161,7 @@ export function normalizeConfig(
 	const messages = isRecord(value.messages) ? value.messages : {};
 	const tools = isRecord(value.tools) ? value.tools : {};
 	const theme = isRecord(value.theme) ? value.theme : {};
+	const widgets = isRecord(value.widgets) ? value.widgets : {};
 	const compatibility = isRecord(value.compatibility) ? value.compatibility : {};
 	const max =
 		typeof tools.maxCollapsedLines === "number" &&
@@ -257,6 +259,9 @@ export function normalizeConfig(
 			colors: stringMap(theme.colors),
 			glyphs: stringMap(theme.glyphs),
 		}),
+		widgets: Object.freeze({
+			hide: [...new Set(strings(widgets.hide, defaults.widgets.hide).map((key) => key.trim()).filter(Boolean))],
+		}),
 		compatibility: Object.freeze({
 			allowSafePatches: bool(compatibility.allowSafePatches, defaults.compatibility.allowSafePatches),
 			allowCorePatches: bool(compatibility.allowCorePatches, defaults.compatibility.allowCorePatches),
@@ -328,6 +333,7 @@ const STRING_ARRAY_PATHS = new Set([
 	"statusLine.layout.right",
 	"statusLine.layout.secondary",
 	"statusLine.disabledSegments",
+	"widgets.hide",
 ]);
 const MAP_PATHS = new Set(["theme.colors", "theme.glyphs"]);
 const CONTAINER_PATHS = new Set([
@@ -338,6 +344,7 @@ const CONTAINER_PATHS = new Set([
 	"messages",
 	"tools",
 	"theme",
+	"widgets",
 	"compatibility",
 ]);
 function validCustomItem(item: unknown): boolean {

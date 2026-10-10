@@ -18,6 +18,7 @@ const SPECIAL_BLOCK_SUBTYPES: readonly CompatibilitySubtype[] = [
 	"native-skill-message",
 	"native-custom-message",
 ];
+const WIDGET_SUBTYPES: readonly CompatibilitySubtype[] = ["native-extension-widget"];
 const TOOL_SUBTYPES: readonly CompatibilitySubtype[] = [
 	"tool-call-renderer",
 	"tool-result-renderer",
@@ -128,6 +129,11 @@ export function createCompatibilityCoordinator(dispose = disposePiCompatibilityP
 					Boolean(authorization?.core),
 					SPECIAL_BLOCK_SUBTYPES,
 				),
+				widgets: surface(
+					config.enabled && config.widgets.hide.length > 0,
+					Boolean(authorization?.core),
+					WIDGET_SUBTYPES,
+				),
 			};
 		},
 		install(config, tui, productGate = "omitted", binding) {
@@ -192,7 +198,10 @@ export function createCompatibilityCoordinator(dispose = disposePiCompatibilityP
 			const toolsEnabled =
 				authorization.tools &&
 				isTierCAuthorized({ coreFlag: authorization.core, surfaceFlag: true, surface: "tools", config });
-			if (!messagesEnabled && !toolsEnabled) return undefined;
+			// Hiding another extension's widget is a core patch of its own, gated only on
+			// the core flag and having keys to hide.
+			const widgetsEnabled = config.widgets.hide.length > 0;
+			if (!messagesEnabled && !toolsEnabled && !widgetsEnabled) return undefined;
 			const detected = detectPiVersion();
 			report = probePiCompatibility(detected.version, {
 				config: {
@@ -210,6 +219,7 @@ export function createCompatibilityCoordinator(dispose = disposePiCompatibilityP
 						...config.tools,
 						enabled: toolsEnabled,
 					},
+					widgets: config.widgets,
 				},
 				messageSnapshot: {
 					assistantPrefix: authorization.ascii ? "[assistant] " : "│ ",

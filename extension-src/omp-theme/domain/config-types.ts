@@ -90,6 +90,10 @@ export interface PiOmpThemeConfig {
 		colors?: Record<string, unknown>;
 		glyphs?: Record<string, unknown>;
 	};
+	widgets?: {
+		/** Extension widget keys kept off screen (for example `pi-todo`). */
+		hide?: string[];
+	};
 	compatibility?: {
 		allowSafePatches?: boolean;
 		allowCorePatches?: boolean;
@@ -165,6 +169,10 @@ export interface NormalizedPiOmpThemeConfig {
 		autoApply: string;
 		colors: Readonly<Record<string, string>>;
 		glyphs: Readonly<Record<string, string>>;
+	};
+	readonly widgets: {
+		/** Extension widget keys kept off screen; their extensions keep running. */
+		hide: readonly string[];
 	};
 	readonly compatibility: {
 		allowSafePatches: boolean;

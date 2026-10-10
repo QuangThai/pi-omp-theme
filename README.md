@@ -153,6 +153,21 @@ Each part is an ordinary option, so it can also be enabled on its own:
 
 The preset also lowers `tools.maxCollapsedLines` to 4. Glyphs follow the Nerd Font/Unicode/ASCII mode and can be overridden through `theme.glyphs` (`toolMarker`, `resultGutter`, `todoDone`, `todoOpen`, `thinkingMarker`); ASCII mode uses `*`, `|`, `[x]`, `[ ]`, and `~`. Message blocks (compaction, skills, branches) and user `!commands` follow the same `●`/`⎿` form, todo lists render as checklists and stay visible after a turn collapses, and the `git diff`/`gh run` views hang under the gutter without frames.
 
+### Hiding extension widgets
+
+`widgets.hide` keeps chosen extension widgets off screen. The extension keeps running; only its widget is not drawn. For example, the transcript already shows pi-todo's checklist, so its pinned **Updated Plan** box above the editor can go:
+
+```json
+{
+  "piOmpTheme": {
+    "widgets": { "hide": ["pi-todo"] },
+    "compatibility": { "allowCorePatches": true }
+  }
+}
+```
+
+The value is a list of widget keys (pi-todo uses `pi-todo`); other widgets are untouched, and the list is empty by default. It is a core patch, so it needs `compatibility.allowCorePatches`, and `/pi-omp-theme doctor` reports it as **Widgets**. `/todos` still shows the list. Changes to the list take effect when Pi restarts.
+
 ## Configuration
 
 Use the `piOmpTheme` key in Pi's global or trusted project `settings.json`:

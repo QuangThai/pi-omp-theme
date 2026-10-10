@@ -7,12 +7,13 @@ export type CompatibilitySubtype =
 	| "tool-call-renderer"
 	| "tool-result-renderer"
 	| "native-bash-execution"
-	| "native-markdown-theme";
+	| "native-markdown-theme"
+	| "native-extension-widget";
 
 type CompatibilityShape = "supported" | "unsupported" | "conflict" | "installed" | "skipped";
 
 export interface CompatibilityRecord {
-	feature: "messages" | "tools";
+	feature: "messages" | "tools" | "widgets";
 	subtype: CompatibilitySubtype;
 	target: object;
 	owner: object;

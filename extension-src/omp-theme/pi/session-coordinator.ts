@@ -162,6 +162,17 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 		if (!ui?.getTheme?.(target)) return;
 		ui.setTheme?.(target);
 	};
+	/**
+	 * The widget filter only stops new registrations; a hidden widget an extension
+	 * registered before it was installed is cleared here, through the filter.
+	 */
+	const clearHiddenWidgets = (config: import("../domain/config-types.js").NormalizedPiOmpThemeConfig) => {
+		const filtering = compatibility.report?.recordSnapshots.some(
+			(record) => record.subtype === "native-extension-widget" && !record.disposed,
+		);
+		if (!filtering || !sessionUi?.setWidget) return;
+		for (const key of config.widgets.hide) sessionUi.setWidget(key, undefined);
+	};
 	const app: PiOmpThemeApp = createPiOmpThemeApp(
 		undefined,
 		{
@@ -186,6 +197,7 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 				}
 			}
 			compatibility.install(config, tuiSession, productGate, hostBinding);
+			clearHiddenWidgets(config);
 			syncOperational(config);
 		},
 	);
@@ -254,6 +266,7 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 			// Populated once per session (never inside render).
 			sessionTheme = ctx.ui?.theme as never;
 			sessionUi = ctx.ui as import("@earendil-works/pi-coding-agent").ExtensionUIContext | undefined;
+			clearHiddenWidgets(app.config);
 			applyToolsRenderConfig(app.config);
 			applyMessagesConfig(app.config);
 			if (ctx.ui?.theme) setSpecialBlockTheme(ctx.ui.theme as never);

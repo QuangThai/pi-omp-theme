@@ -20,6 +20,7 @@ import { withCachedHighlight } from "../features/messages/markdown-highlight-cac
 import { renderSpecialMessageBlock, type SpecialBlockSubtype } from "../features/messages/special-blocks.js";
 import { renderBashExecutionBox } from "../features/tools/bash-execution.js";
 import { createToolDecorationOwner } from "../features/tools/index.js";
+import { filterExtensionWidget } from "../features/widgets/index.js";
 import {
 	type CompatibilityRecord,
 	currentGeneration,
@@ -68,6 +69,19 @@ export const KNOWN_NATIVE_IDENTITIES: Readonly<Record<string, readonly KnownNati
 			arity: 0,
 			fingerprint: "e177a5a7",
 			sourceMarkers: Object.freeze(["getMarkdownTheme()", "codeBlockIndent", "getCodeBlockIndent"]),
+		}),
+	]),
+	"native-extension-widget:setExtensionWidget": Object.freeze([
+		Object.freeze({
+			name: "setExtensionWidget",
+			arity: 3,
+			fingerprint: "96434157",
+		}),
+		Object.freeze({
+			name: "setExtensionWidget",
+			arity: 3,
+			fingerprint: "e2966c7c",
+			sourceMarkers: Object.freeze(["extensionWidgetsAbove", "extensionWidgetsBelow", "renderWidgets", "aboveEditor"]),
 		}),
 	]),
 	"native-assistant-message:render": Object.freeze([
@@ -543,6 +557,7 @@ export interface CompatibilityProbeOptions {
 		};
 		tools: { enabled: boolean; style: string; maxCollapsedLines: number; maxExpandedLines: number; dimOutput: boolean };
 		theme?: { cacheHighlight?: boolean };
+		widgets?: { hide: readonly string[] };
 		preset: string;
 	}>;
 	toolSnapshot?: Readonly<{ callMarker?: string; resultMarker?: string; style?: "marker" | "compact-box" }>;
@@ -589,6 +604,8 @@ function surfaceDisabled(spec: TargetSpec, config: CompatibilityProbeOptions["co
 	// switch rather than on whether message styling is enabled.
 	if (spec.subtype === "native-markdown-theme") return config.theme?.cacheHighlight === false;
 	if (spec.feature === "tools") return !config.tools.enabled;
+	// Only installed when there is something to hide.
+	if (spec.feature === "widgets") return (config.widgets?.hide.length ?? 0) === 0;
 	if (!config.messages.enabled) return true;
 	if (spec.subtype === "native-assistant-message" && spec.method === "render") return !config.messages.assistantPrefix;
 	if (spec.subtype === "native-assistant-message" && spec.method === "updateContent")
@@ -619,6 +636,7 @@ function probeSpec(options: {
 	toolOwner: ReturnType<typeof createToolDecorationOwner> | undefined;
 }): ProbeSpecResult {
 	const { spec, piVersion, generation, markers, config, toolOwner, messageSnapshot } = options;
+	const hiddenWidgets: ReadonlySet<string> = new Set(config?.widgets?.hide ?? []);
 	const identity = trustedNativeIdentity(spec);
 	const diagnostic = probeDiagnostic(spec, identity);
 	const disabled = surfaceDisabled(spec, config);
@@ -661,6 +679,8 @@ function probeSpec(options: {
 						args,
 					) ?? Reflect.apply(original as (...values: unknown[]) => unknown, target, args)
 				);
+			if (spec.subtype === "native-extension-widget")
+				return filterExtensionWidget(original, target, args, hiddenWidgets);
 			if (spec.subtype === "native-markdown-theme")
 				return withCachedHighlight(Reflect.apply(original as (...values: unknown[]) => unknown, target, args));
 			if (spec.subtype === "native-assistant-message") {
@@ -687,6 +707,14 @@ function probeSpec(options: {
 }
 
 export const targetSpecs: readonly TargetSpec[] = [
+	{
+		feature: "widgets",
+		subtype: "native-extension-widget",
+		target: InteractiveMode.prototype,
+		method: "setExtensionWidget",
+		adapterId: "extension-widget-filter-v1",
+		status: "certified",
+	},
 	{
 		feature: "messages",
 		subtype: "native-markdown-theme",

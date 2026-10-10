@@ -75,6 +75,7 @@ const SURFACE_LABELS = [
 	["assistantMessage", "Assistant message"],
 	["specialBlocks", "Special blocks"],
 	["tools", "Tools"],
+	["widgets", "Widgets"],
 ] as const;
 
 function asRecord(value: unknown): DoctorRecord | undefined {

@@ -317,6 +317,7 @@ export function createPiOmpThemeApp(
 					assistantMessage: operational.compatibility?.assistantMessage ?? "unknown",
 					specialBlocks: operational.compatibility?.specialBlocks ?? "unknown",
 					tools: operational.compatibility?.tools ?? "unknown",
+					widgets: operational.compatibility?.widgets ?? "unknown",
 				},
 			});
 		},

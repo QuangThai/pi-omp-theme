@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## [1.0.17] - 2026-10-11
+
+### Added
+
+- `widgets.hide`: keep chosen extension widgets off screen, for example `["pi-todo"]` for pi-todo's pinned **Updated Plan** box. The extension keeps running (`/todos` and its tools are unaffected), other widgets are untouched, and the list is empty by default, so nothing changes unless it is set. Needs `compatibility.allowCorePatches`; `/pi-omp-theme doctor` reports it as **Widgets**.
+
 ## [1.0.16] - 2026-10-10
 
 ### Added

@@ -2,6 +2,34 @@
 
 All notable changes to this project are documented here.
 
+## [1.0.16] - 2026-10-10
+
+### Added
+
+- `claude-code` preset: a Claude Code transcript on top of the `claude` composer. Tool calls render as `● Tool(args)` with a `⎿` result gutter, assistant answers carry a `●` marker, hidden thinking collapses to `● Thought for 6s`, and the working row shows the run time.
+- Individual options for the same transcript: `tools.chrome: "inline"`, `messages.assistantMarker`, `messages.thinkingSummary`, and `theme.workingElapsed`. All are off by default; the `claude` and other presets render exactly as before. `/pi-omp-theme set` accepts them and `tools.chrome`.
+- Inline forms for the rest of the transcript: compaction, skill, branch, and custom message blocks read `● Compaction · 10K→4K` with their body under the gutter; a user `!command` reads `● ! command` with its output under the gutter.
+- Todo checklists: `todos: [{ content, status }]` in a tool's arguments or result details renders as a ☒/☐ checklist (pi-todo's `todo_write`, `todo_update`, and `todo_read` included); cancelled items are struck through. Inline turns keep todo blocks visible instead of folding them into the summary.
+- Inline headers summarise list arguments by their labels, so an ask call reads `● Ask User Question(Fix, Scope +1)`; inline custom message blocks are titled by their type (`● Vcc Recall`).
+- Golden snapshot tests for every tool surface (boxed, light, and inline at 80 and 36 columns), assistant messages, thinking, special message blocks, and user commands.
+
+### Fixed
+
+- The first paint of a `git diff` result leaked the internal omitted-row marker as a stray row (later repaints were correct).
+- Adaptive diff rows whose background had a colour channel of 49 emitted a malformed SGR sequence before the row colour.
+- Completed-turn summaries timed read, list, find, and grep calls until the run collapsed instead of until the tool finished, so a run with a long final answer reported seconds of tool time for millisecond reads (for example `7.52s` instead of `0.12s`).
+- Read headers no longer show `:1` for whole-file reads or when a provider sends `null` for unset optional arguments.
+- Bash results no longer show Pi's literal `(no output)` as output or count it as words; the empty state reads as such.
+- Write previews no longer number an empty line after a final newline.
+- Turn summaries read as one sentence (`Read 1 file, ran 2 shell commands, listed 1 path`).
+- Extension tools in a turn summary share one clause (`used vcc_recall, mcp ×2 and web_fetch`) instead of one `used 1 …` clause each.
+- Collapsed skill blocks no longer lead with Pi's `References are relative to …` line, collapsed pi-vcc summaries skip their `[Session Goal]` heading, and underscores inside words (`snake_case`) are no longer stripped from the preview.
+- A running user `!command` showed `Running · 0.0s`; it now shows its elapsed time.
+
+### Changed
+
+- Removed unused rendering helpers and options from the tool presentation code and enabled `noUnusedLocals`; no visible change.
+
 ## [1.0.15] - 2026-10-01
 
 ### Fixed

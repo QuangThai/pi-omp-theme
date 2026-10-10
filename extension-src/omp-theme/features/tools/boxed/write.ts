@@ -14,7 +14,6 @@ import type { Component } from "@earendil-works/pi-tui";
 import { stripAnsi } from "../../../shared/ansi.js";
 import {
 	type BoxTheme,
-	boxedToolWidthKey,
 	dimLine,
 	getTextOutput,
 	renderBoxedToolResult,
@@ -103,16 +102,10 @@ function renderWritePreviewBox(
 export const writeTool: BoxedToolDefinition = {
 	call(args, theme, context) {
 		noteExecutionStart(context);
-		const detail = displayPath(String(args?.path ?? args?.file_path ?? ""), context);
-		const detailLine = detail;
+		const detailLine = displayPath(String(args?.path ?? args?.file_path ?? ""), context);
 		// On error keep the plain open box: the result renderer continues it with
 		// the boxed error body, so call and result never duplicate a box.
-		if (context.isError) {
-			return compactCall(theme, "Write", detailLine, {
-				detailKey: detail,
-				context,
-			});
-		}
+		if (context.isError) return compactCall(theme, "Write", detailLine, context);
 		return renderWritePreviewBox(theme, detailLine, String(args?.content ?? ""), {
 			state: context.state,
 			isError: Boolean(context.isError),
@@ -124,12 +117,9 @@ export const writeTool: BoxedToolDefinition = {
 	result(result, options, theme, context) {
 		clearFooterState(context);
 		const output = getTextOutput(result);
-		const detail = displayPath(String(context?.args?.path ?? context?.args?.file_path ?? ""), context);
-		const widthKey = boxedToolWidthKey("Write", detail);
 
 		if (context.isError) {
 			return renderBoxedToolResult(theme, () => [theme.fg("error", stripAnsi(output).trim() || "Error")], {
-				widthKey,
 				footerLines: resultFooterLines(theme, result, context),
 				isError: true,
 			});

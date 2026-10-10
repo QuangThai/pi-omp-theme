@@ -23,7 +23,7 @@ import { getQuickEditToolConfig, quickEditTool } from "../extension-src/omp-them
 import { setToolsRenderConfig } from "../extension-src/omp-theme/features/tools/boxed/session-config.js";
 import type { BoxedToolContext } from "../extension-src/omp-theme/features/tools/boxed/shared.js";
 import { writeTool } from "../extension-src/omp-theme/features/tools/boxed/write.js";
-import { renderLines, setBoxTheme, type BoxTheme } from "../extension-src/omp-theme/shared/box.js";
+import { setBoxTheme, type BoxTheme } from "../extension-src/omp-theme/shared/box.js";
 import {
 	displayKeyHint,
 	formatKeyDisplayText,
@@ -233,10 +233,6 @@ function renderAdaptiveDiff(expanded = false): string {
 	return new AdaptiveDiffComponent(theme, rows, expanded ? 160 : 3).render(120).join("\n");
 }
 
-function renderLegacyLines(expanded = false): string {
-	return renderLines(theme, "one\ntwo\nthree", { expanded }, { maxLines: 1 });
-}
-
 function fullHintRenderers(expanded = false): Record<string, () => string> {
 	return {
 		Compaction: () => renderCompaction(expanded),
@@ -249,7 +245,6 @@ function fullHintRenderers(expanded = false): Record<string, () => string> {
 		"Quick Edit": () => renderQuickEdit(expanded),
 		"Git diff": () => renderGitDiff(expanded),
 		"Adaptive diff": () => renderAdaptiveDiff(expanded),
-		"Legacy lines": () => renderLegacyLines(expanded),
 	};
 }
 

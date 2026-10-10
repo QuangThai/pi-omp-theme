@@ -3,10 +3,8 @@
 import type { Component } from "@earendil-works/pi-tui";
 import type { BoxTheme } from "../../../shared/box.js";
 import {
-	boxedToolWidthKey,
 	clearCompactBoxedFooter,
 	formatBoxedFooter,
-	formatBoxedFooterFromValues,
 	getTextOutput,
 	renderCompactBoxedFooter,
 	renderCompactBoxedToolCall,
@@ -85,19 +83,12 @@ export function pathRangeDetail(rawPath: string, offset: unknown, limit: unknown
 }
 
 /** Compact boxed call header for summary-style tools (read/write/ls/find/grep). */
-export function compactCall(
-	theme: BoxTheme,
-	toolName: string,
-	detailLine: string,
-	options: { detailKey: string; context: BoxedToolContext },
-): Component {
+export function compactCall(theme: BoxTheme, toolName: string, detailLine: string, context: BoxedToolContext): Component {
 	return renderCompactBoxedToolCall(theme, toolName, detailLine, {
-		widthKey: boxedToolWidthKey(toolName, options.detailKey),
-		state: options.context.state,
-		isError: Boolean(options.context.isError),
-		isPartial: Boolean(options.context.isPartial),
-		isPending: pendingFlag(options.context),
-		running: Boolean(options.context.executionStarted),
+		state: context.state,
+		isError: Boolean(context.isError),
+		isPending: pendingFlag(context),
+		running: Boolean(context.executionStarted),
 	});
 }
 
@@ -140,27 +131,11 @@ export function stateElapsedMs(context: BoxedToolContext): number | undefined {
 	return getStateElapsedMs(context.state);
 }
 
-/** Footer parts with state-based elapsed when result.details lacks timing. */
-export function boxedFooterWithState(
-	theme: BoxTheme,
-	result: BoxedToolResult | undefined,
-	context: BoxedToolContext,
-	extraParts: string[] = [],
-): string {
-	return formatBoxedFooterFromValues(theme, stateElapsedMs(context), getTextOutput(result), extraParts);
-}
-
-export function compactFooterWithState(
-	theme: BoxTheme,
-	result: BoxedToolResult,
-	context: BoxedToolContext,
-	options: { isError?: boolean; isPartial?: boolean } = {},
-): Component {
+/** Store the settled `elapsed · words` footer for the compact call card to close with. */
+export function compactFooterWithState(theme: BoxTheme, result: BoxedToolResult, context: BoxedToolContext): Component {
 	const elapsedMs = stateElapsedMs(context);
 	return renderCompactBoxedFooter(theme, result, {
 		state: context.state,
-		isError: Boolean(options.isError ?? context.isError),
-		isPartial: Boolean(options.isPartial ?? context.isPartial),
 		...(elapsedMs === undefined ? {} : { elapsedMs }),
 	});
 }
@@ -178,20 +153,4 @@ export function clearFooterState(context: BoxedToolContext): void {
 	clearCompactBoxedFooter(context.state);
 }
 
-/** Result-details truncation line count when the native tool truncated output. */
-export function truncationOutputLines(result: BoxedToolResult | undefined): number | undefined {
-	if (!result) return undefined;
-	const details = result.details as { truncation?: { outputLines?: number } } | undefined;
-	const value = details?.truncation?.outputLines;
-	return typeof value === "number" && Number.isFinite(value) ? value : undefined;
-}
-
-/** Result-details grep match-limit reached counter. */
-export function matchLimitReached(result: BoxedToolResult | undefined): number | undefined {
-	if (!result) return undefined;
-	const details = result.details as { matchLimitReached?: number } | undefined;
-	const value = details?.matchLimitReached;
-	return typeof value === "number" && Number.isFinite(value) ? value : undefined;
-}
-
-export { boxedToolWidthKey, getTextOutput, resolveRelativePath, shortenPath };
+export { getTextOutput, resolveRelativePath, shortenPath };

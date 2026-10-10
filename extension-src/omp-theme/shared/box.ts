@@ -2,11 +2,12 @@
 //
 // Two deliberate design points:
 //
-// 1. Background painting is removed. Boxed lines are foreground-only; the
-//    enclosing native ToolExecutionComponent container applies the semantic
-//    status background (toolPendingBg / toolErrorBg / toolSuccessBg), and the
-//    message-block Box applies customMessageBg. This avoids double-background
-//    conflicts and keeps pi-omp-theme's patches renderer-scoped.
+// 1. Background painting is removed. Boxed lines are foreground-only. For tool
+//    blocks the decoration owner (features/tools/index.ts) also clears the
+//    native ToolExecutionComponent status background and padding, so the frame
+//    drawn here is the block's only boundary; the message-block Box applies
+//    customMessageBg. This avoids double-background conflicts and keeps
+//    pi-omp-theme's patches renderer-scoped.
 //
 // 2. Theme functions are accessed through a minimal structural interface
 //    (BoxTheme) instead of `any`.
@@ -15,8 +16,7 @@ import { homedir } from "node:os";
 import { relative, resolve } from "node:path";
 import type { Component } from "@earendil-works/pi-tui";
 import { fgHex, isHexColor, stripAnsi } from "./ansi.js";
-import { formatToolMetrics, getElapsedMs, type MetricResultLike } from "./elapsed.js";
-import { toolExpandHint } from "./keybinding-hints.js";
+import { getElapsedMs, type MetricResultLike } from "./elapsed.js";
 import {
 	boxedResultRenderBudget,
 	clampRenderLine,
@@ -38,15 +38,13 @@ export interface BoxTheme {
 }
 
 export interface BoxedRenderOptions {
-	widthKey?: string;
 	/** Draw a plain top border: the first content line already names the call. */
 	showHeader?: boolean;
 	/** Detail embedded in the top-border title after the tool name (e.g. the path). */
 	headerDetail?: string;
 	isError?: boolean;
-	isPartial?: boolean;
 	isPending?: boolean;
-	/** Execution has started but the tool is still running (title `◌` instead of `✓`). */
+	/** Execution has started but the tool is still running (title `⟳`, running status). */
 	running?: boolean;
 	/** A result renderer already produced a continuation for this call, so the call
 	 *  leaves the box open instead of closing it with a pending label. May be lazy
@@ -67,10 +65,6 @@ export interface BoxedRenderOptions {
 	/** Right-side label embedded in the compact box bottom border before the
 	 *  corner (for example, the configured expansion hint). */
 	bottomRightLabel?: string;
-}
-
-export function isExpanded(options: { expanded?: boolean } | undefined): boolean {
-	return typeof options?.expanded === "boolean" ? options.expanded : false;
 }
 
 export function shortenPath(path: string): string {
@@ -114,34 +108,6 @@ export function getTextOutput(result: MetricResultLike | undefined): string {
 		.replace(/\r/g, "");
 }
 
-export function stripTrailingNotice(text: string): string {
-	const normalized = (text ?? "").replace(/\r/g, "").trimEnd();
-	if (!normalized) return "";
-	if (normalized.startsWith("[") && normalized.endsWith("]")) return "";
-	const noticeStart = normalized.lastIndexOf("\n\n[");
-	if (noticeStart >= 0 && normalized.endsWith("]")) {
-		return normalized.slice(0, noticeStart).trimEnd();
-	}
-	return normalized;
-}
-
-export function extractTrailingNotice(text: string): string | null {
-	const normalized = (text ?? "").replace(/\r/g, "").trimEnd();
-	if (!normalized) return null;
-	if (normalized.startsWith("[") && normalized.endsWith("]")) return normalized;
-	const noticeStart = normalized.lastIndexOf("\n\n[");
-	if (noticeStart >= 0 && normalized.endsWith("]")) {
-		return normalized.slice(noticeStart + 2).trimEnd();
-	}
-	return null;
-}
-
-export function countLines(text: string): number {
-	const normalized = (text ?? "").replace(/\r/g, "").replace(/\n+$/g, "");
-	if (!normalized) return 0;
-	return normalized.split("\n").length;
-}
-
 export function countWords(text: string): number {
 	let count = 0;
 	let inWord = false;
@@ -164,16 +130,6 @@ export function formatCompactCount(value: number): string {
 export function formatBoxedWords(text: string): string {
 	const words = countWords(text);
 	return `~${formatCompactCount(words)} ${words === 1 ? "word" : "words"}`;
-}
-
-export function badge(theme: BoxTheme, label: string): string {
-	const tagBg = getThemeExtra(theme, "tagBgColor");
-	if (tagBg && isHexColor(tagBg)) {
-		return theme.inverse
-			? theme.inverse(fgHex(theme, tagBg, theme.bold ? theme.bold(` ${label} `) : ` ${label} `))
-			: fgHex(theme, tagBg, theme.bold ? theme.bold(` ${label} `) : ` ${label} `);
-	}
-	return theme.inverse ? theme.inverse(theme.bold ? theme.bold(` ${label} `) : ` ${label} `) : ` ${label} `;
 }
 
 export function parens(theme: BoxTheme, text: string, skipTextColor?: boolean): string {
@@ -205,7 +161,6 @@ const BOX_DIVIDER_RIGHT = "┤";
 const BOX_LABELED_RIGHT_DASH_MIN = 3;
 /** Dashes drawn between a corner/junction and an embedded label. */
 const BOX_LABEL_CAP = BOX_HORIZONTAL.repeat(3);
-const BOX_WIDTH_CACHE = new Map<string, number>();
 
 export function boxWidth(width: number): number {
 	return Math.max(BOX_MIN_WIDTH, width);
@@ -213,31 +168,6 @@ export function boxWidth(width: number): number {
 
 export function boxInnerWidth(width: number): number {
 	return Math.max(1, boxWidth(width) - 2 - BOX_SIDE_PADDING * 2);
-}
-
-function _tightBoxWidth(
-	availableWidth: number,
-	contentLines: string[],
-	labelWidths: number[] = [],
-	widthKey?: string,
-): number {
-	const contentWidth = contentLines.reduce((max, line) => Math.max(max, safeVisibleWidth(line)), 0);
-	const labelWidth = labelWidths.reduce((max, width) => Math.max(max, width), 0);
-	const neededWidth = Math.max(
-		BOX_MIN_WIDTH,
-		contentWidth + 2 + BOX_SIDE_PADDING * 2,
-		labelWidth + 2 + BOX_SIDE_PADDING * 2,
-	);
-	const measuredWidth = Math.min(boxWidth(availableWidth), neededWidth);
-	if (!widthKey) return measuredWidth;
-	const cachedWidth = BOX_WIDTH_CACHE.get(widthKey) ?? 0;
-	const nextWidth = Math.min(boxWidth(availableWidth), Math.max(cachedWidth, measuredWidth));
-	BOX_WIDTH_CACHE.set(widthKey, nextWidth);
-	return nextWidth;
-}
-
-export function boxedToolWidthKey(toolName: string, detail: string): string {
-	return `${toolName}:${detail}`;
 }
 
 function titleCaseToolWord(value: string): string {
@@ -478,9 +408,6 @@ export function dimLine(text: string): string {
 	return `\x1b[2m${text}\x1b[22m`;
 }
 
-function boxText(theme: BoxTheme, text: string): string {
-	return theme.fg("dim", text);
-}
 /**
  * Light chrome keeps every layout calculation and drops only the drawn frame:
  * each glyph becomes a space of the same width, so labels and content stay in
@@ -498,10 +425,6 @@ function boxFrameText(theme: BoxTheme, text: string): string {
 	return theme.fg("borderMuted", text);
 }
 
-export function boxedToolBgName(isError?: boolean, isPartial?: boolean): string {
-	return isPartial ? "toolPendingBg" : isError ? "toolErrorBg" : "toolSuccessBg";
-}
-
 export function boxBorder(theme: BoxTheme, left: string, right: string, width: number): string {
 	// An unlabelled rule is pure chrome, so light mode drops the row outright
 	// rather than paying a blank line for a frame it does not draw.
@@ -515,9 +438,9 @@ export function boxBorder(theme: BoxTheme, left: string, right: string, width: n
  * Border line with an optional label embedded after the left corner and an
  * optional right-side label before the right corner, e.g.:
  *
- *   ╭─ ➔ Bash ✓ ────────────╮
- *   ├─ Response ────────────┤
- *   ╰─ 0.00s · ~45 words ──── configured hint ───╯
+ *   ╭─── ✎ Edit: src/a.ts ──────────────────╮
+ *   ├─── Output ────────────────────────────┤
+ *   ╰─── 0.00s · ~45 words ─── configured hint ───╯
  */
 export function boxLabeledBorder(
 	theme: BoxTheme,
@@ -585,24 +508,24 @@ export function boxLabeledBorder(
 	return parts.join("");
 }
 
-/** Empty content line used for breathing room inside a box. */
 /**
  * Sentinel for a frame padding row that light chrome omits. Content blank lines
  * come through boxLine and stay, so only the frame's own breathing rows go.
  */
-export const BOX_OMITTED_LINE = "[pi-omp-theme:omit]";
+export const BOX_OMITTED_LINE = "\x1b[pi-omp-theme:omit]";
 
 /** Drop the padding rows light chrome asked to omit. */
 export function dropOmittedLines(lines: string[]): string[] {
 	return lines.filter((line) => line !== BOX_OMITTED_LINE);
 }
 
-export function boxBlankLine(theme: BoxTheme, width: number): string {
+/**
+ * Breathing row inside a box. The frame draws no breathing rows in any chrome,
+ * so this always yields the omitted-line sentinel; call sites keep marking
+ * where such a row would belong.
+ */
+export function boxBlankLine(_theme: BoxTheme, _width: number): string {
 	return BOX_OMITTED_LINE;
-	const renderedWidth = boxWidth(width);
-	const contentWidth = boxInnerWidth(renderedWidth);
-	const sidePad = " ".repeat(BOX_SIDE_PADDING);
-	return `${boxFrameText(theme, BOX_VERTICAL)}${sidePad}${" ".repeat(contentWidth)}${sidePad}${boxFrameText(theme, BOX_VERTICAL)}`;
 }
 
 export function boxLineAligned(theme: BoxTheme, left: string, right: string, width: number): string {
@@ -619,24 +542,6 @@ export function boxLineAligned(theme: BoxTheme, left: string, right: string, wid
 	const truncatedLeft = safeTruncateToWidth(left, maxLeftWidth, "…");
 	const gap = " ".repeat(Math.max(1, contentWidth - safeVisibleWidth(truncatedLeft) - rightWidth));
 	return `${boxFrameText(theme, BOX_VERTICAL)}${sidePad}${truncatedLeft}${gap}${right}${sidePad}${boxFrameText(theme, BOX_VERTICAL)}`;
-}
-
-export function boxLineWithRight(theme: BoxTheme, left: string, right: string, width: number): string {
-	const renderedWidth = boxWidth(width);
-	const contentWidth = boxInnerWidth(renderedWidth);
-	const divider = ` ${boxText(theme, "|")} `;
-	const dividerWidth = safeVisibleWidth(divider);
-	const rightWidth = safeVisibleWidth(right);
-	const sidePad = " ".repeat(BOX_SIDE_PADDING);
-
-	if (!right || rightWidth + dividerWidth >= contentWidth) {
-		return boxLine(theme, right || left, renderedWidth);
-	}
-
-	const maxLeftWidth = Math.max(1, contentWidth - dividerWidth - rightWidth - 1);
-	const truncatedLeft = safeTruncateToWidth(left, maxLeftWidth, "…");
-	const gap = " ".repeat(Math.max(1, contentWidth - safeVisibleWidth(truncatedLeft) - dividerWidth - rightWidth));
-	return `${boxFrameText(theme, BOX_VERTICAL)}${sidePad}${truncatedLeft}${gap}${divider}${right}${sidePad}${boxFrameText(theme, BOX_VERTICAL)}`;
 }
 
 export function boxLine(theme: BoxTheme, content: string, width: number): string {
@@ -674,15 +579,8 @@ export function boxInsetLabel(
 	rightLabel: string | undefined,
 	width: number,
 ): string {
-	const styled = label.includes("") ? label : theme.fg("toolTitle", label);
+	const styled = label.includes("\x1b") ? label : theme.fg("toolTitle", label);
 	return boxLabeledBorder(theme, BOX_DIVIDER_LEFT, BOX_DIVIDER_RIGHT, styled, rightLabel, width);
-}
-
-export function boxInsetDivider(theme: BoxTheme, width: number): string {
-	const renderedWidth = boxWidth(width);
-	const lineWidth = boxInnerWidth(renderedWidth);
-	const sidePad = " ".repeat(BOX_SIDE_PADDING);
-	return `${boxFrameText(theme, BOX_VERTICAL)}${sidePad}${boxText(theme, BOX_HORIZONTAL.repeat(lineWidth))}${sidePad}${boxFrameText(theme, BOX_VERTICAL)}`;
 }
 
 export function boxedWrappedLines(theme: BoxTheme, content: string, width: number): string[] {
@@ -821,14 +719,10 @@ export function renderBoxedToolCall(
 }
 
 const COMPACT_FOOTER_KEY = "__piOmpThemeCompactFooter";
-const COMPACT_FOOTER_ERROR_KEY = "__piOmpThemeCompactFooterError";
-const COMPACT_FOOTER_PARTIAL_KEY = "__piOmpThemeCompactFooterPartial";
 
 export function clearCompactBoxedFooter(state: Record<string, unknown> | undefined): void {
 	if (!state || typeof state !== "object") return;
 	delete state[COMPACT_FOOTER_KEY];
-	delete state[COMPACT_FOOTER_ERROR_KEY];
-	delete state[COMPACT_FOOTER_PARTIAL_KEY];
 }
 
 export function renderCompactBoxedToolCall(
@@ -850,8 +744,6 @@ export function renderCompactBoxedToolCall(
 			const headerLabel = detailLine ? `${title}: ${detailLine}` : title;
 			const compactFooter =
 				typeof options.state?.[COMPACT_FOOTER_KEY] === "string" ? options.state[COMPACT_FOOTER_KEY] : "";
-			const _footerIsError = Boolean(options.state?.[COMPACT_FOOTER_ERROR_KEY]);
-			const _footerIsPartial = Boolean(options.state?.[COMPACT_FOOTER_PARTIAL_KEY]);
 			const bodyLines = options.bodyLines ? options.bodyLines(boxInnerWidth(renderedWidth)) : [];
 			const lines = [
 				boxLabeledBorder(theme, BOX_ROUND_TOP_LEFT, BOX_ROUND_TOP_RIGHT, headerLabel, undefined, renderedWidth),
@@ -889,18 +781,14 @@ export function renderBoxedToolResult(
 	theme: BoxTheme,
 	body: BoxedResultBody,
 	options: {
-		outputLabel?: string;
 		footerLines?: string[];
 		emptyText?: string;
-		widthKey?: string;
-		referenceLines?: string[];
 		renderLineBudget?: number;
 		/** Left-side label embedded in the divider between the call and the result. May be a function of the box width (e.g. for width-dependent layout labels). */
 		dividerLabel?: string | ((width: number) => string);
 		/** Configured hint pinned to the right of the footer row. */
 		expandHint?: string;
 		isError?: boolean;
-		isPartial?: boolean;
 		/** Skip the result divider entirely (streaming continuation into an open call box). */
 		showDivider?: boolean;
 		/** Error state marker prepended to the body (default `✘ Error`). */
@@ -961,12 +849,6 @@ export function renderBoxedToolResult(
 	};
 }
 
-export function formatBoxedWallTime(result: MetricResultLike | undefined): string {
-	const elapsedMs = getElapsedMs(result);
-	if (elapsedMs === undefined) return "--";
-	return `${(elapsedMs / 1000).toFixed(2)}s`;
-}
-
 export function formatBoxedFooterFromValues(
 	theme: BoxTheme,
 	elapsedMs: number | undefined,
@@ -1005,8 +887,6 @@ export function renderCompactBoxedFooter(
 ): Component {
 	if (options.state && typeof options.state === "object") {
 		options.state[COMPACT_FOOTER_KEY] = formatBoxedFooterParts(theme, result, [], options.elapsedMs);
-		options.state[COMPACT_FOOTER_ERROR_KEY] = Boolean(options.isError);
-		options.state[COMPACT_FOOTER_PARTIAL_KEY] = Boolean(options.isPartial);
 		return { invalidate() {}, render: () => [] };
 	}
 
@@ -1026,57 +906,6 @@ export function renderCompactBoxedFooter(
 			];
 		},
 	};
-}
-
-const TOOL_BODY_INDENT = 2;
-const TOOL_RIGHT_MARGIN = 1;
-
-export function renderToolCallHeader(
-	theme: BoxTheme,
-	label: string,
-	detail: string,
-	skipTextColor?: boolean,
-): Component {
-	return renderToolCallHeaderLines(theme, label, [parens(theme, detail, skipTextColor)]);
-}
-
-export function getToolBodyWidth(width: number, spaces = TOOL_BODY_INDENT): number {
-	return Math.max(1, width - spaces - TOOL_RIGHT_MARGIN);
-}
-
-export function renderToolCallHeaderLines(theme: BoxTheme, label: string, detailLines: string[]): Component {
-	const prefix = `${badge(theme, label)} `;
-	const indent = " ".repeat(safeVisibleWidth(prefix));
-	return {
-		invalidate() {},
-		render(width: number): string[] {
-			const bodyWidth = Math.max(1, width - safeVisibleWidth(prefix) - TOOL_RIGHT_MARGIN);
-			const output: string[] = [];
-			for (let i = 0; i < detailLines.length; i++) {
-				const wrapped = safeWrapTextWithAnsi(detailLines[i] ?? "", bodyWidth);
-				if (i === 0) {
-					output.push(`${prefix}${wrapped[0] ?? ""}`);
-					output.push(...wrapped.slice(1).map((line) => `${indent}${line}`));
-				} else {
-					output.push(...wrapped.map((line) => `${indent}${line}`));
-				}
-			}
-			return output.length > 0 ? output : [prefix.trimEnd()];
-		},
-	};
-}
-
-export function indentToolBody(text: string, spaces = TOOL_BODY_INDENT): string {
-	const indent = " ".repeat(spaces);
-	return text
-		.split("\n")
-		.map((line) => (line.length === 0 ? line : `${indent}${line}`))
-		.join("\n");
-}
-
-export function indentToolBodyLines(lines: string[], spaces = TOOL_BODY_INDENT): string[] {
-	const indent = " ".repeat(spaces);
-	return lines.map((line) => (line.length === 0 ? line : `${indent}${line}`));
 }
 
 export function formatToolOutputLine(
@@ -1120,48 +949,6 @@ export function selectRenderLines(text: string, maxLines: number, tail = false):
 
 	if (selected.length === 1 && selected[0] === "") return { lines: [], omitted: 0 };
 	return { lines: selected, omitted: Math.max(0, lineCount - selected.length) };
-}
-
-export function renderLines(
-	theme: BoxTheme,
-	text: string,
-	options: { expanded?: boolean },
-	cfg: { maxLines: number; tail?: boolean; color?: "toolOutput" | "error"; width?: number } = { maxLines: 10 },
-): string {
-	const color = cfg.color ?? "toolOutput";
-	const { lines, omitted } = selectRenderLines(text, cfg.maxLines, cfg.tail);
-	const renderWidth = cfg.width ? getToolBodyWidth(cfg.width) : undefined;
-	const renderLine = (line: string) => {
-		const rendered = renderWidth ? safeTruncateToWidth(line, renderWidth, "…") : line;
-		return formatToolOutputLine(theme, rendered, color);
-	};
-
-	if (lines.length === 0) return "";
-
-	let output = lines.map(renderLine).join("\n");
-	if (omitted <= 0) return output;
-
-	const expandHint = toolExpandHint();
-	const hintText = isExpanded(options)
-		? `... ${omitted} more lines omitted by render budget`
-		: `... ${omitted} more lines${expandHint ? `, ${expandHint}` : ""}`;
-	const hint = cfg.width ? safeTruncateToWidth(hintText, Math.max(1, cfg.width - 1), "…") : hintText;
-	output += theme.fg("muted", `\n\n${hint}`);
-
-	return output;
-}
-
-export function dimWithElapsed(theme: BoxTheme, summary: string, result: MetricResultLike | undefined): string {
-	const metrics = formatToolMetrics(result);
-	return metrics
-		? `${theme.fg("dim", summary)} ${theme.fg("dim", "–")} ${theme.italic ? theme.italic(theme.fg("muted", metrics)) : theme.fg("muted", metrics)}`
-		: theme.fg("dim", summary);
-}
-
-export function renderToolMetricsFooter(theme: BoxTheme, _width: number, metrics: string): string[] {
-	return metrics
-		? [theme.italic ? theme.italic(theme.fg("muted", `↳ ${metrics}`)) : theme.fg("muted", `↳ ${metrics}`)]
-		: [];
 }
 
 export type { MetricResultLike };

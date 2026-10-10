@@ -8,7 +8,6 @@ import { getCapabilities, hyperlink, type Component } from "@earendil-works/pi-t
 import { stripAnsi } from "../../../shared/ansi.js";
 import type { BoxTheme } from "../../../shared/box.js";
 import {
-	boxedToolWidthKey,
 	formatBoxedRunningStatus,
 	formatBoxedWords,
 	formatToolOutputLine,
@@ -198,16 +197,7 @@ function stripBashToolNoticeLines(text: string): string {
 		.trimEnd();
 }
 
-function bashWidthKey(rawCommand: string, timeout: unknown): string {
-	return boxedToolWidthKey("Bash", `${rawCommand}|${timeout ?? ""}`);
-}
-
-function renderBoxedBashCall(
-	theme: BoxTheme,
-	commandLines: string[],
-	context: BoxedToolContext,
-	widthKey: string,
-): Component {
+function renderBoxedBashCall(theme: BoxTheme, commandLines: string[], context: BoxedToolContext): Component {
 	const maxCommandLines = 5;
 	const shownCount = Math.min(commandLines.length, maxCommandLines + 1);
 	const detailLines: string[] = [];
@@ -221,9 +211,7 @@ function renderBoxedBashCall(
 	const running = Boolean(context.executionStarted);
 	const resultSeen = () => isResultSeen(context.state);
 	const base = {
-		widthKey,
 		isError: Boolean(context.isError),
-		isPartial: Boolean(context.isPartial),
 		isPending: Boolean(context.isPartial),
 		running,
 	};
@@ -397,14 +385,10 @@ function renderBashStreamingResult(
 		emptyLines.push(theme.fg("dim", "The process may be waiting for terminal input"));
 	}
 	const preview = createBashResultPreview(theme, body, options);
-	const rawCommand = String(context?.args?.command ?? "...");
 	return renderBoxedToolResult(theme, bashBodyComponent(preview, hasOutput ? undefined : emptyLines), {
-		widthKey: bashWidthKey(rawCommand, context?.args?.timeout),
-		referenceLines: rawCommand.split("\n").map((line, index) => `${index === 0 ? "$ " : "> "}${line}`),
 		dividerLabel: "Output",
 		showDivider: hasOutput,
 		footerLines: [formatBoxedRunningStatus(theme, elapsed)],
-		isPartial: true,
 	});
 }
 
@@ -421,10 +405,6 @@ function renderBashFinalResult(
 	const elapsed = getStateElapsedMs(context.state);
 	const footer = bashFooter(theme, status, elapsed, output, isError);
 	const errorLabel = isError ? (bashErrorLabel(status) ?? "✘ Error") : undefined;
-
-	const rawCommand = String(context?.args?.command ?? "...");
-	const widthKey = bashWidthKey(rawCommand, context?.args?.timeout);
-	const referenceLines = rawCommand.split("\n").map((line, index) => `${index === 0 ? "$ " : "> "}${line}`);
 
 	if (!options.expanded) {
 		// Collapsed: only process the tail of the output (notices stripped per line).
@@ -451,12 +431,9 @@ function renderBashFinalResult(
 				statusStripped.trim() ? undefined : [theme.fg("muted", bashEmptyBodyText(status, isError))],
 			),
 			{
-				widthKey,
-				referenceLines,
 				footerLines: [footer],
 				...(expandHint ? { expandHint } : {}),
 				isError,
-				isPartial: false,
 				...(errorLabel ? { errorLabel } : {}),
 			},
 		);
@@ -467,11 +444,8 @@ function renderBashFinalResult(
 		theme,
 		bashBodyComponent(preview, output.trim() ? undefined : [theme.fg("muted", bashEmptyBodyText(status, isError))]),
 		{
-			widthKey,
-			referenceLines,
 			footerLines: [footer],
 			isError,
-			isPartial: false,
 			...(errorLabel ? { errorLabel } : {}),
 		},
 	);
@@ -932,14 +906,7 @@ function renderSemanticPanel(theme: BoxTheme, toolCallId: string, context: Boxed
 		invalidate() {},
 		render(width: number): string[] {
 			if (!state) return [];
-			if (state.fallback) {
-				return renderBoxedBashCall(
-					theme,
-					state.command.split("\n"),
-					context,
-					bashWidthKey(state.command, context?.args?.timeout),
-				).render(width);
-			}
+			if (state.fallback) return renderBoxedBashCall(theme, state.command.split("\n"), context).render(width);
 			if (isBashTreeClass(state.cls)) {
 				const treeState: { cls: BashTreeClass; parsed?: ParsedBashTree } = { cls: state.cls };
 				if (state.parsed !== undefined) treeState.parsed = state.parsed as ParsedBashTree;
@@ -969,7 +936,7 @@ export const bashTool: BoxedToolDefinition = {
 		}
 		noteBoxedCallState(context);
 		const rawCommand = String(args?.command ?? "...");
-		return renderBoxedBashCall(theme, rawCommand.split("\n"), context, bashWidthKey(rawCommand, args?.timeout));
+		return renderBoxedBashCall(theme, rawCommand.split("\n"), context);
 	},
 	result(result, options, theme, context) {
 		const firstResultPass = !isResultSeen(context.state);

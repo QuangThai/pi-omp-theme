@@ -196,7 +196,7 @@ export function createCompatibilityCoordinator(dispose = disposePiCompatibilityP
 					hideInterimText: config.messages.hideInterimText && messagesEnabled,
 				},
 				toolSnapshot: {
-					callMarker: authorization.ascii ? "[tool] " : "[tool] ",
+					callMarker: "[tool] ",
 					resultMarker: authorization.ascii ? "[result] " : "[tool:result] ",
 					style: config.tools.style === "compact-box" ? "compact-box" : "marker",
 				},

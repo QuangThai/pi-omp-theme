@@ -474,10 +474,7 @@ export function createToolDecorationOwner(snapshot: Partial<ToolDecorationSnapsh
 						const body = Reflect.apply(renderer, this, rendererArgs) as Component;
 						noteBoxedResultPhase(context, options.isPartial);
 						neutralizeToolContainerBackground(instance);
-						return frameToolResult(theme, body, {
-							isPartial: options.isPartial,
-							isError: context.isError,
-						});
+						return frameToolResult(theme, body, { isError: context.isError });
 					}
 					const component =
 						subtype === "tool-call-renderer"

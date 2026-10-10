@@ -70,7 +70,6 @@ export const editTool: BoxedToolDefinition = {
 		return renderBoxedToolCall(theme, "Edit", [], {
 			headerDetail: detail,
 			isError: Boolean(context.isError),
-			isPartial: Boolean(context.isPartial),
 			isPending: Boolean(context.isPartial),
 			running: Boolean(context.executionStarted),
 			resultSeen: () => isResultSeen(context.state),
@@ -85,7 +84,6 @@ export const editTool: BoxedToolDefinition = {
 			return renderBoxedToolResult(theme, () => [`${theme.fg("dim", "↳")} ${theme.fg("muted", "Applying edit...")}`], {
 				showDivider: false,
 				footerLines: [formatBoxedRunningStatus(theme, stateElapsedMs(context))],
-				isPartial: true,
 			});
 		}
 

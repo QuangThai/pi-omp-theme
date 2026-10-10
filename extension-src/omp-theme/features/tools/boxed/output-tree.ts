@@ -544,8 +544,3 @@ export function pluralForm(noun: string, count: number): string {
 	if (count === 1) return noun;
 	return /(s|x|z|ch|sh)$/i.test(noun) ? `${noun}es` : `${noun}s`;
 }
-
-/** Pluralize a count noun: "1 file" / "3 files", "1 match" / "3 matches". */
-export function pluralize(count: number, noun: string): string {
-	return `${count} ${pluralForm(noun, count)}`;
-}

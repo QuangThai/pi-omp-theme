@@ -146,7 +146,7 @@ function renderQuickEditResult(
 		return renderBoxedToolResult(
 			theme,
 			() => [`${theme.fg("dim", "↳")} ${theme.fg("muted", `Applying ${config.applyingLabel}...`)}`],
-			{ showDivider: false, footerLines: [formatBoxedRunningStatus(theme, stateElapsedMs(context))], isPartial: true },
+			{ showDivider: false, footerLines: [formatBoxedRunningStatus(theme, stateElapsedMs(context))] },
 		);
 	}
 
@@ -213,7 +213,6 @@ export function quickEditTool(config: QuickEditToolConfig): BoxedToolDefinition 
 			return renderBoxedToolCall(theme, config.toolLabel, [], {
 				headerDetail: detail,
 				isError: Boolean(context.isError),
-				isPartial: Boolean(context.isPartial),
 				isPending: Boolean(context.isPartial),
 				running: Boolean(context.executionStarted),
 				resultSeen: () => isResultSeen(context.state),

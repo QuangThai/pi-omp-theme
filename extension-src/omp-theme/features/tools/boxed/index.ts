@@ -48,10 +48,6 @@ const REGISTRY: Readonly<Record<string, BoxedToolDefinition>> = {
 	target_edit: quickEditToolFor("target_edit"),
 };
 
-export function hasBoxedRenderer(toolName: unknown): boolean {
-	return typeof toolName === "string" && Object.hasOwn(REGISTRY, toolName);
-}
-
 /**
  * Turn-summary gate (ADR 0007): the member belongs to an ended turn, Pi's
  * global tool-output state is collapsed, the surface is enabled, and the block

@@ -182,37 +182,6 @@ export function rgbToHex(rgb: { r: number; g: number; b: number }): string {
 const CUBE_VALUES = [0, 95, 135, 175, 215, 255] as const;
 const GRAY_VALUES = Array.from({ length: 24 }, (_, i) => 8 + i * 10);
 
-function _ansi256ToRgb(index: number): { r: number; g: number; b: number } {
-	if (index >= 232) {
-		const gray = 8 + (index - 232) * 10;
-		return { r: gray, g: gray, b: gray };
-	}
-	const cubeIndex = Math.max(0, index - 16);
-	const redIndex = Math.floor(cubeIndex / 36);
-	const greenIndex = Math.floor((cubeIndex % 36) / 6);
-	const blueIndex = cubeIndex % 6;
-	return { r: CUBE_VALUES[redIndex] ?? 0, g: CUBE_VALUES[greenIndex] ?? 0, b: CUBE_VALUES[blueIndex] ?? 0 };
-}
-
-const _ANSI_16_RGB: ReadonlyArray<readonly [number, number, number]> = [
-	[0, 0, 0],
-	[128, 0, 0],
-	[0, 128, 0],
-	[128, 128, 0],
-	[0, 0, 128],
-	[128, 0, 128],
-	[0, 128, 128],
-	[192, 192, 192],
-	[128, 128, 128],
-	[255, 0, 0],
-	[0, 255, 0],
-	[255, 255, 0],
-	[0, 0, 255],
-	[255, 0, 255],
-	[0, 255, 255],
-	[255, 255, 255],
-] as const;
-
 function colorDistance(r1: number, g1: number, b1: number, r2: number, g2: number, b2: number): number {
 	const dr = r1 - r2;
 	const dg = g1 - g2;

@@ -30,7 +30,6 @@ export function renderFallbackCall(
 	noteBoxedCallState(context);
 	return renderBoxedToolCall(theme, formatToolName(String(toolName ?? "Tool")), formatToolParamLines(args, theme), {
 		isError: Boolean(context.isError),
-		isPartial: Boolean(context.isPartial),
 		isPending: Boolean(context.isPartial),
 		running: Boolean(context.executionStarted),
 		resultSeen: () => isResultSeen(context.state),
@@ -70,7 +69,6 @@ export function renderFallbackResult(
 				dividerLabel: "Output",
 				showDivider: hasOutput,
 				footerLines: [formatBoxedRunningStatus(theme, elapsedMs)],
-				isPartial: true,
 			},
 		);
 	}
@@ -89,7 +87,6 @@ export function renderFallbackResult(
 			renderLineBudget: maxLines,
 			...(expandHint ? { expandHint } : {}),
 			isError,
-			isPartial: Boolean(options.isPartial),
 		},
 	);
 }

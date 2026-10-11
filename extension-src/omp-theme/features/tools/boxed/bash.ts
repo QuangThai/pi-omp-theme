@@ -24,8 +24,11 @@ import {
 } from "../../../shared/box.js";
 import {
 	inlineBlock,
+	inlineContentWidth,
 	inlineElapsed,
 	inlineGutterComponent,
+	inlineGutterLines,
+	inlineHeaderLine,
 	inlineMarker,
 	inlineMeta,
 	inlineMoreRow,
@@ -33,7 +36,7 @@ import {
 	inlineStatus,
 } from "../../../shared/inline.js";
 import { toolExpandHint } from "../../../shared/keybinding-hints.js";
-import { safeTruncateToWidth, truncateAtCodePointBoundary } from "../../../shared/render-budget.js";
+import { safeTruncateToWidth, safeVisibleWidth, truncateAtCodePointBoundary } from "../../../shared/render-budget.js";
 import { parseSimpleBashCommand } from "./command-shape.js";
 import {
 	classifyGhCommand,
@@ -55,9 +58,9 @@ import {
 } from "./git.js";
 import {
 	GREP_COLLAPSED_LINE_LIMIT,
-	GREP_EXPANDED_LINE_LIMIT,
 	type GrepDisplayLine,
 	type GrepMatch,
+	grepTreeShownLines,
 	groupMatchesByFile,
 	parseFindOutput,
 	parseGrepBareDisplayOutput,
@@ -584,9 +587,12 @@ function createBashResultPreview(
 
 // ── Inline presentation ──────────────────────────────────────────────────────
 
-/** Inline chrome hangs a semantic result body under the result gutter. */
-function hangInline(theme: BoxTheme, component: Component): Component {
-	return isInlineChrome() ? inlineGutterComponent(theme, component) : component;
+/**
+ * Inline chrome hangs a semantic result body under the result gutter. When the
+ * call panel's card already opened the gutter, the body continues it.
+ */
+function hangInline(theme: BoxTheme, component: Component, options: { continues?: boolean } = {}): Component {
+	return isInlineChrome() ? inlineGutterComponent(theme, component, options) : component;
 }
 
 /** First command line, marked when more lines follow. */
@@ -941,6 +947,13 @@ function linkBashGrepLine(
 	return hyperlink(styledText, url.href);
 }
 
+/** Grep preview rows: omp's strict collapsed cap, then `maxExpandedLines` once expanded. */
+function bashGrepLineBudget(expanded: boolean): number {
+	const config = getToolsRenderConfig();
+	const budget = expanded ? config.maxExpandedLines : Math.min(config.maxCollapsedLines, GREP_COLLAPSED_LINE_LIMIT);
+	return Math.max(0, budget);
+}
+
 function renderBashTreeLines(
 	theme: BoxTheme,
 	state: { cls: BashTreeClass; parsed?: ParsedBashTree },
@@ -961,8 +974,6 @@ function renderBashTreeLines(
 	if (state.parsed && "matches" in state.parsed) {
 		const matches = state.parsed.matches;
 		const config = getToolsRenderConfig();
-		const configuredLimit = expanded ? config.maxExpandedLines : config.maxCollapsedLines;
-		const ompLimit = expanded ? GREP_EXPANDED_LINE_LIMIT : GREP_COLLAPSED_LINE_LIMIT;
 		return renderGrepTree(
 			theme,
 			bashTreeHeader(theme, cls, { matches: matches.length, files: groupMatchesByFile(matches).length }),
@@ -971,8 +982,9 @@ function renderBashTreeLines(
 			{
 				indent: TREE_INDENT,
 				withIcons: config.nerdFonts,
-				lineBudget: Math.max(0, Math.min(configuredLimit, ompLimit)),
+				lineBudget: bashGrepLineBudget(expanded),
 				expanded,
+				...(expanded ? {} : { expandHint: toolExpandHint() }),
 				displayLines: state.parsed.displayLines,
 				link: (styledText, file, line) => linkBashGrepLine(context, styledText, file, line),
 			},
@@ -1005,14 +1017,99 @@ function renderSemanticPanel(theme: BoxTheme, toolCallId: string, context: Boxed
 			panel.invalidate();
 		},
 		render(width: number): string[] {
-			const lines = panel.render(width);
 			// The unparsed fallback already renders an inline Bash block.
-			if (lines.length === 0 || state?.fallback) return lines;
-			const [head = "", ...rest] = lines;
-			const marked = `${inlineMarker(theme, inlineStatus(context))} ${head}`;
-			return [safeTruncateToWidth(marked, Math.max(1, width), "…"), ...rest];
+			if (!state || state.fallback) return panel.render(width);
+			if (isBashTreeClass(state.cls)) {
+				return renderInlineBashTreeLines(theme, state.cls, state.parsed as ParsedBashTree | undefined, width, context);
+			}
+			return renderInlineCardLines(theme, panel, width, context);
 		},
 	};
+}
+
+// ── Inline semantic panels ───────────────────────────────────────────────────
+// ls/find/grep read like the inline List/Find/Grep tools: `● Grep(row in src)`,
+// the count opening the gutter, the tree under it. Git and gh cards keep their
+// title on the marker row and hang the rest of the card under the gutter.
+
+/** Leading tree indent of a card row, also when the row's style opens first. */
+const CARD_INDENT = new RegExp(`^((?:\\x1b\\[[0-9;]*m)*)${TREE_INDENT}`);
+
+function dropCardIndent(line: string): string {
+	return line.replace(CARD_INDENT, "$1");
+}
+
+function inlineTreeCall(cls: BashTreeClass): { name: string; args: string } {
+	const path = cls.pathLabel && cls.pathLabel !== "current directory" ? cls.pathLabel : "";
+	const pattern = cls.pattern?.replace(/\r\n?|\n/g, " ") ?? "";
+	if (cls.kind === "ls") return { name: "List", args: path || "." };
+	const args = pattern && path ? `${pattern} in ${path}` : pattern || path || ".";
+	return { name: cls.kind === "find" ? "Find" : "Grep", args };
+}
+
+function renderInlineBashTreeLines(
+	theme: BoxTheme,
+	cls: BashTreeClass,
+	parsed: ParsedBashTree | undefined,
+	width: number,
+	context: BoxedToolContext,
+): string[] {
+	const call = inlineTreeCall(cls);
+	const header = inlineHeaderLine(theme, inlineStatus(context), call.name, call.args, width);
+	if (!parsed) return [header];
+	const config = getToolsRenderConfig();
+	// The tree indents itself by TREE_INDENT; under the gutter that column is
+	// already taken, so it is painted wider and the indent dropped.
+	const treeWidth = inlineContentWidth(width) + TREE_INDENT.length;
+	if ("entries" in parsed) {
+		const count = parsed.entries.length;
+		const summary =
+			cls.kind === "find" ? `Found ${count} ${pluralForm("file", count)}` : `Listed ${count} ${pluralForm("path", count)}`;
+		const tree = renderOutputTree(theme, "", parsed.entries, treeWidth, {
+			moreUnit: "file",
+			indent: TREE_INDENT,
+			withIcons: config.nerdFonts,
+		})
+			.slice(1)
+			.map(dropCardIndent);
+		return [header, ...inlineGutterLines(theme, [theme.fg("dim", summary), ...tree], width)];
+	}
+	const matches = parsed.matches;
+	if (matches.length === 0) return [header, ...inlineGutterLines(theme, [theme.fg("dim", "No matches")], width)];
+	const expanded = context.expanded;
+	const displayLines = parsed.displayLines ? { displayLines: parsed.displayLines } : {};
+	const shown = (mode: boolean) =>
+		grepTreeShownLines(matches, { lineBudget: bashGrepLineBudget(mode), expanded: mode, ...displayLines });
+	// Ctrl+O only when the expanded tree paints lines this one leaves out.
+	const hint = !expanded && shown(true) > shown(false) ? toolExpandHint() : "";
+	const fileCount = groupMatchesByFile(matches).length;
+	const counts = `${matches.length} ${pluralForm("match", matches.length)} in ${fileCount} ${pluralForm("file", fileCount)}`;
+	const summary = theme.fg("dim", hint ? `${counts} · ${hint}` : counts);
+	const tree = renderGrepTree(theme, "", matches, treeWidth, {
+		indent: TREE_INDENT,
+		withIcons: config.nerdFonts,
+		lineBudget: bashGrepLineBudget(expanded),
+		expanded,
+		...displayLines,
+		link: (styledText, file, line) => linkBashGrepLine(context, styledText, file, line),
+	})
+		.slice(1)
+		.map(dropCardIndent);
+	return [header, ...inlineGutterLines(theme, [summary, ...tree], width)];
+}
+
+/** A git/gh card inline: its title on the marker row, the rest under the gutter. */
+function renderInlineCardLines(theme: BoxTheme, panel: Component, width: number, context: BoxedToolContext): string[] {
+	const marker = `${inlineMarker(theme, inlineStatus(context))} `;
+	const [title = ""] = panel.render(Math.max(1, width - safeVisibleWidth(marker)));
+	if (!title) return [];
+	const [, ...rest] = panel.render(inlineContentWidth(width) + TREE_INDENT.length);
+	return [`${marker}${title}`, ...inlineGutterLines(theme, rest.map(dropCardIndent), width)];
+}
+
+/** True when the inline card already opened the result gutter with rows of its own. */
+function semanticCardHasBody(theme: BoxTheme, toolCallId: string, context: BoxedToolContext): boolean {
+	return renderSemanticPanelBody(theme, toolCallId, context).render(80).length > 1;
 }
 
 function renderSemanticPanelBody(theme: BoxTheme, toolCallId: string, context: BoxedToolContext): Component {
@@ -1085,11 +1182,21 @@ export const bashTool: BoxedToolDefinition = {
 					// per file); `gh run view --job=<id>` renders a boxed log result. Every
 					// other semantic class renders its whole panel in the call card, so the
 					// result adds nothing.
+					const continues = isInlineChrome() && semanticCardHasBody(theme, context.toolCallId, context);
 					if (isGitDiffClass(cls)) {
-						return hangInline(theme, renderGitDiffResult(theme, parsed as GitDiffParsed, options, context));
+						// Inline, the card already reads `no changes`; only the elapsed row is left.
+						if (continues && (parsed as GitDiffParsed).files.length === 0) {
+							const elapsed = inlineElapsed(getStateElapsedMs(context.state));
+							return inlineBlock(theme, undefined, () => (elapsed ? [inlineMeta(theme, [elapsed])] : []), {
+								continues,
+							});
+						}
+						const diff = renderGitDiffResult(theme, parsed as GitDiffParsed, options, context);
+						return hangInline(theme, diff, { continues });
 					}
 					if (isGhRunJobClass(cls)) {
-						return hangInline(theme, renderGhRunJobResult(theme, parsed as GhRunJobParsed, options, context));
+						const log = renderGhRunJobResult(theme, parsed as GhRunJobParsed, options, context);
+						return hangInline(theme, log, { continues });
 					}
 					return EMPTY_BASH_TREE_RESULT;
 				}

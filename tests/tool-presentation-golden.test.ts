@@ -189,6 +189,13 @@ const GIT_DIFF = [
 const GH_PR_VIEW = ["title:\tFixture PR", "state:\tOPEN", "number:\t42", "--", "Body line one", "Body line two"].join("\n");
 const QUICK_EDIT_OUTPUT = ["Applied 1 edit to src/plan.txt", "── diff ──", ":2", "- beta", "+ BETA", "---"].join("\n");
 const EDIT_DIFF = ["  1 alpha", "- 2 beta", "+ 2 BETA", "  3 gamma", "+ 4 delta"].join("\n");
+/** A one-line change inside a long run of unchanged lines, as Pi's diff sends it. */
+const EDIT_DIFF_LONG_CONTEXT = [
+	...Array.from({ length: 4 }, (_, index) => `  ${index + 1} row ${index + 1}`),
+	"- 5 row 5",
+	"+ 5 ROW 5",
+	...Array.from({ length: 9 }, (_, index) => `  ${index + 6} row ${index + 6}`),
+].join("\n");
 const TODOS = [
 	{ content: "Reproduce the failure", status: "completed" },
 	{ content: "Fix the expiry check", status: "in_progress" },
@@ -197,11 +204,13 @@ const TODOS = [
 
 interface GoldenCase {
 	readonly id: string;
+	/** The one tool a single-step case drives (the expand-hint property replays it). */
+	readonly step?: ToolStep;
 	render(width: number): string[];
 }
 
 function single(id: string, step: ToolStep): GoldenCase {
-	return { id, render: (width) => runTool(step).paint(width) };
+	return { id, step, render: (width) => runTool(step).paint(width) };
 }
 
 const TOOL_CASES: readonly GoldenCase[] = [
@@ -255,6 +264,14 @@ const TOOL_CASES: readonly GoldenCase[] = [
 	single("bash/git-status", { tool: "bash", args: { command: "git status" }, result: text(GIT_STATUS) }),
 	single("bash/git-diff", { tool: "bash", args: { command: "git diff" }, result: text(GIT_DIFF) }),
 	single("bash/gh-pr-view", { tool: "bash", args: { command: "gh pr view 42" }, result: text(GH_PR_VIEW) }),
+	single("bash/git-diff-empty", { tool: "bash", args: { command: "git diff" }, result: text("") }),
+	single("bash/gh-run-job", {
+		tool: "bash",
+		args: { command: "gh run view --job=123 --log" },
+		result: text("build\tSet up job\tok\nbuild\tRun tests\tpassed"),
+	}),
+	single("bash/ls", { tool: "bash", args: { command: "ls src" }, result: text("a.ts\nb.ts\nlib/") }),
+	single("bash/find", { tool: "bash", args: { command: "find src -name '*.ts'" }, result: text("src/a.ts\nsrc/lib/b.ts") }),
 	// Shapes seen from a real Pi 1.1 session (openai-codex): null optional
 	// arguments, a search in the current directory, Pi's literal "(no output)",
 	// and content ending with a newline.
@@ -286,10 +303,50 @@ const TOOL_CASES: readonly GoldenCase[] = [
 			].join("\n"),
 		),
 	}),
+	single("grep/one-match", {
+		tool: "grep",
+		args: { pattern: "renderStatus", path: "src" },
+		result: text("src/a.ts:54: export function renderStatus("),
+	}),
+	single("grep/many-matches", {
+		tool: "grep",
+		args: { pattern: "row", path: "src" },
+		result: text(Array.from({ length: 12 }, (_, index) => `src/rows.ts:${index + 1}: row ${index + 1}`).join("\n")),
+	}),
+	single("bash/grep-many-matches", {
+		tool: "bash",
+		args: { command: "grep -rn row src" },
+		result: text(Array.from({ length: 12 }, (_, index) => `src/rows.ts:${index + 1}:row ${index + 1}`).join("\n")),
+	}),
 	single("edit/diff", {
 		tool: "edit",
 		args: { path: "/repo/src/plan.txt", edits: [{ oldText: "beta", newText: "BETA" }] },
 		result: text("Successfully replaced text in src/plan.txt.", { diff: EDIT_DIFF }),
+	}),
+	single("edit/long-context", {
+		tool: "edit",
+		args: { path: "/repo/src/rows.txt", edits: [{ oldText: "row 5", newText: "ROW 5" }] },
+		result: text("Successfully replaced text in src/rows.txt.", { diff: EDIT_DIFF_LONG_CONTEXT }),
+	}),
+	// Pi's own shape: four context lines each side, then its numberless `...` row.
+	single("edit/pi-skip-marker", {
+		tool: "edit",
+		args: { path: "/repo/src/rows.txt", edits: [{ oldText: "row 5", newText: "ROW 5" }] },
+		result: text("Successfully replaced text in src/rows.txt.", {
+			diff: [
+				...Array.from({ length: 4 }, (_, index) => ` ${String(index + 1).padStart(2)} row ${index + 1}`),
+				"- 5 row 5",
+				"+ 5 ROW 5",
+				...Array.from({ length: 4 }, (_, index) => ` ${String(index + 6).padStart(2)} row ${index + 6}`),
+				`  ${"".padStart(2)} ...`.slice(1),
+			].join("\n"),
+		}),
+	}),
+	single("edit/long-context-expanded", {
+		tool: "edit",
+		args: { path: "/repo/src/rows.txt", edits: [{ oldText: "row 5", newText: "ROW 5" }] },
+		result: text("Successfully replaced text in src/rows.txt.", { diff: EDIT_DIFF_LONG_CONTEXT }),
+		expanded: true,
 	}),
 	single("edit/error", {
 		tool: "edit",
@@ -461,7 +518,17 @@ const TOOL_CASES: readonly GoldenCase[] = [
 	},
 ];
 
-const NARROW_IDS = new Set(["fallback/settled", "bash/settled", "bash/exit-1", "edit/diff", "write/settled", "grep/settled"]);
+const NARROW_IDS = new Set([
+	"fallback/settled",
+	"bash/settled",
+	"bash/exit-1",
+	"bash/long-collapsed",
+	"edit/diff",
+	"write/settled",
+	"write/long-collapsed",
+	"grep/settled",
+	"grep/many-matches",
+]);
 
 interface Variant {
 	readonly chrome: "boxed" | "light" | "inline";
@@ -558,6 +625,82 @@ for (const variant of VARIANTS) {
 		});
 	}
 }
+
+// ── Expand-hint property ─────────────────────────────────────────────────────
+// A collapsed block may offer Ctrl+O only when expanding shows something it did
+// not: every settled single-tool case is painted both ways in every chrome, and
+// a hint whose expanded paint adds no line is a false promise.
+
+/** The full hint, or the bare key a narrow row shrinks it to, whole at the end of a row. */
+const EXPAND_HINT = /Ctrl\+O(?: to expand)?$/;
+
+/** A painted line without ANSI, frame glyphs or trailing blanks. */
+function unframed(line: string): string {
+	return plainLine(line)
+		.replace(/[─│╭╮╰╯┌┐└┘├┤]/g, "")
+		.trimEnd();
+}
+
+/** Content of a painted line, without the hint, frame glyphs and separators. */
+function hintFreeContent(line: string): string {
+	return unframed(line)
+		.replace(EXPAND_HINT, "")
+		.replace(/(?:\s*[·…]\s*)+$/u, "")
+		.trim();
+}
+
+function paintedContent(step: ToolStep, expanded: boolean, width: number): { hint: boolean; lines: Set<string> } {
+	resetRegistries();
+	const lines = runTool({ ...step, expanded }).paint(width);
+	return {
+		hint: lines.some((line) => EXPAND_HINT.test(unframed(line))),
+		lines: new Set(lines.map(hintFreeContent).filter(Boolean)),
+	};
+}
+
+for (const variant of VARIANTS) {
+	test(`expand hints promise new lines: ${variant.chrome} · w${variant.width}`, () => {
+		setBoxChrome(variant.chrome);
+		setToolsRenderConfig(toolsConfigFor(variant));
+		const falsePromises: string[] = [];
+		const stillOffered: string[] = [];
+		const unannounced: string[] = [];
+		for (const entry of TOOL_CASES) {
+			const step = entry.step;
+			if (!step || (step.phase ?? "settled") !== "settled" || step.expanded) continue;
+			const collapsed = paintedContent(step, false, variant.width);
+			const expanded = paintedContent(step, true, variant.width);
+			const added = [...expanded.lines].filter((line) => !collapsed.lines.has(line));
+			if (collapsed.hint && added.length === 0) falsePromises.push(entry.id);
+			if (expanded.hint) stillOffered.push(entry.id);
+			if (!collapsed.hint && added.length > 0) unannounced.push(entry.id);
+		}
+		assert.deepEqual(falsePromises, [], "these collapsed blocks offer Ctrl+O but expanding adds nothing");
+		assert.deepEqual(stillOffered, [], "these blocks still offer Ctrl+O once expanded");
+		assert.deepEqual(unannounced, [], "expanding these shows more, but the collapsed block never says so");
+	});
+}
+
+// ── Inline gutter property ───────────────────────────────────────────────────
+// Every inline block is a `●` row and one result gutter: a second `⎿` under the
+// same marker means two components each opened it (a call card and its result).
+
+test("inline blocks open the result gutter once", () => {
+	setBoxChrome("inline");
+	for (const width of [80, 36]) {
+		setToolsRenderConfig(toolsConfigFor({ chrome: "inline", width }));
+		const reopened: string[] = [];
+		for (const entry of TOOL_CASES) {
+			resetRegistries();
+			let openers = 0;
+			for (const line of entry.render(width).map(plainLine)) {
+				if (line.startsWith("●")) openers = 0;
+				if (/^ {2}⎿/.test(line) && ++openers === 2) reopened.push(entry.id);
+			}
+		}
+		assert.deepEqual(reopened, [], `w${width}: these blocks open a second gutter under one marker`);
+	}
+});
 
 test("golden files carry no stale sections", () => {
 	if (UPDATE_GOLDEN) return;

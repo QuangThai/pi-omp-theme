@@ -22,7 +22,8 @@ import { safeTruncateToWidth } from "../../shared/render-budget.js";
 export type MessageBlockOptions = {
 	kind: string;
 	title?: string;
-	right?: string;
+	/** Trailing label (the expand hint); a function decides per content width. */
+	right?: string | ((contentWidth: number) => string);
 	body: (contentWidth: number) => string[];
 	hasDivider?: boolean | "auto";
 	icon?: string;
@@ -63,6 +64,7 @@ export function renderBoxedMessageBlock(theme: BoxTheme, options: MessageBlockOp
 			const contentWidth = boxInnerWidth(renderedWidth);
 			const titleLine = formatMessageBlockTitle(theme, kind, title, icon);
 			const bodyLines = body(contentWidth);
+			const rightLabel = typeof right === "function" ? right(contentWidth) : right;
 
 			const lines: string[] = [
 				boxLabeledBorder(theme, "╭", "╮", titleLine, undefined, renderedWidth),
@@ -70,8 +72,8 @@ export function renderBoxedMessageBlock(theme: BoxTheme, options: MessageBlockOp
 				...bodyLines.map((line) => boxLine(theme, line, renderedWidth)),
 			];
 			if (bodyLines.length > 0) lines.push(boxBlankLine(theme, renderedWidth));
-			if (right) {
-				lines.push(boxLabeledBorder(theme, "╰", "╯", "", theme.fg("dim", right), renderedWidth));
+			if (rightLabel) {
+				lines.push(boxLabeledBorder(theme, "╰", "╯", "", theme.fg("dim", rightLabel), renderedWidth));
 			} else {
 				lines.push(boxBorder(theme, "╰", "╯", renderedWidth));
 			}
@@ -103,7 +105,9 @@ function renderInlineMessageBlock(theme: BoxTheme, options: MessageBlockOptions)
 			const name = typeof theme.bold === "function" ? theme.bold(theme.fg("text", label)) : theme.fg("text", label);
 			const subtitle = title && !custom ? theme.fg("dim", ` · ${title}`) : "";
 			const header = `${theme.fg("accent", inlineGlyphs().marker)} ${name}${subtitle}`;
-			const rows = [...body(inlineContentWidth(width)), ...(right ? [theme.fg("dim", right)] : [])];
+			const contentWidth = inlineContentWidth(width);
+			const rightLabel = typeof right === "function" ? right(contentWidth) : right;
+			const rows = [...body(contentWidth), ...(rightLabel ? [theme.fg("dim", rightLabel)] : [])];
 			const lines = [safeTruncateToWidth(header, Math.max(1, width), "…"), ...inlineGutterLines(theme, rows, width)];
 			if (shouldCache) cache = { width, lines };
 			return lines;

@@ -21,6 +21,7 @@
 
 import type { BoxTheme } from "../../../shared/box.js";
 import { dimLine, replaceTabs } from "../../../shared/box.js";
+import { fitExpandHint } from "../../../shared/keybinding-hints.js";
 import { safeTruncateToWidth } from "../../../shared/render-budget.js";
 
 /** Indent for top-level tree rows; matches the quiet-tool batch panel. */
@@ -29,9 +30,8 @@ export const TREE_INDENT = "  ";
 export const TREE_CHILD_INDENT = "  ";
 /** Default number of entries shown before collapsing to "… N more". */
 export const OUTPUT_TREE_HEAD_LIMIT = 6;
-/** OMP search previews use strict final-row budgets, separate from generic tools. */
+/** OMP search previews keep a strict collapsed budget, separate from generic tools; expanded follows `maxExpandedLines`. */
 export const GREP_COLLAPSED_LINE_LIMIT = 6;
-export const GREP_EXPANDED_LINE_LIMIT = 24;
 
 // ── Nerd Font file-type icons ───────────────────────────────────────────────
 // Only used when the session glyph mode is nerd (see withIcons). Unicode/ASCII
@@ -346,6 +346,8 @@ export interface GrepTreeOptions {
 	withIcons?: boolean;
 	/** Optional OSC-8/link wrapper supplied by a renderer that knows the cwd. */
 	link?: (styledText: string, file: string, line?: number) => string;
+	/** Appended to the `… N more matches` row (the collapsed expand hint). */
+	expandHint?: string;
 }
 
 interface GrepDisplayGroup {
@@ -470,6 +472,32 @@ function moreSummary(
 	return theme.fg("dim", `… ${primary}${files}`);
 }
 
+function grepTreeLineBudget(options: GrepTreeOptions): number {
+	return Math.max(0, Math.floor(options.lineBudget ?? OUTPUT_TREE_HEAD_LIMIT));
+}
+
+/** The files and lines a grep tree paints within its budget. */
+function selectGrepTree(matches: readonly GrepMatch[], options: GrepTreeOptions) {
+	const lineBudget = grepTreeLineBudget(options);
+	const fallbackLines: GrepDisplayLine[] = matches.map((match) => ({ ...match, isMatch: true }));
+	const displayLines = options.displayLines?.some((line) => line.isMatch) ? options.displayLines : fallbackLines;
+	const groups = groupDisplayLines(displayLines);
+	const multiFile = groups.length > 1;
+	const selected = options.expanded
+		? selectExpandedGroups(groups, lineBudget, multiFile)
+		: selectCollapsedGroups(groups, lineBudget, multiFile);
+	return { displayLines, groups, multiFile, selected };
+}
+
+/**
+ * Match and context lines a grep tree paints within its budget: a collapsed
+ * tree offers Ctrl+O only when its expanded form would paint more of them.
+ */
+export function grepTreeShownLines(matches: readonly GrepMatch[], options: GrepTreeOptions = {}): number {
+	if (matches.length === 0 || grepTreeLineBudget(options) === 0) return 0;
+	return selectGrepTree(matches, options).selected.reduce((count, entry) => count + entry.lines.length, 0);
+}
+
 /**
  * Render grep output with a strict visual-line budget. Collapsed mode favors
  * breadth across files and match lines only; expanded mode keeps source order
@@ -485,17 +513,11 @@ export function renderGrepTree(
 ): string[] {
 	const indent = options.indent ?? TREE_INDENT;
 	const safeWidth = Math.max(1, width);
-	const lineBudget = Math.max(0, Math.floor(options.lineBudget ?? OUTPUT_TREE_HEAD_LIMIT));
+	const lineBudget = grepTreeLineBudget(options);
 	const out: string[] = [safeTruncateToWidth(header, safeWidth, "…")];
 	if (matches.length === 0 || lineBudget === 0) return out;
 
-	const fallbackLines: GrepDisplayLine[] = matches.map((match) => ({ ...match, isMatch: true }));
-	const displayLines = options.displayLines?.some((line) => line.isMatch) ? options.displayLines : fallbackLines;
-	const groups = groupDisplayLines(displayLines);
-	const multiFile = groups.length > 1;
-	const selected = options.expanded
-		? selectExpandedGroups(groups, lineBudget, multiFile)
-		: selectCollapsedGroups(groups, lineBudget, multiFile);
+	const { displayLines, groups, multiFile, selected } = selectGrepTree(matches, options);
 	const selectedLines = selected.flatMap((entry) => entry.lines);
 	const selectedMatches = selectedLines.filter((line) => line.isMatch).length;
 	const totalDisplayMatches = displayLines.filter((line) => line.isMatch).length;
@@ -506,7 +528,7 @@ export function renderGrepTree(
 	const selectedFiles = new Set(selected.filter((entry) => entry.lines.some((line) => line.isMatch)).map((entry) => entry.group.file));
 	const hiddenFiles = groups.filter((group) => !selectedFiles.has(group.file)).length;
 	const hasSummary = hiddenMatches > 0 || hiddenLines > 0;
-	const push = (line: string) => out.push(safeTruncateToWidth(line, safeWidth, "…"));
+	const push = (line: string) => out.push(safeTruncateToWidth(fitExpandHint(line, safeWidth), safeWidth, "…"));
 
 	selected.forEach((entry, index) => {
 		const isLast = index === selected.length - 1 && !hasSummary;
@@ -534,7 +556,8 @@ export function renderGrepTree(
 	});
 
 	if (hasSummary && out.length - 1 < lineBudget) {
-		push(`${indent}${dimLine("└─")} ${moreSummary(theme, hiddenMatches, hiddenLines, hiddenFiles)}`);
+		const hint = options.expandHint ? theme.fg("dim", ` · ${options.expandHint}`) : "";
+		push(`${indent}${dimLine("└─")} ${moreSummary(theme, hiddenMatches, hiddenLines, hiddenFiles)}${hint}`);
 	}
 	return out;
 }

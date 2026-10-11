@@ -256,6 +256,33 @@
   {muted}Body line one{/}
   {muted}Body line two{/}
 
+=== boxed · w80 · bash/git-diff-empty ===
+{b}Git diff{/b}
+{muted}  no changes{/}
+{borderMuted}╭─── {/}{b}{text}Git diff{/}{/b}{borderMuted} ─────────────────────────────────────────────────────────────────{/}{borderMuted}╮{/}
+{borderMuted}│{/} {muted}No changes{/}                                                                   {borderMuted}│{/}
+{borderMuted}│{/} {dim}{text}2.2s{/}{/}                                                                         {borderMuted}│{/}
+{borderMuted}╰──────────────────────────────────────────────────────────────────────────────╯{/}
+
+=== boxed · w80 · bash/gh-run-job ===
+{b}Run job · 123{/b}
+{borderMuted}├─── {/}{toolTitle}Log · 123{/}{borderMuted} ────────────────────────────────────────────────────────────────{/}{borderMuted}┤{/}
+{borderMuted}│{/} {toolOutput}build	Set up job	ok{/}                                                      {borderMuted}│{/}
+{borderMuted}│{/} {toolOutput}build	Run tests	passed{/}                                                   {borderMuted}│{/}
+{borderMuted}│{/} {dim}{text}2.2s{/}{/}                                                                         {borderMuted}│{/}
+{borderMuted}╰──────────────────────────────────────────────────────────────────────────────╯{/}
+
+=== boxed · w80 · bash/ls ===
+{toolTitle}{b}List:{/b}{/}{dim} 3 files{/}{dim} · in src{/}
+  {dim}├─{/} {toolOutput}a.ts{/}
+  {dim}├─{/} {toolOutput}b.ts{/}
+  {dim}└─{/} {toolOutput}lib/{/}
+
+=== boxed · w80 · bash/find ===
+{toolTitle}{b}Find:{/b}{/} {muted}*.ts{/}{dim} 2 files{/}{dim} · in src{/}
+  {dim}├─{/} {toolOutput}src/a.ts{/}
+  {dim}└─{/} {toolOutput}src/lib/b.ts{/}
+
 === boxed · w80 · read/null-optional-args ===
 {b}{bashMode}▤ Read{/}{/b} {accent}src/auth.ts{/}
 
@@ -306,6 +333,28 @@
   {dim}└─{/} {accent}src/b.ts{/}
      {dim}*4{/}{dim}│{/} {toolOutput}renderStatus(){/}
 
+=== boxed · w80 · grep/one-match ===
+{toolTitle}⌕{/} {toolTitle}{b}Grep:{/b}{/} {muted}renderStatus{/}{dim} 1 match · 1 file{/}{dim} · in {/}{dim}src{/}
+  {dim}└─{/} {dim}*54{/}{dim}│{/} {toolOutput}export function renderStatus({/}
+
+=== boxed · w80 · grep/many-matches ===
+{toolTitle}⌕{/} {toolTitle}{b}Grep:{/b}{/} {muted}row{/}{dim} 12 matches · 1 file{/}{dim} · in {/}{dim}src{/}
+  {dim}├─{/} {dim}* 1{/}{dim}│{/} {toolOutput}row 1{/}
+  {dim}│ {/} {dim}* 2{/}{dim}│{/} {toolOutput}row 2{/}
+  {dim}│ {/} {dim}* 3{/}{dim}│{/} {toolOutput}row 3{/}
+  {dim}│ {/} {dim}* 4{/}{dim}│{/} {toolOutput}row 4{/}
+  {dim}│ {/} {dim}* 5{/}{dim}│{/} {toolOutput}row 5{/}
+  {dim}└─{/} {dim}… 7 more matches{/}{dim} · Ctrl+O to expand{/}
+
+=== boxed · w80 · bash/grep-many-matches ===
+{toolTitle}{b}Grep:{/b}{/} {muted}row{/}{dim} 12 matches · 1 file{/}{dim} · in src{/}
+  {dim}├─{/} {dim}* 1{/}{dim}│{/} {toolOutput}row 1{/}
+  {dim}│ {/} {dim}* 2{/}{dim}│{/} {toolOutput}row 2{/}
+  {dim}│ {/} {dim}* 3{/}{dim}│{/} {toolOutput}row 3{/}
+  {dim}│ {/} {dim}* 4{/}{dim}│{/} {toolOutput}row 4{/}
+  {dim}│ {/} {dim}* 5{/}{dim}│{/} {toolOutput}row 5{/}
+  {dim}└─{/} {dim}… 7 more matches{/}{dim} · Ctrl+O to expand{/}
+
 === boxed · w80 · edit/diff ===
 {borderMuted}╭─── {/}{b}{bashMode}✎ Edit{/}{/b}: src/plan.txt{borderMuted} ─────────────────────────────────────────────────────{/}{borderMuted}╮{/}
 {borderMuted}│{/} {dim} {/} {dim}  1{/}  alpha                                                                 {borderMuted}│{/}
@@ -314,6 +363,56 @@
 {borderMuted}│{/} {dim} {/} {dim}  3{/}  gamma                                                                 {borderMuted}│{/}
 {borderMuted}│{/} {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  4{/}  delta                                                                {sgr:49} {borderMuted}│{/}
 {borderMuted}│{/} {dim}{text}2.2s{/}{dim} · {/}{dim}1 file{/}{dim} · {/}{toolDiffAdded}+2{/} {toolDiffRemoved}-1{/}{/}                                                        {borderMuted}│{/}
+{borderMuted}╰──────────────────────────────────────────────────────────────────────────────╯{/}
+
+=== boxed · w80 · edit/long-context ===
+{borderMuted}╭─── {/}{b}{bashMode}✎ Edit{/}{/b}: src/rows.txt{borderMuted} ─────────────────────────────────────────────────────{/}{borderMuted}╮{/}
+{borderMuted}│{/} {dim} {/} {dim}  1{/}  row 1                                                                 {borderMuted}│{/}
+{borderMuted}│{/} {dim} {/} {dim}  2{/}  row 2                                                                 {borderMuted}│{/}
+{borderMuted}│{/} {dim} {/} {dim}  3{/}  row 3                                                                 {borderMuted}│{/}
+{borderMuted}│{/} {dim} {/} {dim}  4{/}  row 4                                                                 {borderMuted}│{/}
+{borderMuted}│{/} {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  5{/}  {sgr:48;2;75;51;57}row{sgr:48;2;52;43;49} 5                                                                {sgr:49} {borderMuted}│{/}
+{borderMuted}│{/} {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  5{/}  {sgr:48;2;57;96;62}ROW{sgr:48;2;45;68;53} 5                                                                {sgr:49} {borderMuted}│{/}
+{borderMuted}│{/} {dim} {/} {dim}  6{/}  row 6                                                                 {borderMuted}│{/}
+{borderMuted}│{/} {dim} {/} {dim}  7{/}  row 7                                                                 {borderMuted}│{/}
+{borderMuted}│{/} {muted}⋯ 7 unchanged lines hidden{/}                                                   {borderMuted}│{/}
+{borderMuted}│{/} {dim}{text}2.2s{/}{dim} · {/}{dim}1 file{/}{dim} · {/}{toolDiffAdded}+1{/} {toolDiffRemoved}-1{/}{/}                                       {dim}Ctrl+O to expand{/} {borderMuted}│{/}
+{borderMuted}╰──────────────────────────────────────────────────────────────────────────────╯{/}
+
+=== boxed · w80 · edit/pi-skip-marker ===
+{borderMuted}╭─── {/}{b}{bashMode}✎ Edit{/}{/b}: src/rows.txt{borderMuted} ─────────────────────────────────────────────────────{/}{borderMuted}╮{/}
+{borderMuted}│{/} {dim} {/} {dim}  1{/}  row 1                                                                 {borderMuted}│{/}
+{borderMuted}│{/} {dim} {/} {dim}  2{/}  row 2                                                                 {borderMuted}│{/}
+{borderMuted}│{/} {dim} {/} {dim}  3{/}  row 3                                                                 {borderMuted}│{/}
+{borderMuted}│{/} {dim} {/} {dim}  4{/}  row 4                                                                 {borderMuted}│{/}
+{borderMuted}│{/} {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  5{/}  {sgr:48;2;75;51;57}row{sgr:48;2;52;43;49} 5                                                                {sgr:49} {borderMuted}│{/}
+{borderMuted}│{/} {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  5{/}  {sgr:48;2;57;96;62}ROW{sgr:48;2;45;68;53} 5                                                                {sgr:49} {borderMuted}│{/}
+{borderMuted}│{/} {dim} {/} {dim}  6{/}  row 6                                                                 {borderMuted}│{/}
+{borderMuted}│{/} {dim} {/} {dim}  7{/}  row 7                                                                 {borderMuted}│{/}
+{borderMuted}│{/} {dim} {/} {dim}  8{/}  row 8                                                                 {borderMuted}│{/}
+{borderMuted}│{/} {dim} {/} {dim}  9{/}  row 9                                                                 {borderMuted}│{/}
+{borderMuted}│{/} {muted}⋯ unchanged lines hidden{/}                                                     {borderMuted}│{/}
+{borderMuted}│{/} {dim}{text}2.2s{/}{dim} · {/}{dim}1 file{/}{dim} · {/}{toolDiffAdded}+1{/} {toolDiffRemoved}-1{/}{/}                                                        {borderMuted}│{/}
+{borderMuted}╰──────────────────────────────────────────────────────────────────────────────╯{/}
+
+=== boxed · w80 · edit/long-context-expanded ===
+{borderMuted}╭─── {/}{b}{bashMode}✎ Edit{/}{/b}: src/rows.txt{borderMuted} ─────────────────────────────────────────────────────{/}{borderMuted}╮{/}
+{borderMuted}│{/} {dim} {/} {dim}  1{/}  row 1                                                                 {borderMuted}│{/}
+{borderMuted}│{/} {dim} {/} {dim}  2{/}  row 2                                                                 {borderMuted}│{/}
+{borderMuted}│{/} {dim} {/} {dim}  3{/}  row 3                                                                 {borderMuted}│{/}
+{borderMuted}│{/} {dim} {/} {dim}  4{/}  row 4                                                                 {borderMuted}│{/}
+{borderMuted}│{/} {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  5{/}  {sgr:48;2;75;51;57}row{sgr:48;2;52;43;49} 5                                                                {sgr:49} {borderMuted}│{/}
+{borderMuted}│{/} {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  5{/}  {sgr:48;2;57;96;62}ROW{sgr:48;2;45;68;53} 5                                                                {sgr:49} {borderMuted}│{/}
+{borderMuted}│{/} {dim} {/} {dim}  6{/}  row 6                                                                 {borderMuted}│{/}
+{borderMuted}│{/} {dim} {/} {dim}  7{/}  row 7                                                                 {borderMuted}│{/}
+{borderMuted}│{/} {dim} {/} {dim}  8{/}  row 8                                                                 {borderMuted}│{/}
+{borderMuted}│{/} {dim} {/} {dim}  9{/}  row 9                                                                 {borderMuted}│{/}
+{borderMuted}│{/} {dim} {/} {dim} 10{/}  row 10                                                                {borderMuted}│{/}
+{borderMuted}│{/} {dim} {/} {dim} 11{/}  row 11                                                                {borderMuted}│{/}
+{borderMuted}│{/} {dim} {/} {dim} 12{/}  row 12                                                                {borderMuted}│{/}
+{borderMuted}│{/} {dim} {/} {dim} 13{/}  row 13                                                                {borderMuted}│{/}
+{borderMuted}│{/} {dim} {/} {dim} 14{/}  row 14                                                                {borderMuted}│{/}
+{borderMuted}│{/} {dim}{text}2.2s{/}{dim} · {/}{dim}1 file{/}{dim} · {/}{toolDiffAdded}+1{/} {toolDiffRemoved}-1{/}{/}                                                        {borderMuted}│{/}
 {borderMuted}╰──────────────────────────────────────────────────────────────────────────────╯{/}
 
 === boxed · w80 · edit/error ===
@@ -636,6 +735,31 @@
   {muted}Body line one{/}
   {muted}Body line two{/}
 
+=== light · w80 · bash/git-diff-empty ===
+{b}Git diff{/b}
+{muted}  no changes{/}
+{b}{text}Git diff{/}{/b}                                                                        
+{muted}No changes{/}                                                                      
+{dim}{text}2.2s{/}{/}                                                                            
+
+=== light · w80 · bash/gh-run-job ===
+{b}Run job · 123{/b}
+{toolTitle}Log · 123{/}                                                                       
+{toolOutput}build	Set up job	ok{/}                                                         
+{toolOutput}build	Run tests	passed{/}                                                      
+{dim}{text}2.2s{/}{/}                                                                            
+
+=== light · w80 · bash/ls ===
+{toolTitle}{b}List:{/b}{/}{dim} 3 files{/}{dim} · in src{/}
+  {dim}├─{/} {toolOutput}a.ts{/}
+  {dim}├─{/} {toolOutput}b.ts{/}
+  {dim}└─{/} {toolOutput}lib/{/}
+
+=== light · w80 · bash/find ===
+{toolTitle}{b}Find:{/b}{/} {muted}*.ts{/}{dim} 2 files{/}{dim} · in src{/}
+  {dim}├─{/} {toolOutput}src/a.ts{/}
+  {dim}└─{/} {toolOutput}src/lib/b.ts{/}
+
 === light · w80 · read/null-optional-args ===
 {b}{bashMode}▤ Read{/}{/b} {accent}src/auth.ts{/}
 
@@ -683,6 +807,28 @@
   {dim}└─{/} {accent}src/b.ts{/}
      {dim}*4{/}{dim}│{/} {toolOutput}renderStatus(){/}
 
+=== light · w80 · grep/one-match ===
+{toolTitle}⌕{/} {toolTitle}{b}Grep:{/b}{/} {muted}renderStatus{/}{dim} 1 match · 1 file{/}{dim} · in {/}{dim}src{/}
+  {dim}└─{/} {dim}*54{/}{dim}│{/} {toolOutput}export function renderStatus({/}
+
+=== light · w80 · grep/many-matches ===
+{toolTitle}⌕{/} {toolTitle}{b}Grep:{/b}{/} {muted}row{/}{dim} 12 matches · 1 file{/}{dim} · in {/}{dim}src{/}
+  {dim}├─{/} {dim}* 1{/}{dim}│{/} {toolOutput}row 1{/}
+  {dim}│ {/} {dim}* 2{/}{dim}│{/} {toolOutput}row 2{/}
+  {dim}│ {/} {dim}* 3{/}{dim}│{/} {toolOutput}row 3{/}
+  {dim}│ {/} {dim}* 4{/}{dim}│{/} {toolOutput}row 4{/}
+  {dim}│ {/} {dim}* 5{/}{dim}│{/} {toolOutput}row 5{/}
+  {dim}└─{/} {dim}… 7 more matches{/}{dim} · Ctrl+O to expand{/}
+
+=== light · w80 · bash/grep-many-matches ===
+{toolTitle}{b}Grep:{/b}{/} {muted}row{/}{dim} 12 matches · 1 file{/}{dim} · in src{/}
+  {dim}├─{/} {dim}* 1{/}{dim}│{/} {toolOutput}row 1{/}
+  {dim}│ {/} {dim}* 2{/}{dim}│{/} {toolOutput}row 2{/}
+  {dim}│ {/} {dim}* 3{/}{dim}│{/} {toolOutput}row 3{/}
+  {dim}│ {/} {dim}* 4{/}{dim}│{/} {toolOutput}row 4{/}
+  {dim}│ {/} {dim}* 5{/}{dim}│{/} {toolOutput}row 5{/}
+  {dim}└─{/} {dim}… 7 more matches{/}{dim} · Ctrl+O to expand{/}
+
 === light · w80 · edit/diff ===
 {b}{bashMode}✎ Edit{/}{/b}: src/plan.txt                                                            
 {dim} {/} {dim}  1{/}  alpha                                                                    
@@ -691,6 +837,53 @@
 {dim} {/} {dim}  3{/}  gamma                                                                    
 {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  4{/}  delta                                                                {sgr:49}    
 {dim}{text}2.2s{/}{dim} · {/}{dim}1 file{/}{dim} · {/}{toolDiffAdded}+2{/} {toolDiffRemoved}-1{/}{/}                                                           
+
+=== light · w80 · edit/long-context ===
+{b}{bashMode}✎ Edit{/}{/b}: src/rows.txt                                                            
+{dim} {/} {dim}  1{/}  row 1                                                                    
+{dim} {/} {dim}  2{/}  row 2                                                                    
+{dim} {/} {dim}  3{/}  row 3                                                                    
+{dim} {/} {dim}  4{/}  row 4                                                                    
+{sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  5{/}  {sgr:48;2;75;51;57}row{sgr:48;2;52;43;49} 5                                                                {sgr:49}    
+{sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  5{/}  {sgr:48;2;57;96;62}ROW{sgr:48;2;45;68;53} 5                                                                {sgr:49}    
+{dim} {/} {dim}  6{/}  row 6                                                                    
+{dim} {/} {dim}  7{/}  row 7                                                                    
+{muted}⋯ 7 unchanged lines hidden{/}                                                      
+  {dim}{text}2.2s{/}{dim} · {/}{dim}1 file{/}{dim} · {/}{toolDiffAdded}+1{/} {toolDiffRemoved}-1{/}{/}                                       {dim}Ctrl+O to expand{/}  
+
+=== light · w80 · edit/pi-skip-marker ===
+{b}{bashMode}✎ Edit{/}{/b}: src/rows.txt                                                            
+{dim} {/} {dim}  1{/}  row 1                                                                    
+{dim} {/} {dim}  2{/}  row 2                                                                    
+{dim} {/} {dim}  3{/}  row 3                                                                    
+{dim} {/} {dim}  4{/}  row 4                                                                    
+{sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  5{/}  {sgr:48;2;75;51;57}row{sgr:48;2;52;43;49} 5                                                                {sgr:49}    
+{sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  5{/}  {sgr:48;2;57;96;62}ROW{sgr:48;2;45;68;53} 5                                                                {sgr:49}    
+{dim} {/} {dim}  6{/}  row 6                                                                    
+{dim} {/} {dim}  7{/}  row 7                                                                    
+{dim} {/} {dim}  8{/}  row 8                                                                    
+{dim} {/} {dim}  9{/}  row 9                                                                    
+{muted}⋯ unchanged lines hidden{/}                                                        
+{dim}{text}2.2s{/}{dim} · {/}{dim}1 file{/}{dim} · {/}{toolDiffAdded}+1{/} {toolDiffRemoved}-1{/}{/}                                                           
+
+=== light · w80 · edit/long-context-expanded ===
+{b}{bashMode}✎ Edit{/}{/b}: src/rows.txt                                                            
+{dim} {/} {dim}  1{/}  row 1                                                                    
+{dim} {/} {dim}  2{/}  row 2                                                                    
+{dim} {/} {dim}  3{/}  row 3                                                                    
+{dim} {/} {dim}  4{/}  row 4                                                                    
+{sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  5{/}  {sgr:48;2;75;51;57}row{sgr:48;2;52;43;49} 5                                                                {sgr:49}    
+{sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  5{/}  {sgr:48;2;57;96;62}ROW{sgr:48;2;45;68;53} 5                                                                {sgr:49}    
+{dim} {/} {dim}  6{/}  row 6                                                                    
+{dim} {/} {dim}  7{/}  row 7                                                                    
+{dim} {/} {dim}  8{/}  row 8                                                                    
+{dim} {/} {dim}  9{/}  row 9                                                                    
+{dim} {/} {dim} 10{/}  row 10                                                                   
+{dim} {/} {dim} 11{/}  row 11                                                                   
+{dim} {/} {dim} 12{/}  row 12                                                                   
+{dim} {/} {dim} 13{/}  row 13                                                                   
+{dim} {/} {dim} 14{/}  row 14                                                                   
+{dim}{text}2.2s{/}{dim} · {/}{dim}1 file{/}{dim} · {/}{toolDiffAdded}+1{/} {toolDiffRemoved}-1{/}{/}                                                           
 
 === light · w80 · edit/error ===
 {b}{error}✎ Edit ✘{/}{/b}: src/plan.txt                                                          
@@ -932,16 +1125,16 @@
 
 === inline · w80 · bash/git-status ===
 {success}●{/} {b}Git status{/b}
-  {accent}2 modified{/}{dim} · {/}{warning}1 untracked{/}
-  {text}main{/}{dim} · {/}{accent}ahead 2{/}
-  {dim}├─{/} {toolOutput}M{/}  {toolOutput}src/a.ts{/}
-  {dim}├─{/} {toolOutput}D{/}  {toolOutput}src/old.ts{/}
-  {dim}└─{/} {warning}?{/}  {toolOutput}notes.txt{/}
+  {dim}⎿{/}  {accent}2 modified{/}{dim} · {/}{warning}1 untracked{/}
+     {text}main{/}{dim} · {/}{accent}ahead 2{/}
+     {dim}├─{/} {toolOutput}M{/}  {toolOutput}src/a.ts{/}
+     {dim}├─{/} {toolOutput}D{/}  {toolOutput}src/old.ts{/}
+     {dim}└─{/} {warning}?{/}  {toolOutput}notes.txt{/}
 
 === inline · w80 · bash/git-diff ===
 {success}●{/} {b}Git diff{/b}
-  {accent}1 file{/} {toolDiffAdded}+1{/} {toolDiffRemoved}-1{/}
-  {dim}⎿{/}  {b}{text}notes.txt{/}{/b}                                                                  
+  {dim}⎿{/}  {accent}1 file{/} {toolDiffAdded}+1{/} {toolDiffRemoved}-1{/}
+     {b}{text}notes.txt{/}{/b}                                                                  
      {dim} {/} {dim}  1{/}  alpha                                                               
      {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43;49}                                                            {sgr:49}    
      {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  2{/}  {sgr:48;2;57;96;62}BETA{sgr:48;2;45;68;53}                                                            {sgr:49}    
@@ -950,9 +1143,34 @@
 
 === inline · w80 · bash/gh-pr-view ===
 {success}●{/} {b}PR #42 · Fixture PR{/b}
-  {accent}OPEN{/}
-  {muted}Body line one{/}
-  {muted}Body line two{/}
+  {dim}⎿{/}  {accent}OPEN{/}
+     {muted}Body line one{/}
+     {muted}Body line two{/}
+
+=== inline · w80 · bash/git-diff-empty ===
+{success}●{/} {b}Git diff{/b}
+  {dim}⎿{/}  {muted}no changes{/}
+     {dim}2.2s{/}
+
+=== inline · w80 · bash/gh-run-job ===
+{success}●{/} {b}Run job · 123{/b}
+  {dim}⎿{/}  {toolTitle}Log · 123{/}                                                                  
+     {toolOutput}build	Set up job	ok{/}                                                    
+     {toolOutput}build	Run tests	passed{/}                                                 
+     {dim}{text}2.2s{/}{/}                                                                       
+
+=== inline · w80 · bash/ls ===
+{success}●{/} {b}{toolTitle}List{/}{/b}{dim}({/}{text}src{/}{dim}){/}
+  {dim}⎿{/}  {dim}Listed 3 paths{/}
+     {dim}├─{/} {toolOutput}a.ts{/}
+     {dim}├─{/} {toolOutput}b.ts{/}
+     {dim}└─{/} {toolOutput}lib/{/}
+
+=== inline · w80 · bash/find ===
+{success}●{/} {b}{toolTitle}Find{/}{/b}{dim}({/}{text}*.ts in src{/}{dim}){/}
+  {dim}⎿{/}  {dim}Found 2 files{/}
+     {dim}├─{/} {toolOutput}src/a.ts{/}
+     {dim}└─{/} {toolOutput}src/lib/b.ts{/}
 
 === inline · w80 · read/null-optional-args ===
 {success}●{/} {b}{toolTitle}Read{/}{/b}{dim}({/}{text}src/auth.ts{/}{dim}){/}
@@ -998,6 +1216,27 @@
      {dim}│ {/} {dim}*54{/}{dim}│{/} {toolOutput}export function renderStatus({/}
      {dim}└─{/} {dim}… 1 more match · 1 more file{/}
 
+=== inline · w80 · grep/one-match ===
+{success}●{/} {b}{toolTitle}Grep{/}{/b}{dim}({/}{text}renderStatus in src{/}{dim}){/}
+  {dim}⎿{/}  {dim}1 match in 1 file{/}
+     {dim}└─{/} {dim}*54{/}{dim}│{/} {toolOutput}export function renderStatus({/}
+
+=== inline · w80 · grep/many-matches ===
+{success}●{/} {b}{toolTitle}Grep{/}{/b}{dim}({/}{text}row in src{/}{dim}){/}
+  {dim}⎿{/}  {dim}12 matches in 1 file{/}{dim} · Ctrl+O to expand{/}
+     {dim}├─{/} {dim}* 1{/}{dim}│{/} {toolOutput}row 1{/}
+     {dim}│ {/} {dim}* 2{/}{dim}│{/} {toolOutput}row 2{/}
+     {dim}│ {/} {dim}* 3{/}{dim}│{/} {toolOutput}row 3{/}
+     {dim}└─{/} {dim}… 9 more matches{/}
+
+=== inline · w80 · bash/grep-many-matches ===
+{success}●{/} {b}{toolTitle}Grep{/}{/b}{dim}({/}{text}row in src{/}{dim}){/}
+  {dim}⎿{/}  {dim}12 matches in 1 file · Ctrl+O to expand{/}
+     {dim}├─{/} {dim}* 1{/}{dim}│{/} {toolOutput}row 1{/}
+     {dim}│ {/} {dim}* 2{/}{dim}│{/} {toolOutput}row 2{/}
+     {dim}│ {/} {dim}* 3{/}{dim}│{/} {toolOutput}row 3{/}
+     {dim}└─{/} {dim}… 9 more matches{/}
+
 === inline · w80 · edit/diff ===
 {success}●{/} {b}{toolTitle}Edit{/}{/b}{dim}({/}{text}src/plan.txt{/}{dim}){/}
   {dim}⎿{/}  {dim}Updated src/plan.txt with 2 additions and 1 removal{/}
@@ -1007,6 +1246,57 @@
      {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  2{/}  {sgr:48;2;57;96;62}BETA{sgr:48;2;45;68;53}                                                                {sgr:49}
      {dim} {/} {dim}  3{/}  gamma                                                               
      {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  4{/}  delta                                                               {sgr:49}
+
+=== inline · w80 · edit/long-context ===
+{success}●{/} {b}{toolTitle}Edit{/}{/b}{dim}({/}{text}src/rows.txt{/}{dim}){/}
+  {dim}⎿{/}  {dim}Updated src/rows.txt with 1 addition and 1 removal{/}
+     {toolDiffAdded}+1{/} {toolDiffRemoved}−1{/}{dim} · {/}{dim}2.2s{/}
+     {dim} {/} {dim}  1{/}  row 1                                                               
+     {dim} {/} {dim}  2{/}  row 2                                                               
+     {dim} {/} {dim}  3{/}  row 3                                                               
+     {dim} {/} {dim}  4{/}  row 4                                                               
+     {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  5{/}  {sgr:48;2;75;51;57}row{sgr:48;2;52;43;49} 5                                                               {sgr:49}
+     {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  5{/}  {sgr:48;2;57;96;62}ROW{sgr:48;2;45;68;53} 5                                                               {sgr:49}
+     {dim} {/} {dim}  6{/}  row 6                                                               
+     {dim} {/} {dim}  7{/}  row 7                                                               
+     {muted}⋯ 7 unchanged lines hidden{/}                                                 
+     {dim}… Ctrl+O to expand{/}
+
+=== inline · w80 · edit/pi-skip-marker ===
+{success}●{/} {b}{toolTitle}Edit{/}{/b}{dim}({/}{text}src/rows.txt{/}{dim}){/}
+  {dim}⎿{/}  {dim}Updated src/rows.txt with 1 addition and 1 removal{/}
+     {toolDiffAdded}+1{/} {toolDiffRemoved}−1{/}{dim} · {/}{dim}2.2s{/}
+     {dim} {/} {dim}  1{/}  row 1                                                               
+     {dim} {/} {dim}  2{/}  row 2                                                               
+     {dim} {/} {dim}  3{/}  row 3                                                               
+     {dim} {/} {dim}  4{/}  row 4                                                               
+     {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  5{/}  {sgr:48;2;75;51;57}row{sgr:48;2;52;43;49} 5                                                               {sgr:49}
+     {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  5{/}  {sgr:48;2;57;96;62}ROW{sgr:48;2;45;68;53} 5                                                               {sgr:49}
+     {dim} {/} {dim}  6{/}  row 6                                                               
+     {dim} {/} {dim}  7{/}  row 7                                                               
+     {dim} {/} {dim}  8{/}  row 8                                                               
+     {dim} {/} {dim}  9{/}  row 9                                                               
+     {muted}⋯ unchanged lines hidden{/}                                                   
+
+=== inline · w80 · edit/long-context-expanded ===
+{success}●{/} {b}{toolTitle}Edit{/}{/b}{dim}({/}{text}src/rows.txt{/}{dim}){/}
+  {dim}⎿{/}  {dim}Updated src/rows.txt with 1 addition and 1 removal{/}
+     {toolDiffAdded}+1{/} {toolDiffRemoved}−1{/}{dim} · {/}{dim}2.2s{/}
+     {dim} {/} {dim}  1{/}  row 1                                                               
+     {dim} {/} {dim}  2{/}  row 2                                                               
+     {dim} {/} {dim}  3{/}  row 3                                                               
+     {dim} {/} {dim}  4{/}  row 4                                                               
+     {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  5{/}  {sgr:48;2;75;51;57}row{sgr:48;2;52;43;49} 5                                                               {sgr:49}
+     {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  5{/}  {sgr:48;2;57;96;62}ROW{sgr:48;2;45;68;53} 5                                                               {sgr:49}
+     {dim} {/} {dim}  6{/}  row 6                                                               
+     {dim} {/} {dim}  7{/}  row 7                                                               
+     {dim} {/} {dim}  8{/}  row 8                                                               
+     {dim} {/} {dim}  9{/}  row 9                                                               
+     {dim} {/} {dim} 10{/}  row 10                                                              
+     {dim} {/} {dim} 11{/}  row 11                                                              
+     {dim} {/} {dim} 12{/}  row 12                                                              
+     {dim} {/} {dim} 13{/}  row 13                                                              
+     {dim} {/} {dim} 14{/}  row 14                                                              
 
 === inline · w80 · edit/error ===
 {error}●{/} {b}{error}Edit{/}{/b}{dim}({/}{text}src/plan.txt{/}{dim}){/}
@@ -1114,6 +1404,23 @@
 {borderMuted}│{/} {dim}{error}Exit 1{/}{dim} · {/}{text}2.23s{/}{dim} · {/}{dim}~2 words{/}{/}        {borderMuted}│{/}
 {borderMuted}╰──────────────────────────────────╯{/}
 
+=== boxed · w36 · bash/long-collapsed ===
+{borderMuted}╭──────────────────────────────────╮{/}
+{borderMuted}│{/} {dim}$ {/}{syntaxFunction}seq{/} {syntaxString}30{/}                         {borderMuted}│{/}
+{borderMuted}├─── {/}{toolTitle}Output{/}{borderMuted} ───────────────────────{/}{borderMuted}┤{/}
+{borderMuted}│{/} {text}line 21{/}                          {borderMuted}│{/}
+{borderMuted}│{/} {text}line 22{/}                          {borderMuted}│{/}
+{borderMuted}│{/} {text}line 23{/}                          {borderMuted}│{/}
+{borderMuted}│{/} {text}line 24{/}                          {borderMuted}│{/}
+{borderMuted}│{/} {text}line 25{/}                          {borderMuted}│{/}
+{borderMuted}│{/} {text}line 26{/}                          {borderMuted}│{/}
+{borderMuted}│{/} {text}line 27{/}                          {borderMuted}│{/}
+{borderMuted}│{/} {text}line 28{/}                          {borderMuted}│{/}
+{borderMuted}│{/} {text}line 29{/}                          {borderMuted}│{/}
+{borderMuted}│{/} {text}line 30{/}                          {borderMuted}│{/}
+{borderMuted}│{/} {dim}{text}Exit 0{/}{dim} · {/}{text}2.23s{/}{dim} · {/}{dim}~60 wor{sgr:0}…{sgr:0} {dim}Ctrl+O{/} {borderMuted}│{/}
+{borderMuted}╰──────────────────────────────────╯{/}
+
 === boxed · w36 · grep/settled ===
 {toolTitle}⌕{/} {toolTitle}{b}Grep:{/b}{/} {muted}renderStatus{/}{dim} 3 matches · 2 {sgr:0}…{sgr:0}
   {dim}├─{/} {accent}src/a.ts{/}
@@ -1121,6 +1428,15 @@
   {dim}│ {/} {dim}*54{/}{dim}│{/} {toolOutput}export function renderSta{sgr:0}…{sgr:0}
   {dim}└─{/} {accent}src/b.ts{/}
      {dim}*4{/}{dim}│{/} {toolOutput}renderStatus(){/}
+
+=== boxed · w36 · grep/many-matches ===
+{toolTitle}⌕{/} {toolTitle}{b}Grep:{/b}{/} {muted}row{/}{dim} 12 matches · 1 file{/}{dim} · i{sgr:0}…{sgr:0}
+  {dim}├─{/} {dim}* 1{/}{dim}│{/} {toolOutput}row 1{/}
+  {dim}│ {/} {dim}* 2{/}{dim}│{/} {toolOutput}row 2{/}
+  {dim}│ {/} {dim}* 3{/}{dim}│{/} {toolOutput}row 3{/}
+  {dim}│ {/} {dim}* 4{/}{dim}│{/} {toolOutput}row 4{/}
+  {dim}│ {/} {dim}* 5{/}{dim}│{/} {toolOutput}row 5{/}
+  {dim}└─{/} {dim}… 7 more matches{/}{dim} · Ctrl+O{/}
 
 === boxed · w36 · edit/diff ===
 {borderMuted}╭─── {/}{b}{bashMode}✎ Edit{/}{/b}: src/plan.txt{borderMuted} ─────────{/}{borderMuted}╮{/}
@@ -1138,6 +1454,22 @@
 {borderMuted}│{/} {dim}2 {/}{toolOutput}two{/}                            {borderMuted}│{/}
 {borderMuted}│{/} {dim}3 {/}{toolOutput}three{/}                          {borderMuted}│{/}
 {borderMuted}│{/} {text}2.23s{/}{dim} · {/}{dim}~8 words{/}                 {borderMuted}│{/}
+{borderMuted}╰──────────────────────────────────╯{/}
+
+=== boxed · w36 · write/long-collapsed ===
+{borderMuted}╭─── {/}{b}{bashMode}✎ Write{/}{/b}: notes/long.txt{borderMuted} ──────{/}{borderMuted}╮{/}
+{borderMuted}│{/} {dim} 1 {/}{toolOutput}line 1{/}                        {borderMuted}│{/}
+{borderMuted}│{/} {dim} 2 {/}{toolOutput}line 2{/}                        {borderMuted}│{/}
+{borderMuted}│{/} {dim} 3 {/}{toolOutput}line 3{/}                        {borderMuted}│{/}
+{borderMuted}│{/} {dim} 4 {/}{toolOutput}line 4{/}                        {borderMuted}│{/}
+{borderMuted}│{/} {dim} 5 {/}{toolOutput}line 5{/}                        {borderMuted}│{/}
+{borderMuted}│{/} {dim} 6 {/}{toolOutput}line 6{/}                        {borderMuted}│{/}
+{borderMuted}│{/} {dim} 7 {/}{toolOutput}line 7{/}                        {borderMuted}│{/}
+{borderMuted}│{/} {dim} 8 {/}{toolOutput}line 8{/}                        {borderMuted}│{/}
+{borderMuted}│{/} {dim} 9 {/}{toolOutput}line 9{/}                        {borderMuted}│{/}
+{borderMuted}│{/} {dim}10 {/}{toolOutput}line 10{/}                       {borderMuted}│{/}
+{borderMuted}│{/} {muted}… 10 more lines{/}                  {borderMuted}│{/}
+{borderMuted}│{/} {text}2.23s{/}{dim} · {/}{dim}~8 words{/}   Ctrl+O        {borderMuted}│{/}
 {borderMuted}╰──────────────────────────────────╯{/}
 
 === light · w36 · fallback/settled ===
@@ -1165,6 +1497,21 @@
 {text}1 failing{/}                           
 {dim}{error}Exit 1{/}{dim} · {/}{text}2.23s{/}{dim} · {/}{dim}~2 words{/}{/}           
 
+=== light · w36 · bash/long-collapsed ===
+{dim}$ {/}{syntaxFunction}seq{/} {syntaxString}30{/}                            
+{toolTitle}Output{/}                              
+{text}line 21{/}                             
+{text}line 22{/}                             
+{text}line 23{/}                             
+{text}line 24{/}                             
+{text}line 25{/}                             
+{text}line 26{/}                             
+{text}line 27{/}                             
+{text}line 28{/}                             
+{text}line 29{/}                             
+{text}line 30{/}                             
+  {dim}{text}Exit 0{/}{dim} · {/}{text}2.23s{/}{dim} · {/}{dim}~60 wor{sgr:0}…{sgr:0} {dim}Ctrl+O{/}  
+
 === light · w36 · grep/settled ===
 {toolTitle}⌕{/} {toolTitle}{b}Grep:{/b}{/} {muted}renderStatus{/}{dim} 3 matches · 2 {sgr:0}…{sgr:0}
   {dim}├─{/} {accent}src/a.ts{/}
@@ -1172,6 +1519,15 @@
   {dim}│ {/} {dim}*54{/}{dim}│{/} {toolOutput}export function renderSta{sgr:0}…{sgr:0}
   {dim}└─{/} {accent}src/b.ts{/}
      {dim}*4{/}{dim}│{/} {toolOutput}renderStatus(){/}
+
+=== light · w36 · grep/many-matches ===
+{toolTitle}⌕{/} {toolTitle}{b}Grep:{/b}{/} {muted}row{/}{dim} 12 matches · 1 file{/}{dim} · i{sgr:0}…{sgr:0}
+  {dim}├─{/} {dim}* 1{/}{dim}│{/} {toolOutput}row 1{/}
+  {dim}│ {/} {dim}* 2{/}{dim}│{/} {toolOutput}row 2{/}
+  {dim}│ {/} {dim}* 3{/}{dim}│{/} {toolOutput}row 3{/}
+  {dim}│ {/} {dim}* 4{/}{dim}│{/} {toolOutput}row 4{/}
+  {dim}│ {/} {dim}* 5{/}{dim}│{/} {toolOutput}row 5{/}
+  {dim}└─{/} {dim}… 7 more matches{/}{dim} · Ctrl+O{/}
 
 === light · w36 · edit/diff ===
 {b}{bashMode}✎ Edit{/}{/b}: src/plan.txt                
@@ -1188,6 +1544,21 @@
 {dim}2 {/}{toolOutput}two{/}                               
 {dim}3 {/}{toolOutput}three{/}                             
 {text}2.23s{/}{dim} · {/}{dim}~8 words{/}                    
+
+=== light · w36 · write/long-collapsed ===
+{b}{bashMode}✎ Write{/}{/b}: notes/long.txt             
+{dim} 1 {/}{toolOutput}line 1{/}                           
+{dim} 2 {/}{toolOutput}line 2{/}                           
+{dim} 3 {/}{toolOutput}line 3{/}                           
+{dim} 4 {/}{toolOutput}line 4{/}                           
+{dim} 5 {/}{toolOutput}line 5{/}                           
+{dim} 6 {/}{toolOutput}line 6{/}                           
+{dim} 7 {/}{toolOutput}line 7{/}                           
+{dim} 8 {/}{toolOutput}line 8{/}                           
+{dim} 9 {/}{toolOutput}line 9{/}                           
+{dim}10 {/}{toolOutput}line 10{/}                          
+{muted}… 10 more lines{/}                     
+{text}2.23s{/}{dim} · {/}{dim}~8 words{/}   Ctrl+O to expand 
 
 === inline · w36 · fallback/settled ===
 {success}●{/} {b}{toolTitle}Exa: Web Search Exa{/}{/b}{dim}({/}{text}query: pi co…{/}{dim}){/}
@@ -1208,13 +1579,30 @@
   {dim}⎿{/}  {text}1 failing{/}
      {error}✘ Exit 1{/}{dim} · {/}{dim}2.2s{/}{dim} · {/}{dim}~2 words{/}
 
+=== inline · w36 · bash/long-collapsed ===
+{success}●{/} {b}{toolTitle}Bash{/}{/b}{dim}({/}{text}seq 30{/}{dim}){/}
+  {dim}⎿{/}  {dim}… +26 earlier lines · Ctrl+O{/}
+     {text}line 27{/}
+     {text}line 28{/}
+     {text}line 29{/}
+     {text}line 30{/}
+     {dim}2.2s{/}{dim} · {/}{dim}~60 words{/}
+
 === inline · w36 · grep/settled ===
 {success}●{/} {b}{toolTitle}Grep{/}{/b}{dim}({/}{text}renderStatus in src{/}{dim}){/}
-  {dim}⎿{/}  {dim}3 matches in 2 files{/}{dim} · Ctrl+O {sgr:0}…{sgr:0}
+  {dim}⎿{/}  {dim}3 matches in 2 files{/}{dim} · Ctrl+O{/}
      {dim}├─{/} {accent}src/a.ts{/}
      {dim}│ {/} {dim}* 4{/}{dim}│{/} {toolOutput}import { renderStatus {sgr:0}…{sgr:0}
      {dim}│ {/} {dim}*54{/}{dim}│{/} {toolOutput}export function render{sgr:0}…{sgr:0}
      {dim}└─{/} {dim}… 1 more match · 1 more file{/}
+
+=== inline · w36 · grep/many-matches ===
+{success}●{/} {b}{toolTitle}Grep{/}{/b}{dim}({/}{text}row in src{/}{dim}){/}
+  {dim}⎿{/}  {dim}12 matches in 1 file{/}{dim} · Ctrl+O{/}
+     {dim}├─{/} {dim}* 1{/}{dim}│{/} {toolOutput}row 1{/}
+     {dim}│ {/} {dim}* 2{/}{dim}│{/} {toolOutput}row 2{/}
+     {dim}│ {/} {dim}* 3{/}{dim}│{/} {toolOutput}row 3{/}
+     {dim}└─{/} {dim}… 9 more matches{/}
 
 === inline · w36 · edit/diff ===
 {success}●{/} {b}{toolTitle}Edit{/}{/b}{dim}({/}{text}src/plan.txt{/}{dim}){/}
@@ -1232,3 +1620,12 @@
      {dim}1 {/}{toolOutput}one{/}
      {dim}2 {/}{toolOutput}two{/}
      {dim}3 {/}{toolOutput}three{/}
+
+=== inline · w36 · write/long-collapsed ===
+{success}●{/} {b}{toolTitle}Write{/}{/b}{dim}({/}{text}notes/long.txt{/}{dim}){/}
+  {dim}⎿{/}  {dim}Wrote 20 lines{/}{dim} · {/}{dim}2.2s{/}
+     {dim} 1 {/}{toolOutput}line 1{/}
+     {dim} 2 {/}{toolOutput}line 2{/}
+     {dim} 3 {/}{toolOutput}line 3{/}
+     {dim} 4 {/}{toolOutput}line 4{/}
+     {dim}… +16 lines · Ctrl+O to expand{/}

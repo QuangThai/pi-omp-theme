@@ -33,7 +33,7 @@
 import type { Component } from "@earendil-works/pi-tui";
 import { type BoxTheme, isInlineChrome } from "../../../shared/box.js";
 import { inlineElapsed, inlineMarker } from "../../../shared/inline.js";
-import { toolExpandHint } from "../../../shared/keybinding-hints.js";
+import { fitExpandHint, toolExpandHint } from "../../../shared/keybinding-hints.js";
 import { safeTruncateToWidth } from "../../../shared/render-budget.js";
 import { pluralForm } from "./output-tree.js";
 import { resetToolRowHints, toolRowPlacement } from "./render-viewport.js";
@@ -460,7 +460,8 @@ export function renderTurnSummaryCall(theme: BoxTheme, turn: TurnState): Compone
 	return {
 		invalidate() {},
 		render(width: number): string[] {
-			return [safeTruncateToWidth(formatTurnSummaryLine(theme, turn), Math.max(1, width), "…")];
+			const line = fitExpandHint(formatTurnSummaryLine(theme, turn), Math.max(1, width));
+			return [safeTruncateToWidth(line, Math.max(1, width), "…")];
 		},
 	};
 }

@@ -13,6 +13,14 @@ All notable changes to this project are documented here.
 
 ### Fixed
 
+- Ctrl+O no longer promises lines it cannot show. A diff (edit, quick edit, `git diff`) offered it when only unchanged context was folded, and expanding repainted the same rows; an expanded diff now shows all the context it has room for, so Ctrl+O and a click reveal the folded lines. Inline grep offered it when every match was already shown, and compaction, skill, and branch blocks when their body was empty or a single line that fits. An expanded diff past its row budget no longer offers it on its `lines omitted` row.
+- Diffs read Pi's `...` row (unchanged lines its edit diff leaves out) as a gap: it no longer shows as a numbered line (`10 ...`) or counts toward `⋯ 3 unchanged lines hidden`, so a short edit diff shows all its context instead of folding two lines behind a hint. A gap between two changes says how many lines it hides.
+- Split diffs number the new side correctly after a skipped run, after a change that opens the diff, and across the hunks of a `git diff`; context lines there continued the previous count.
+- Boxed grep results and `grep` commands run through bash now offer Ctrl+O on their `… 7 more matches` row, as the other truncated results do.
+- On a narrow terminal the expand hint is no longer cut to `Ctrl+O t…`: a row that cannot fit `Ctrl+O to expand` shows the bare key (`· Ctrl+O`) and shortens its own text first, in every chrome (result rows, tree `… more` rows, footers, and the inline turn summary).
+- An expanded grep (the tool and `grep`/`rg` through bash) shows up to `tools.maxExpandedLines` rows instead of stopping at 24; collapsed previews keep their six-row cap.
+- Inline chrome: `grep`, `rg`, `ls`, and `find` run through bash read like the Grep, List, and Find tools (`● Grep(row in src)`, then `12 matches in 1 file` under the `⎿` gutter, then the tree), and git and gh cards hang under the gutter too. A `git diff` no longer opens a second `⎿` halfway down its block, and an empty one no longer repeats `no changes`.
+- `git diff` and `git status` render their cards on Windows with `core.autocrlf` on. Git's `LF will be replaced by CRLF` warnings in the output made the parser fall back to raw text.
 - `/reload` left the transcript half-themed: the reloaded copy found the previous copy's core patches still installed and fell back to Pi's native rendering, while the retired copy kept rendering, so restored history could repeat, new tool calls could go missing, and `/pi-omp-theme doctor` reported the surfaces as native. The reloaded copy now takes the patches over, and `widgets.hide` changes apply on `/reload`.
 
 ## [1.0.17] - 2026-10-11

@@ -7,7 +7,7 @@
 // to it whenever the theme or component shape is unavailable.
 
 import { Markdown, type MarkdownTheme } from "@earendil-works/pi-tui";
-import { truncateAnsi } from "../../shared/ansi.js";
+import { truncateAnsi, visibleWidth } from "../../shared/ansi.js";
 import { type BoxTheme, isInlineChrome } from "../../shared/box.js";
 import { toolExpandHint } from "../../shared/keybinding-hints.js";
 import { setFullTheme } from "../../shared/theme-extras.js";
@@ -111,6 +111,16 @@ function summaryLead(text: string): string {
 }
 
 /**
+ * Ctrl+O for a collapsed block only when its expanded body shows more than the
+ * lead line it paints: further lines, or a lead too long for the row.
+ */
+function expandHintFor(text: string): (contentWidth: number) => string {
+	const lines = (text ?? "").split("\n").filter((line) => line.trim()).length;
+	const lead = summaryLead(text);
+	return (contentWidth) => (lines > 1 || visibleWidth(lead) > contentWidth ? toolExpandHint() : "");
+}
+
+/**
  * Body for a collapsed block: the given rows, blanks dropped, each fitted to the
  * frame so a long summary line cannot overflow the border.
  */
@@ -170,7 +180,7 @@ function patchCompaction(instance: MessageBlockInstance, _original: () => void, 
 	const block = renderBoxedMessageBlock(theme, {
 		kind: "Compaction",
 		title: amount,
-		...(expanded ? {} : { right: toolExpandHint() }),
+		...(expanded ? {} : { right: expandHintFor(summary) }),
 		body: expanded ? body : collapsedLines(theme, [compactionStat(theme, before, tokensAfter), summaryLead(summary)]),
 		icon: "⊟",
 		hasDivider: expanded,
@@ -196,7 +206,7 @@ function patchSkill(instance: MessageBlockInstance, _original: () => void, theme
 	const block = renderBoxedMessageBlock(theme, {
 		kind: "Skill",
 		title: skillName,
-		...(expanded ? {} : { right: toolExpandHint() }),
+		...(expanded ? {} : { right: expandHintFor(content) }),
 		body: expanded ? body : collapsedLines(theme, [summaryLead(content)]),
 		icon: "⊟",
 		hasDivider: expanded,
@@ -220,7 +230,7 @@ function patchBranch(instance: MessageBlockInstance, _original: () => void, them
 
 	const block = renderBoxedMessageBlock(theme, {
 		kind: "Branch",
-		...(expanded ? {} : { right: toolExpandHint() }),
+		...(expanded ? {} : { right: expandHintFor(summary) }),
 		body: expanded ? body : collapsedLines(theme, [summaryLead(summary)]),
 		icon: "⑂",
 		hasDivider: expanded,

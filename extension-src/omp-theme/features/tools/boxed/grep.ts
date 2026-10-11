@@ -30,9 +30,9 @@ import { toolExpandHint } from "../../../shared/keybinding-hints.js";
 import { safeTruncateToWidth } from "../../../shared/render-budget.js";
 import {
 	GREP_COLLAPSED_LINE_LIMIT,
-	GREP_EXPANDED_LINE_LIMIT,
 	type GrepDisplayLine,
 	type GrepMatch,
+	grepTreeShownLines,
 	groupMatchesByFile,
 	parseGrepDisplayOutput,
 	parseGrepOutput,
@@ -210,9 +210,8 @@ function renderErrorLines(theme: BoxTheme, errorText: string, width: number): st
 
 function grepLineBudget(expanded: boolean): number {
 	const config = getToolsRenderConfig();
-	const configured = expanded ? config.maxExpandedLines : config.maxCollapsedLines;
-	const ompLimit = expanded ? GREP_EXPANDED_LINE_LIMIT : GREP_COLLAPSED_LINE_LIMIT;
-	return Math.max(0, Math.min(configured, ompLimit));
+	if (expanded) return Math.max(0, config.maxExpandedLines);
+	return Math.max(0, Math.min(config.maxCollapsedLines, GREP_COLLAPSED_LINE_LIMIT));
 }
 
 function renderGrepPanelLines(theme: BoxTheme, state: GrepPanelState, width: number, expanded: boolean): string[] {
@@ -232,6 +231,7 @@ function renderGrepPanelLines(theme: BoxTheme, state: GrepPanelState, width: num
 	return renderGrepTree(theme, header, state.matches, safeWidth, {
 		lineBudget,
 		expanded,
+		...(expanded ? {} : { expandHint: toolExpandHint() }),
 		...(state.displayLines ? { displayLines: state.displayLines } : {}),
 		withIcons: getToolsRenderConfig().nerdFonts,
 		link: (styledText, file, line) => linkFile(state, styledText, file, line),
@@ -264,7 +264,11 @@ function renderInlineGrepLines(theme: BoxTheme, state: GrepPanelState, width: nu
 	const matchCount = state.matches.length;
 	const fileCount = groupMatchesByFile(state.matches).length;
 	const truncated = state.truncationLabel ? theme.fg("warning", ` · ${state.truncationLabel}`) : "";
-	const hint = expanded ? "" : toolExpandHint();
+	const displayLines = state.displayLines ? { displayLines: state.displayLines } : {};
+	const shown = (mode: boolean) =>
+		grepTreeShownLines(state.matches ?? [], { lineBudget: grepLineBudget(mode), expanded: mode, ...displayLines });
+	// Ctrl+O only when the expanded tree paints lines this one leaves out.
+	const hint = !expanded && shown(true) > shown(false) ? toolExpandHint() : "";
 	const summary = `${theme.fg(
 		"dim",
 		`${matchCount} ${pluralForm("match", matchCount)} in ${fileCount} ${pluralForm("file", fileCount)}`,

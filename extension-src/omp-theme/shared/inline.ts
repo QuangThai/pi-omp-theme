@@ -11,7 +11,7 @@
 import type { Component } from "@earendil-works/pi-tui";
 import type { BoxTheme } from "./box.js";
 import { formatElapsedMs } from "./elapsed.js";
-import { toolExpandHint } from "./keybinding-hints.js";
+import { fitExpandHint, toolExpandHint } from "./keybinding-hints.js";
 import { safeTruncateToWidth, safeVisibleWidth } from "./render-budget.js";
 
 export interface InlineGlyphs {
@@ -72,6 +72,11 @@ function truncate(text: string, width: number): string {
 	return safeTruncateToWidth(text, Math.max(1, width), "…");
 }
 
+/** Truncate a body row, keeping a trailing expand hint in view. */
+function fitRow(row: string, width: number): string {
+	return truncate(fitExpandHint(row, width), width);
+}
+
 /**
  * `● Name(args)`. When the row is too narrow the arguments give way first and
  * the closing parenthesis stays, so the call still reads as a call.
@@ -116,11 +121,11 @@ export function inlineGutterLines(
 ): string[] {
 	const indent = inlineBodyIndent();
 	const flat = rows.flatMap((row) => row.split("\n"));
-	if (width <= indent) return flat.map((row) => truncate(row, width));
+	if (width <= indent) return flat.map((row) => fitRow(row, width));
 	const opener = `${" ".repeat(GUTTER_LEAD)}${theme.fg("dim", glyphs.gutter)}${" ".repeat(GUTTER_GAP)}`;
 	const hang = " ".repeat(indent);
 	const contentWidth = width - indent;
-	return flat.map((row, index) => `${index === 0 && !options.continues ? opener : hang}${truncate(row, contentWidth)}`);
+	return flat.map((row, index) => `${index === 0 && !options.continues ? opener : hang}${fitRow(row, contentWidth)}`);
 }
 
 /** Dim `a · b · c` metadata row; empty parts are skipped. */
@@ -177,9 +182,14 @@ export function inlineBlock(
 /**
  * Hang a component that renders its own body (a diff view, a tool's own result
  * record) under the result gutter, painted at the gutter's content width.
+ * `continues` hangs it under a gutter an earlier component already opened.
  */
-export function inlineGutterComponent(theme: BoxTheme, component: Component): Component {
-	const block = inlineBlock(theme, undefined, (contentWidth) => component.render(contentWidth));
+export function inlineGutterComponent(
+	theme: BoxTheme,
+	component: Component,
+	options: { continues?: boolean } = {},
+): Component {
+	const block = inlineBlock(theme, undefined, (contentWidth) => component.render(contentWidth), options);
 	return {
 		invalidate() {
 			component.invalidate();

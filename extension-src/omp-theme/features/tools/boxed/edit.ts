@@ -42,6 +42,9 @@ import {
 
 const MAX_HIGHLIGHT_DIFF_CHARS = 12000;
 const MAX_HIGHLIGHT_DIFF_ROWS = 120;
+/** Diff rows painted collapsed and expanded. */
+const COLLAPSED_DIFF_ROWS = 36;
+const EXPANDED_DIFF_ROWS = 160;
 
 /** First-partial-pass result: the pending/running call card stands alone. */
 const EMPTY_EDIT_RESULT: Component = Object.freeze({
@@ -134,8 +137,11 @@ export const editTool: BoxedToolDefinition = {
 		const stats = countDiffStats(diff);
 
 		// Render adaptive diff (unified/split per width) with syntax colors for small outputs.
-		const maxRows = expanded ? 160 : 36;
-		const diffView = new AdaptiveDiffComponent(theme, rows, maxRows, shouldHighlight ? language : undefined);
+		const maxRows = expanded ? EXPANDED_DIFF_ROWS : COLLAPSED_DIFF_ROWS;
+		const diffView = new AdaptiveDiffComponent(theme, rows, maxRows, shouldHighlight ? language : undefined, {
+			expanded,
+			expandedMaxRows: EXPANDED_DIFF_ROWS,
+		});
 		if (isInlineChrome()) {
 			const shownPath = argPath || sourcePath;
 			return inlineFileDiff(theme, diffView, stats, expanded, context, shownPath ? displayPath(shownPath, context) : undefined);

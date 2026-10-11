@@ -18,6 +18,7 @@ import {
 	boxLabeledBorder,
 	boxWidth,
 	dimLine,
+	isInlineChrome,
 	renderBoxedToolResult,
 	dropOmittedLines,
 } from "../../../shared/box.js";
@@ -1493,7 +1494,8 @@ const GIT_CARD_HEAD_LIMIT = 6;
 const GIT_CONFLICT_PAIRS = new Set(["UU", "AA", "DD", "AU", "UA", "DU", "UD"]);
 
 function gitCardHeader(theme: BoxTheme, cls: GitSemanticClass, parsed?: GitParsedSemantic): string {
-	const icon = getToolsRenderConfig().nerdFonts ? `${GIT_ICON} ` : "";
+	// Inline chrome leads the row with its status marker instead.
+	const icon = getToolsRenderConfig().nerdFonts && !isInlineChrome() ? `${GIT_ICON} ` : "";
 	let prefix: string;
 	if (cls.kind === "diff") {
 		const label = cls.show ? "Git show" : "Git diff";
@@ -1803,8 +1805,27 @@ function renderActionCard(theme: BoxTheme, parsed: GitActionParsed, out: string[
 
 // ── Dispatch helpers (used by bash.ts) ──────────────────────────────────────
 
+/**
+ * Git for Windows' `core.autocrlf` notices reach the tool output through
+ * stderr. They belong to no result shape, so the fail-closed parsers would
+ * otherwise drop every diff or status they are mixed into back to raw text.
+ */
+const LINE_ENDING_NOTICE = /^warning: (?:in the working copy of .*, )?(?:CR)?LF will be replaced by (?:CR)?LF\b/;
+const LINE_ENDING_FOLLOW_UP = /^The file will have its original line endings in your working directory\.?$/;
+
+function dropLineEndingNotices(text: string): string {
+	if (!text.includes("will be replaced by")) return text;
+	return text
+		.split("\n")
+		.filter((line) => {
+			const bare = line.replace(/\r$/, "");
+			return !LINE_ENDING_NOTICE.test(bare) && !LINE_ENDING_FOLLOW_UP.test(bare);
+		})
+		.join("\n");
+}
+
 export function parseGitOutput(cls: GitSemanticClass, output: string): GitParsedSemantic | null {
-	const text = String(output ?? "");
+	const text = dropLineEndingNotices(String(output ?? ""));
 	if (cls.kind === "status") return parseGitStatus(cls, text);
 	if (cls.kind === "diff-stat") return parseGitDiffStat(text);
 	if (cls.kind === "show-stat") return parseGitShowStat(text);
@@ -1917,7 +1938,10 @@ export function renderGitDiffResult(
 				file.body.length <= GIT_DIFF_MAX_HIGHLIGHT_CHARS &&
 				rows.length <= GIT_DIFF_MAX_HIGHLIGHT_ROWS;
 			const maxRows = expanded ? GIT_DIFF_MAX_ROWS_EXPANDED : GIT_DIFF_MAX_ROWS_COLLAPSED;
-			const view = new AdaptiveDiffComponent(theme, rows, maxRows, shouldHighlight ? language : undefined);
+			const view = new AdaptiveDiffComponent(theme, rows, maxRows, shouldHighlight ? language : undefined, {
+				expanded,
+				expandedMaxRows: GIT_DIFF_MAX_ROWS_EXPANDED,
+			});
 			const expandHint = !expanded && view.hasCollapsed() ? toolExpandHint() : "";
 			fileBoxes.push({
 				topLabel,

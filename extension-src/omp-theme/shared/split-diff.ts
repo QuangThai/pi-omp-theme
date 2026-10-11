@@ -19,9 +19,12 @@ type DiffLine = {
 };
 
 type SplitDiffRow = {
-	kind: "context" | "changed" | "added" | "removed";
+	/** `skip` is Pi's `...` marker for unchanged lines its diff left out. */
+	kind: "context" | "changed" | "added" | "removed" | "skip";
 	left?: DiffLine;
 	right?: DiffLine;
+	/** Lines a `skip` stands for, when the numbers around it tell. */
+	hidden?: number;
 };
 
 type CellLineKind = "add" | "remove" | "context";
@@ -49,8 +52,8 @@ type DiffPalette = {
 /** A planned render entry: a diff row, a collapsed context gap, or a budget omission. */
 type DiffEntry =
 	| { kind: "row"; row: SplitDiffRow }
-	| { kind: "gap"; hidden: number }
-	| { kind: "omitted"; count: number };
+	| { kind: "gap"; hidden?: number }
+	| { kind: "omitted"; count: number; expandable: boolean };
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -370,12 +373,32 @@ function computeInlineDiffSpans(leftLine: string, rightLine: string): { left: Di
 
 // ── Exported helpers ───────────────────────────────────────────────
 
+/**
+ * Pi's diff marks unchanged lines it left out with a numberless ` ... ` row
+ * (` ${"".padStart(width)} ...`). Only Pi's numbered format carries it: a
+ * unified `git diff` (with `@@` hunks) may hold a context line that reads `...`.
+ */
+const PI_SKIP_MARKER = /^ {3,}\.\.\.$/;
+
+function isPiNumberedDiff(diff: string): boolean {
+	return !/^@@/m.test(diff) && /^[+\- ]\s?\d+\s/m.test(diff);
+}
+
+/** Old-file line number of a row, when it has one. */
+function oldLineNumber(row: SplitDiffRow | undefined): number | undefined {
+	return row?.left ? parseLineNumber(row.left.lineNumber) : undefined;
+}
+
 export function buildSplitRows(diff: string): SplitDiffRow[] {
 	const rows: SplitDiffRow[] = [];
 	const pendingLeft: DiffLine[] = [];
 	const pendingRight: DiffLine[] = [];
 	let oldCursor: number | undefined;
 	let newCursor: number | undefined;
+	// New-minus-old numbering offset carried across a skip marker, where both
+	// cursors lose track until the next numbered line.
+	let skipOffset: number | undefined;
+	const piNumbered = isPiNumberedDiff(diff);
 
 	const flushPending = () => {
 		while (pendingLeft.length > 0 || pendingRight.length > 0) {
@@ -388,18 +411,30 @@ export function buildSplitRows(diff: string): SplitDiffRow[] {
 	};
 
 	for (const rawLine of diff.split("\n")) {
+		if (piNumbered && PI_SKIP_MARKER.test(rawLine)) {
+			flushPending();
+			if (oldCursor !== undefined && newCursor !== undefined) skipOffset = newCursor - oldCursor;
+			oldCursor = undefined;
+			newCursor = undefined;
+			rows.push({ kind: "skip" });
+			continue;
+		}
 		const parsed = parseDiffLine(rawLine);
 		if (!parsed) continue;
 
 		const parsedNum = parseLineNumber(parsed.lineNumber);
+		// A change that opens the diff, or follows a skip, seeds the other side's
+		// cursor from the offset in force, so the context after it stays aligned.
 		if (parsed.prefix === "-") {
 			const oldNum = parsedNum ?? oldCursor;
+			if (newCursor === undefined && oldNum !== undefined) newCursor = oldNum + (skipOffset ?? 0);
 			if (oldNum !== undefined) oldCursor = oldNum + 1;
 			pendingLeft.push(makeDiffLine("-", oldNum, parsed.line));
 			continue;
 		}
 		if (parsed.prefix === "+") {
 			const newNum = parsedNum ?? newCursor;
+			if (oldCursor === undefined && newNum !== undefined) oldCursor = newNum - (skipOffset ?? 0);
 			if (newNum !== undefined) newCursor = newNum + 1;
 			pendingRight.push(makeDiffLine("+", newNum, parsed.line));
 			continue;
@@ -407,8 +442,13 @@ export function buildSplitRows(diff: string): SplitDiffRow[] {
 
 		flushPending();
 
+		// A context line keeps the new-minus-old offset the lines above it set, so a
+		// jump in old numbering (a skip, or the next hunk of a git diff) moves the
+		// new side by the same amount instead of continuing its count.
+		const offset = oldCursor !== undefined && newCursor !== undefined ? newCursor - oldCursor : skipOffset;
 		const oldNum = parsedNum ?? oldCursor;
-		const newNum = newCursor ?? oldNum;
+		const newNum = oldNum !== undefined && offset !== undefined ? oldNum + offset : (newCursor ?? oldNum);
+		skipOffset = undefined;
 		if (oldNum !== undefined) oldCursor = oldNum + 1;
 		if (newNum !== undefined) newCursor = newNum + 1;
 
@@ -420,6 +460,13 @@ export function buildSplitRows(diff: string): SplitDiffRow[] {
 	}
 
 	flushPending();
+	// A skip between numbered lines (or opening the diff) knows how many it hides.
+	rows.forEach((row, index) => {
+		if (row.kind !== "skip") return;
+		const before = index === 0 ? 0 : oldLineNumber(rows[index - 1]);
+		const after = oldLineNumber(rows[index + 1]);
+		if (before !== undefined && after !== undefined && after > before + 1) row.hidden = after - before - 1;
+	});
 	return rows;
 }
 
@@ -484,6 +531,20 @@ export function pickDiffMode(
 	return "split";
 }
 
+function gapEntry(hidden: number | undefined): DiffEntry {
+	return hidden === undefined ? { kind: "gap" } : { kind: "gap", hidden };
+}
+
+/** Add a gap, folding it into a gap just before it so two `⋯` rows never stack. */
+function pushGap(out: DiffEntry[], hidden: number | undefined): void {
+	const last = out.at(-1);
+	if (last?.kind !== "gap") {
+		out.push(gapEntry(hidden));
+		return;
+	}
+	out[out.length - 1] = gapEntry(last.hidden !== undefined && hidden !== undefined ? last.hidden + hidden : undefined);
+}
+
 function collapseContextRows(rows: SplitDiffRow[], options: { keep: number; runShowMax?: number }): DiffEntry[] {
 	const keep = options.keep;
 	const runShowMax = options.runShowMax ?? CONTEXT_RUN_SHOW_MAX;
@@ -492,6 +553,11 @@ function collapseContextRows(rows: SplitDiffRow[], options: { keep: number; runS
 
 	while (i < rows.length) {
 		const row = rows[i];
+		if (row?.kind === "skip") {
+			pushGap(out, row.hidden);
+			i++;
+			continue;
+		}
 		if (row?.kind !== "context") {
 			if (row) out.push({ kind: "row", row });
 			i++;
@@ -505,8 +571,9 @@ function collapseContextRows(rows: SplitDiffRow[], options: { keep: number; runS
 		if (run <= runShowMax) {
 			for (let k = i; k < j; k++) out.push({ kind: "row", row: rows[k] as SplitDiffRow });
 		} else {
-			const leading = i === 0;
-			const trailing = j >= rows.length;
+			// Context against the diff edge or a skip has nothing to anchor on that side.
+			const leading = i === 0 || rows[i - 1]?.kind === "skip";
+			const trailing = j >= rows.length || rows[j]?.kind === "skip";
 			const keepHead = leading ? 0 : Math.min(keep, run);
 			const keepTail = trailing ? 0 : Math.min(keep, Math.max(0, run - keepHead));
 			const hidden = Math.max(0, run - keepHead - keepTail);
@@ -514,7 +581,7 @@ function collapseContextRows(rows: SplitDiffRow[], options: { keep: number; runS
 			if (keepHead > 0) {
 				for (let k = i; k < i + keepHead; k++) out.push({ kind: "row", row: rows[k] as SplitDiffRow });
 			}
-			if (hidden > 0) out.push({ kind: "gap", hidden });
+			if (hidden > 0) pushGap(out, hidden);
 			if (keepTail > 0) {
 				for (let k = j - keepTail; k < j; k++) out.push({ kind: "row", row: rows[k] as SplitDiffRow });
 			}
@@ -532,8 +599,12 @@ function collapseContextRows(rows: SplitDiffRow[], options: { keep: number; runS
  * tall, then finally trim the head and append an omission marker. The budget
  * applies to entries (each renders at least one line, gaps included).
  */
-function planEntries(rows: SplitDiffRow[], maxRows: number): DiffEntry[] {
+function planEntries(rows: SplitDiffRow[], maxRows: number, expanded = false): DiffEntry[] {
 	const budget = Math.max(1, maxRows);
+	// Expanded shows every row it has room for: the folded context is what the
+	// collapsed view's Ctrl+O promises.
+	if (expanded && rows.length <= budget)
+		return rows.map((row): DiffEntry => (row.kind === "skip" ? gapEntry(row.hidden) : { kind: "row", row }));
 
 	let entries = collapseContextRows(rows, { keep: CONTEXT_KEEP_DEFAULT });
 	if (entries.length <= budget) return entries;
@@ -544,15 +615,22 @@ function planEntries(rows: SplitDiffRow[], maxRows: number): DiffEntry[] {
 	const kept = entries.slice(0, Math.max(1, budget - 1));
 	const omitted = Math.max(0, entries.length - kept.length);
 	if (omitted <= 0) return kept;
-	return [...kept, { kind: "omitted", count: omitted }];
+	return [...kept, { kind: "omitted", count: omitted, expandable: !expanded }];
 }
 
-function formatGapLabel(hidden: number): string {
+function shownRows(entries: readonly DiffEntry[]): number {
+	return entries.filter((entry) => entry.kind === "row").length;
+}
+
+/** `⋯ 3 unchanged lines hidden`; a count Pi did not give reads `⋯ unchanged lines hidden`. */
+function formatGapLabel(hidden: number | undefined): string {
+	if (hidden === undefined) return "⋯ unchanged lines hidden";
 	return `⋯ ${hidden} unchanged ${hidden === 1 ? "line" : "lines"} hidden`;
 }
 
-function formatOmittedLabel(count: number): string {
-	const expandHint = toolExpandHint();
+/** `⋯ 12 lines omitted`, offering Ctrl+O only where expanding would show them. */
+function formatOmittedLabel(count: number, expandable: boolean): string {
+	const expandHint = expandable ? toolExpandHint() : "";
 	return `⋯ ${count} ${count === 1 ? "line" : "lines"} omitted${expandHint ? ` · ${expandHint}` : ""}`;
 }
 
@@ -631,12 +709,12 @@ class UnifiedDiffRenderer {
 		private readonly entries: DiffEntry[],
 	) {}
 
-	private gapLine(entry: { hidden: number }, width: number): string {
+	private gapLine(entry: { hidden?: number }, width: number): string {
 		return padRenderedLineWidth(this.ctx.fg("muted", formatGapLabel(entry.hidden)), width);
 	}
 
-	private omittedLine(entry: { count: number }, width: number): string {
-		return padRenderedLineWidth(this.ctx.fg("muted", formatOmittedLabel(entry.count)), width);
+	private omittedLine(entry: { count: number; expandable: boolean }, width: number): string {
+		return padRenderedLineWidth(this.ctx.fg("muted", formatOmittedLabel(entry.count, entry.expandable)), width);
 	}
 
 	render(width: number): string[] {
@@ -922,12 +1000,12 @@ class SplitDiffRenderer {
 		return lines;
 	}
 
-	private gapLine(entry: { hidden: number }, width: number): string {
+	private gapLine(entry: { hidden?: number }, width: number): string {
 		return padRenderedLineWidth(this.ctx.fg("muted", formatGapLabel(entry.hidden)), width);
 	}
 
-	private omittedLine(entry: { count: number }, width: number): string {
-		return padRenderedLineWidth(this.ctx.fg("muted", formatOmittedLabel(entry.count)), width);
+	private omittedLine(entry: { count: number; expandable: boolean }, width: number): string {
+		return padRenderedLineWidth(this.ctx.fg("muted", formatOmittedLabel(entry.count, entry.expandable)), width);
 	}
 
 	render(width: number): string[] {
@@ -999,11 +1077,17 @@ export class AdaptiveDiffComponent implements Component {
 	private readonly split: SplitDiffRenderer;
 	private readonly collapsed: boolean;
 
+	/**
+	 * `expanded` paints every row that fits `maxRows` rather than folding
+	 * unchanged context. `expandedMaxRows` is the budget the expanded view gets,
+	 * so a collapsed view can tell whether Ctrl+O would show anything more.
+	 */
 	constructor(
 		theme: SplitDiffTheme,
 		private readonly rows: SplitDiffRow[],
 		maxRows: number,
 		language?: string,
+		options: { expanded?: boolean; expandedMaxRows?: number } = {},
 	) {
 		this.ctx = new DiffRenderContext(theme, rows, language);
 		this.stats = { additions: 0, removals: 0 };
@@ -1011,13 +1095,15 @@ export class AdaptiveDiffComponent implements Component {
 			if (row.kind === "added" || row.kind === "changed") this.stats.additions++;
 			if (row.kind === "removed" || row.kind === "changed") this.stats.removals++;
 		}
-		const entries = planEntries(rows, maxRows);
-		this.collapsed = entries.some((entry) => entry.kind !== "row");
+		const expanded = options.expanded === true;
+		const entries = planEntries(rows, maxRows, expanded);
+		this.collapsed =
+			!expanded && shownRows(planEntries(rows, options.expandedMaxRows ?? maxRows, true)) > shownRows(entries);
 		this.unified = new UnifiedDiffRenderer(this.ctx, entries);
 		this.split = new SplitDiffRenderer(this.ctx, entries);
 	}
 
-	/** True when any unchanged context was collapsed or rows were omitted. */
+	/** True when the expanded view would show rows this one leaves out. */
 	hasCollapsed(): boolean {
 		return this.collapsed;
 	}

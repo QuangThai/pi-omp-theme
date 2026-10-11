@@ -17,6 +17,7 @@ import { relative, resolve } from "node:path";
 import type { Component } from "@earendil-works/pi-tui";
 import { fgHex, isHexColor, stripAnsi } from "./ansi.js";
 import { getElapsedMs, type MetricResultLike } from "./elapsed.js";
+import { compactExpandHint, fitExpandHint } from "./keybinding-hints.js";
 import {
 	boxedResultRenderBudget,
 	clampRenderLine,
@@ -542,9 +543,12 @@ export function boxBlankLine(_theme: BoxTheme, _width: number): string {
 	return BOX_OMITTED_LINE;
 }
 
-export function boxLineAligned(theme: BoxTheme, left: string, right: string, width: number): string {
+export function boxLineAligned(theme: BoxTheme, left: string, fullRight: string, width: number): string {
 	const renderedWidth = boxWidth(width);
 	const contentWidth = boxInnerWidth(renderedWidth);
+	// A hint that would push the left side out shrinks to its bare key first.
+	const right =
+		safeVisibleWidth(left) + 1 + safeVisibleWidth(fullRight) > contentWidth ? compactExpandHint(fullRight) : fullRight;
 	const rightWidth = safeVisibleWidth(right);
 	const sidePad = " ".repeat(BOX_SIDE_PADDING);
 
@@ -558,8 +562,9 @@ export function boxLineAligned(theme: BoxTheme, left: string, right: string, wid
 	return `${boxFrameText(theme, BOX_VERTICAL)}${sidePad}${truncatedLeft}${gap}${right}${sidePad}${boxFrameText(theme, BOX_VERTICAL)}`;
 }
 
-export function boxLine(theme: BoxTheme, content: string, width: number): string {
+export function boxLine(theme: BoxTheme, row: string, width: number): string {
 	const renderedWidth = boxWidth(width);
+	const content = fitExpandHint(row, frameless() ? renderedWidth : boxInnerWidth(renderedWidth));
 	// Light chrome draws no frame, so the frame's own inset would leave these lines
 	// hanging a few columns right of the boxless renderers (Read, Grep, List) and
 	// the transcript would have two left margins. Start at column 0 instead and put

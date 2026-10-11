@@ -9,6 +9,7 @@ import {
 	setKeybindings,
 	type Component,
 	type KeybindingsConfig,
+	visibleWidth,
 } from "@earendil-works/pi-tui";
 import {
 	renderSpecialMessageBlock,
@@ -23,9 +24,11 @@ import { getQuickEditToolConfig, quickEditTool } from "../extension-src/omp-them
 import { setToolsRenderConfig } from "../extension-src/omp-theme/features/tools/boxed/session-config.js";
 import type { BoxedToolContext } from "../extension-src/omp-theme/features/tools/boxed/shared.js";
 import { writeTool } from "../extension-src/omp-theme/features/tools/boxed/write.js";
+import { stripAnsi } from "../extension-src/omp-theme/shared/ansi.js";
 import { setBoxTheme, type BoxTheme } from "../extension-src/omp-theme/shared/box.js";
 import {
 	displayKeyHint,
+	fitExpandHint,
 	formatKeyDisplayText,
 	toolExpandHint,
 	toolExpandKeyText,
@@ -93,10 +96,15 @@ function renderSpecial(subtype: SpecialBlockSubtype, fixture: SpecialFixture, ex
 	return child.render(100).join("\n");
 }
 
+// Bodies with more than their collapsed lead line, so expanding shows something.
+const SKILL_CONTENT = "A concise skill summary.\n\nRun it before a release.";
+const COMPACTION_SUMMARY = "Compacted test context.\n\n- Kept the failing test.";
+const BRANCH_SUMMARY = "Prepared a test branch.\n\n- Moved the fixture.";
+
 function renderSkill(expanded = false): string {
 	return renderSpecial(
 		"native-skill-message",
-		{ skillBlock: { name: "keybinding-audit", content: "A concise skill summary." } },
+		{ skillBlock: { name: "keybinding-audit", content: SKILL_CONTENT } },
 		expanded,
 	);
 }
@@ -104,13 +112,13 @@ function renderSkill(expanded = false): string {
 function renderCompaction(expanded = false): string {
 	return renderSpecial(
 		"native-compaction-message",
-		{ message: { tokensBefore: 10_000, tokensAfter: 4_000, summary: "Compacted test context." } },
+		{ message: { tokensBefore: 10_000, tokensAfter: 4_000, summary: COMPACTION_SUMMARY } },
 		expanded,
 	);
 }
 
 function renderBranch(expanded = false): string {
-	return renderSpecial("native-branch-message", { message: { summary: "Prepared a test branch." } }, expanded);
+	return renderSpecial("native-branch-message", { message: { summary: BRANCH_SUMMARY } }, expanded);
 }
 
 function changedDiff(rowCount = 48): string {
@@ -315,6 +323,37 @@ test("every changed collapsed surface omits the affordance when expansion is unb
 		assert.doesNotMatch(output, /Ctrl\+O|Alt\+X|ctrl\+o/, `${name} should not invent a binding`);
 	}
 	assert.doesNotMatch(renderGhPreview(), /Ctrl\+O|Alt\+X|ctrl\+o/);
+});
+
+test("a collapsed block whose body is its lead line offers no expansion", () => {
+	const oneLine = renderSpecial("native-branch-message", { message: { summary: "Prepared a test branch." } });
+	assert.match(oneLine, /Prepared a test branch\./);
+	assert.doesNotMatch(oneLine, /to expand/, "expanding would show the same line");
+	const empty = renderSpecial("native-compaction-message", { message: { tokensBefore: 10_000, summary: "" } });
+	assert.doesNotMatch(empty, /to expand/, "expanding would show nothing");
+});
+
+test("a narrow row keeps its expand hint: the bare key first, then the text gives way", () => {
+	const dim = (text: string) => `\x1b[2m${text}\x1b[22m`;
+	const oneSpan = dim("3 matches in 2 files · Ctrl+O to expand");
+	const twoSpans = `${dim("3 matches in 2 files")}${dim(" · Ctrl+O to expand")}`;
+	for (const row of [oneSpan, twoSpans]) {
+		assert.equal(fitExpandHint(row, 80), row, "a row that fits is left alone");
+		assert.equal(stripAnsi(fitExpandHint(row, 31)), "3 matches in 2 files · Ctrl+O");
+		const narrow = fitExpandHint(row, 20);
+		assert.ok(visibleWidth(narrow) <= 20);
+		assert.match(stripAnsi(narrow), /^3 matches.*… · Ctrl\+O$/);
+		assert.match(narrow, /\x1b\[2m · Ctrl\+O\x1b\[22m$/, "the key keeps the hint's style");
+	}
+	const footer = "2.23s · ~8 words   Ctrl+O to expand";
+	assert.equal(fitExpandHint(footer, 14), "2.23…   Ctrl+O", "a footer gap is a separator too");
+	assert.equal(fitExpandHint("no hint on this row", 5), "no hint on this row", "callers truncate it as usual");
+	const midRow = "Ctrl+O to expand, then read on";
+	assert.equal(fitExpandHint(midRow, 10), midRow, "only a trailing hint is kept");
+	installKeybindings({ "app.tools.expand": "alt+x" });
+	assert.equal(fitExpandHint("… +26 earlier lines · Alt+X to expand", 28), "… +26 earlier lines · Alt+X");
+	installKeybindings({ "app.tools.expand": [] });
+	assert.equal(fitExpandHint("… +26 earlier lines · Ctrl+O to expand", 28), "… +26 earlier lines · Ctrl+O to expand");
 });
 
 test("expanded surfaces do not keep a stale expansion affordance", () => {

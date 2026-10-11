@@ -256,6 +256,33 @@ PR #42 · Fixture PR¶
   Body line one¶
   Body line two¶
 
+=== boxed · w80 · bash/git-diff-empty ===
+Git diff¶
+  no changes¶
+╭─── Git diff ─────────────────────────────────────────────────────────────────╮¶
+│ No changes                                                                   │¶
+│ 2.2s                                                                         │¶
+╰──────────────────────────────────────────────────────────────────────────────╯¶
+
+=== boxed · w80 · bash/gh-run-job ===
+Run job · 123¶
+├─── Log · 123 ────────────────────────────────────────────────────────────────┤¶
+│ build	Set up job	ok                                                      │¶
+│ build	Run tests	passed                                                   │¶
+│ 2.2s                                                                         │¶
+╰──────────────────────────────────────────────────────────────────────────────╯¶
+
+=== boxed · w80 · bash/ls ===
+List: 3 files · in src¶
+  ├─ a.ts¶
+  ├─ b.ts¶
+  └─ lib/¶
+
+=== boxed · w80 · bash/find ===
+Find: *.ts 2 files · in src¶
+  ├─ src/a.ts¶
+  └─ src/lib/b.ts¶
+
 === boxed · w80 · read/null-optional-args ===
 ▤ Read src/auth.ts¶
 
@@ -306,6 +333,28 @@ PR #42 · Fixture PR¶
   └─ src/b.ts¶
      *4│ renderStatus()¶
 
+=== boxed · w80 · grep/one-match ===
+⌕ Grep: renderStatus 1 match · 1 file · in src¶
+  └─ *54│ export function renderStatus(¶
+
+=== boxed · w80 · grep/many-matches ===
+⌕ Grep: row 12 matches · 1 file · in src¶
+  ├─ * 1│ row 1¶
+  │  * 2│ row 2¶
+  │  * 3│ row 3¶
+  │  * 4│ row 4¶
+  │  * 5│ row 5¶
+  └─ … 7 more matches · Ctrl+O to expand¶
+
+=== boxed · w80 · bash/grep-many-matches ===
+Grep: row 12 matches · 1 file · in src¶
+  ├─ * 1│ row 1¶
+  │  * 2│ row 2¶
+  │  * 3│ row 3¶
+  │  * 4│ row 4¶
+  │  * 5│ row 5¶
+  └─ … 7 more matches · Ctrl+O to expand¶
+
 === boxed · w80 · edit/diff ===
 ╭─── ✎ Edit: src/plan.txt ─────────────────────────────────────────────────────╮¶
 │     1  alpha                                                                 │¶
@@ -314,6 +363,56 @@ PR #42 · Fixture PR¶
 │     3  gamma                                                                 │¶
 │ +   4  delta                                                                 │¶
 │ 2.2s · 1 file · +2 -1                                                        │¶
+╰──────────────────────────────────────────────────────────────────────────────╯¶
+
+=== boxed · w80 · edit/long-context ===
+╭─── ✎ Edit: src/rows.txt ─────────────────────────────────────────────────────╮¶
+│     1  row 1                                                                 │¶
+│     2  row 2                                                                 │¶
+│     3  row 3                                                                 │¶
+│     4  row 4                                                                 │¶
+│ -   5  row 5                                                                 │¶
+│ +   5  ROW 5                                                                 │¶
+│     6  row 6                                                                 │¶
+│     7  row 7                                                                 │¶
+│ ⋯ 7 unchanged lines hidden                                                   │¶
+│ 2.2s · 1 file · +1 -1                                       Ctrl+O to expand │¶
+╰──────────────────────────────────────────────────────────────────────────────╯¶
+
+=== boxed · w80 · edit/pi-skip-marker ===
+╭─── ✎ Edit: src/rows.txt ─────────────────────────────────────────────────────╮¶
+│     1  row 1                                                                 │¶
+│     2  row 2                                                                 │¶
+│     3  row 3                                                                 │¶
+│     4  row 4                                                                 │¶
+│ -   5  row 5                                                                 │¶
+│ +   5  ROW 5                                                                 │¶
+│     6  row 6                                                                 │¶
+│     7  row 7                                                                 │¶
+│     8  row 8                                                                 │¶
+│     9  row 9                                                                 │¶
+│ ⋯ unchanged lines hidden                                                     │¶
+│ 2.2s · 1 file · +1 -1                                                        │¶
+╰──────────────────────────────────────────────────────────────────────────────╯¶
+
+=== boxed · w80 · edit/long-context-expanded ===
+╭─── ✎ Edit: src/rows.txt ─────────────────────────────────────────────────────╮¶
+│     1  row 1                                                                 │¶
+│     2  row 2                                                                 │¶
+│     3  row 3                                                                 │¶
+│     4  row 4                                                                 │¶
+│ -   5  row 5                                                                 │¶
+│ +   5  ROW 5                                                                 │¶
+│     6  row 6                                                                 │¶
+│     7  row 7                                                                 │¶
+│     8  row 8                                                                 │¶
+│     9  row 9                                                                 │¶
+│    10  row 10                                                                │¶
+│    11  row 11                                                                │¶
+│    12  row 12                                                                │¶
+│    13  row 13                                                                │¶
+│    14  row 14                                                                │¶
+│ 2.2s · 1 file · +1 -1                                                        │¶
 ╰──────────────────────────────────────────────────────────────────────────────╯¶
 
 === boxed · w80 · edit/error ===
@@ -636,6 +735,31 @@ PR #42 · Fixture PR¶
   Body line one¶
   Body line two¶
 
+=== light · w80 · bash/git-diff-empty ===
+Git diff¶
+  no changes¶
+Git diff                                                                        ¶
+No changes                                                                      ¶
+2.2s                                                                            ¶
+
+=== light · w80 · bash/gh-run-job ===
+Run job · 123¶
+Log · 123                                                                       ¶
+build	Set up job	ok                                                         ¶
+build	Run tests	passed                                                      ¶
+2.2s                                                                            ¶
+
+=== light · w80 · bash/ls ===
+List: 3 files · in src¶
+  ├─ a.ts¶
+  ├─ b.ts¶
+  └─ lib/¶
+
+=== light · w80 · bash/find ===
+Find: *.ts 2 files · in src¶
+  ├─ src/a.ts¶
+  └─ src/lib/b.ts¶
+
 === light · w80 · read/null-optional-args ===
 ▤ Read src/auth.ts¶
 
@@ -683,6 +807,28 @@ Exit 3 · 2.23s                                                                 
   └─ src/b.ts¶
      *4│ renderStatus()¶
 
+=== light · w80 · grep/one-match ===
+⌕ Grep: renderStatus 1 match · 1 file · in src¶
+  └─ *54│ export function renderStatus(¶
+
+=== light · w80 · grep/many-matches ===
+⌕ Grep: row 12 matches · 1 file · in src¶
+  ├─ * 1│ row 1¶
+  │  * 2│ row 2¶
+  │  * 3│ row 3¶
+  │  * 4│ row 4¶
+  │  * 5│ row 5¶
+  └─ … 7 more matches · Ctrl+O to expand¶
+
+=== light · w80 · bash/grep-many-matches ===
+Grep: row 12 matches · 1 file · in src¶
+  ├─ * 1│ row 1¶
+  │  * 2│ row 2¶
+  │  * 3│ row 3¶
+  │  * 4│ row 4¶
+  │  * 5│ row 5¶
+  └─ … 7 more matches · Ctrl+O to expand¶
+
 === light · w80 · edit/diff ===
 ✎ Edit: src/plan.txt                                                            ¶
     1  alpha                                                                    ¶
@@ -691,6 +837,53 @@ Exit 3 · 2.23s                                                                 
     3  gamma                                                                    ¶
 +   4  delta                                                                    ¶
 2.2s · 1 file · +2 -1                                                           ¶
+
+=== light · w80 · edit/long-context ===
+✎ Edit: src/rows.txt                                                            ¶
+    1  row 1                                                                    ¶
+    2  row 2                                                                    ¶
+    3  row 3                                                                    ¶
+    4  row 4                                                                    ¶
+-   5  row 5                                                                    ¶
++   5  ROW 5                                                                    ¶
+    6  row 6                                                                    ¶
+    7  row 7                                                                    ¶
+⋯ 7 unchanged lines hidden                                                      ¶
+  2.2s · 1 file · +1 -1                                       Ctrl+O to expand  ¶
+
+=== light · w80 · edit/pi-skip-marker ===
+✎ Edit: src/rows.txt                                                            ¶
+    1  row 1                                                                    ¶
+    2  row 2                                                                    ¶
+    3  row 3                                                                    ¶
+    4  row 4                                                                    ¶
+-   5  row 5                                                                    ¶
++   5  ROW 5                                                                    ¶
+    6  row 6                                                                    ¶
+    7  row 7                                                                    ¶
+    8  row 8                                                                    ¶
+    9  row 9                                                                    ¶
+⋯ unchanged lines hidden                                                        ¶
+2.2s · 1 file · +1 -1                                                           ¶
+
+=== light · w80 · edit/long-context-expanded ===
+✎ Edit: src/rows.txt                                                            ¶
+    1  row 1                                                                    ¶
+    2  row 2                                                                    ¶
+    3  row 3                                                                    ¶
+    4  row 4                                                                    ¶
+-   5  row 5                                                                    ¶
++   5  ROW 5                                                                    ¶
+    6  row 6                                                                    ¶
+    7  row 7                                                                    ¶
+    8  row 8                                                                    ¶
+    9  row 9                                                                    ¶
+   10  row 10                                                                   ¶
+   11  row 11                                                                   ¶
+   12  row 12                                                                   ¶
+   13  row 13                                                                   ¶
+   14  row 14                                                                   ¶
+2.2s · 1 file · +1 -1                                                           ¶
 
 === light · w80 · edit/error ===
 ✎ Edit ✘: src/plan.txt                                                          ¶
@@ -932,16 +1125,16 @@ Exit 1 · 2.23s · ~2 words                                                     
 
 === inline · w80 · bash/git-status ===
 ● Git status¶
-  2 modified · 1 untracked¶
-  main · ahead 2¶
-  ├─ M  src/a.ts¶
-  ├─ D  src/old.ts¶
-  └─ ?  notes.txt¶
+  ⎿  2 modified · 1 untracked¶
+     main · ahead 2¶
+     ├─ M  src/a.ts¶
+     ├─ D  src/old.ts¶
+     └─ ?  notes.txt¶
 
 === inline · w80 · bash/git-diff ===
 ● Git diff¶
-  1 file +1 -1¶
-  ⎿  notes.txt                                                                  ¶
+  ⎿  1 file +1 -1¶
+     notes.txt                                                                  ¶
          1  alpha                                                               ¶
      -   2  beta                                                                ¶
      +   2  BETA                                                                ¶
@@ -950,9 +1143,34 @@ Exit 1 · 2.23s · ~2 words                                                     
 
 === inline · w80 · bash/gh-pr-view ===
 ● PR #42 · Fixture PR¶
-  OPEN¶
-  Body line one¶
-  Body line two¶
+  ⎿  OPEN¶
+     Body line one¶
+     Body line two¶
+
+=== inline · w80 · bash/git-diff-empty ===
+● Git diff¶
+  ⎿  no changes¶
+     2.2s¶
+
+=== inline · w80 · bash/gh-run-job ===
+● Run job · 123¶
+  ⎿  Log · 123                                                                  ¶
+     build	Set up job	ok                                                    ¶
+     build	Run tests	passed                                                 ¶
+     2.2s                                                                       ¶
+
+=== inline · w80 · bash/ls ===
+● List(src)¶
+  ⎿  Listed 3 paths¶
+     ├─ a.ts¶
+     ├─ b.ts¶
+     └─ lib/¶
+
+=== inline · w80 · bash/find ===
+● Find(*.ts in src)¶
+  ⎿  Found 2 files¶
+     ├─ src/a.ts¶
+     └─ src/lib/b.ts¶
 
 === inline · w80 · read/null-optional-args ===
 ● Read(src/auth.ts)¶
@@ -998,6 +1216,27 @@ Exit 1 · 2.23s · ~2 words                                                     
      │  *54│ export function renderStatus(¶
      └─ … 1 more match · 1 more file¶
 
+=== inline · w80 · grep/one-match ===
+● Grep(renderStatus in src)¶
+  ⎿  1 match in 1 file¶
+     └─ *54│ export function renderStatus(¶
+
+=== inline · w80 · grep/many-matches ===
+● Grep(row in src)¶
+  ⎿  12 matches in 1 file · Ctrl+O to expand¶
+     ├─ * 1│ row 1¶
+     │  * 2│ row 2¶
+     │  * 3│ row 3¶
+     └─ … 9 more matches¶
+
+=== inline · w80 · bash/grep-many-matches ===
+● Grep(row in src)¶
+  ⎿  12 matches in 1 file · Ctrl+O to expand¶
+     ├─ * 1│ row 1¶
+     │  * 2│ row 2¶
+     │  * 3│ row 3¶
+     └─ … 9 more matches¶
+
 === inline · w80 · edit/diff ===
 ● Edit(src/plan.txt)¶
   ⎿  Updated src/plan.txt with 2 additions and 1 removal¶
@@ -1007,6 +1246,57 @@ Exit 1 · 2.23s · ~2 words                                                     
      +   2  BETA                                                                ¶
          3  gamma                                                               ¶
      +   4  delta                                                               ¶
+
+=== inline · w80 · edit/long-context ===
+● Edit(src/rows.txt)¶
+  ⎿  Updated src/rows.txt with 1 addition and 1 removal¶
+     +1 −1 · 2.2s¶
+         1  row 1                                                               ¶
+         2  row 2                                                               ¶
+         3  row 3                                                               ¶
+         4  row 4                                                               ¶
+     -   5  row 5                                                               ¶
+     +   5  ROW 5                                                               ¶
+         6  row 6                                                               ¶
+         7  row 7                                                               ¶
+     ⋯ 7 unchanged lines hidden                                                 ¶
+     … Ctrl+O to expand¶
+
+=== inline · w80 · edit/pi-skip-marker ===
+● Edit(src/rows.txt)¶
+  ⎿  Updated src/rows.txt with 1 addition and 1 removal¶
+     +1 −1 · 2.2s¶
+         1  row 1                                                               ¶
+         2  row 2                                                               ¶
+         3  row 3                                                               ¶
+         4  row 4                                                               ¶
+     -   5  row 5                                                               ¶
+     +   5  ROW 5                                                               ¶
+         6  row 6                                                               ¶
+         7  row 7                                                               ¶
+         8  row 8                                                               ¶
+         9  row 9                                                               ¶
+     ⋯ unchanged lines hidden                                                   ¶
+
+=== inline · w80 · edit/long-context-expanded ===
+● Edit(src/rows.txt)¶
+  ⎿  Updated src/rows.txt with 1 addition and 1 removal¶
+     +1 −1 · 2.2s¶
+         1  row 1                                                               ¶
+         2  row 2                                                               ¶
+         3  row 3                                                               ¶
+         4  row 4                                                               ¶
+     -   5  row 5                                                               ¶
+     +   5  ROW 5                                                               ¶
+         6  row 6                                                               ¶
+         7  row 7                                                               ¶
+         8  row 8                                                               ¶
+         9  row 9                                                               ¶
+        10  row 10                                                              ¶
+        11  row 11                                                              ¶
+        12  row 12                                                              ¶
+        13  row 13                                                              ¶
+        14  row 14                                                              ¶
 
 === inline · w80 · edit/error ===
 ● Edit(src/plan.txt)¶
@@ -1114,6 +1404,23 @@ Exit 1 · 2.23s · ~2 words                                                     
 │ Exit 1 · 2.23s · ~2 words        │¶
 ╰──────────────────────────────────╯¶
 
+=== boxed · w36 · bash/long-collapsed ===
+╭──────────────────────────────────╮¶
+│ $ seq 30                         │¶
+├─── Output ───────────────────────┤¶
+│ line 21                          │¶
+│ line 22                          │¶
+│ line 23                          │¶
+│ line 24                          │¶
+│ line 25                          │¶
+│ line 26                          │¶
+│ line 27                          │¶
+│ line 28                          │¶
+│ line 29                          │¶
+│ line 30                          │¶
+│ Exit 0 · 2.23s · ~60 wor… Ctrl+O │¶
+╰──────────────────────────────────╯¶
+
 === boxed · w36 · grep/settled ===
 ⌕ Grep: renderStatus 3 matches · 2 …¶
   ├─ src/a.ts¶
@@ -1121,6 +1428,15 @@ Exit 1 · 2.23s · ~2 words                                                     
   │  *54│ export function renderSta…¶
   └─ src/b.ts¶
      *4│ renderStatus()¶
+
+=== boxed · w36 · grep/many-matches ===
+⌕ Grep: row 12 matches · 1 file · i…¶
+  ├─ * 1│ row 1¶
+  │  * 2│ row 2¶
+  │  * 3│ row 3¶
+  │  * 4│ row 4¶
+  │  * 5│ row 5¶
+  └─ … 7 more matches · Ctrl+O¶
 
 === boxed · w36 · edit/diff ===
 ╭─── ✎ Edit: src/plan.txt ─────────╮¶
@@ -1138,6 +1454,22 @@ Exit 1 · 2.23s · ~2 words                                                     
 │ 2 two                            │¶
 │ 3 three                          │¶
 │ 2.23s · ~8 words                 │¶
+╰──────────────────────────────────╯¶
+
+=== boxed · w36 · write/long-collapsed ===
+╭─── ✎ Write: notes/long.txt ──────╮¶
+│  1 line 1                        │¶
+│  2 line 2                        │¶
+│  3 line 3                        │¶
+│  4 line 4                        │¶
+│  5 line 5                        │¶
+│  6 line 6                        │¶
+│  7 line 7                        │¶
+│  8 line 8                        │¶
+│  9 line 9                        │¶
+│ 10 line 10                       │¶
+│ … 10 more lines                  │¶
+│ 2.23s · ~8 words   Ctrl+O        │¶
 ╰──────────────────────────────────╯¶
 
 === light · w36 · fallback/settled ===
@@ -1165,6 +1497,21 @@ Output                              ¶
 1 failing                           ¶
 Exit 1 · 2.23s · ~2 words           ¶
 
+=== light · w36 · bash/long-collapsed ===
+$ seq 30                            ¶
+Output                              ¶
+line 21                             ¶
+line 22                             ¶
+line 23                             ¶
+line 24                             ¶
+line 25                             ¶
+line 26                             ¶
+line 27                             ¶
+line 28                             ¶
+line 29                             ¶
+line 30                             ¶
+  Exit 0 · 2.23s · ~60 wor… Ctrl+O  ¶
+
 === light · w36 · grep/settled ===
 ⌕ Grep: renderStatus 3 matches · 2 …¶
   ├─ src/a.ts¶
@@ -1172,6 +1519,15 @@ Exit 1 · 2.23s · ~2 words           ¶
   │  *54│ export function renderSta…¶
   └─ src/b.ts¶
      *4│ renderStatus()¶
+
+=== light · w36 · grep/many-matches ===
+⌕ Grep: row 12 matches · 1 file · i…¶
+  ├─ * 1│ row 1¶
+  │  * 2│ row 2¶
+  │  * 3│ row 3¶
+  │  * 4│ row 4¶
+  │  * 5│ row 5¶
+  └─ … 7 more matches · Ctrl+O¶
 
 === light · w36 · edit/diff ===
 ✎ Edit: src/plan.txt                ¶
@@ -1188,6 +1544,21 @@ Exit 1 · 2.23s · ~2 words           ¶
 2 two                               ¶
 3 three                             ¶
 2.23s · ~8 words                    ¶
+
+=== light · w36 · write/long-collapsed ===
+✎ Write: notes/long.txt             ¶
+ 1 line 1                           ¶
+ 2 line 2                           ¶
+ 3 line 3                           ¶
+ 4 line 4                           ¶
+ 5 line 5                           ¶
+ 6 line 6                           ¶
+ 7 line 7                           ¶
+ 8 line 8                           ¶
+ 9 line 9                           ¶
+10 line 10                          ¶
+… 10 more lines                     ¶
+2.23s · ~8 words   Ctrl+O to expand ¶
 
 === inline · w36 · fallback/settled ===
 ● Exa: Web Search Exa(query: pi co…)¶
@@ -1208,13 +1579,30 @@ Exit 1 · 2.23s · ~2 words           ¶
   ⎿  1 failing¶
      ✘ Exit 1 · 2.2s · ~2 words¶
 
+=== inline · w36 · bash/long-collapsed ===
+● Bash(seq 30)¶
+  ⎿  … +26 earlier lines · Ctrl+O¶
+     line 27¶
+     line 28¶
+     line 29¶
+     line 30¶
+     2.2s · ~60 words¶
+
 === inline · w36 · grep/settled ===
 ● Grep(renderStatus in src)¶
-  ⎿  3 matches in 2 files · Ctrl+O …¶
+  ⎿  3 matches in 2 files · Ctrl+O¶
      ├─ src/a.ts¶
      │  * 4│ import { renderStatus …¶
      │  *54│ export function render…¶
      └─ … 1 more match · 1 more file¶
+
+=== inline · w36 · grep/many-matches ===
+● Grep(row in src)¶
+  ⎿  12 matches in 1 file · Ctrl+O¶
+     ├─ * 1│ row 1¶
+     │  * 2│ row 2¶
+     │  * 3│ row 3¶
+     └─ … 9 more matches¶
 
 === inline · w36 · edit/diff ===
 ● Edit(src/plan.txt)¶
@@ -1232,3 +1620,12 @@ Exit 1 · 2.23s · ~2 words           ¶
      1 one¶
      2 two¶
      3 three¶
+
+=== inline · w36 · write/long-collapsed ===
+● Write(notes/long.txt)¶
+  ⎿  Wrote 20 lines · 2.2s¶
+      1 line 1¶
+      2 line 2¶
+      3 line 3¶
+      4 line 4¶
+     … +16 lines · Ctrl+O to expand¶

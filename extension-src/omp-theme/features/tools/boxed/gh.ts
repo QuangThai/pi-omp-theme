@@ -13,7 +13,7 @@
 // table/rich text format is parsed.
 
 import type { Component } from "@earendil-works/pi-tui";
-import { type BoxTheme, dimLine, renderBoxedToolResult } from "../../../shared/box.js";
+import { type BoxTheme, dimLine, isInlineChrome, renderBoxedToolResult } from "../../../shared/box.js";
 import { formatElapsedMs } from "../../../shared/elapsed.js";
 import { toolExpandKeyText } from "../../../shared/keybinding-hints.js";
 import { safeTruncateToWidth } from "../../../shared/render-budget.js";
@@ -699,7 +699,8 @@ const GH_CARD_HEAD_LIMIT = 6;
 const GH_BODY_PREVIEW_LINES = 8;
 
 function ghCardHeader(theme: BoxTheme, cls: GhSemanticClass, parsed?: GhParsedSemantic): string {
-	const icon = getToolsRenderConfig().nerdFonts ? `${GH_ICON} ` : "";
+	// Inline chrome leads the row with its status marker instead.
+	const icon = getToolsRenderConfig().nerdFonts && !isInlineChrome() ? `${GH_ICON} ` : "";
 	let prefix: string;
 	switch (cls.kind) {
 		case "pr-list":

@@ -96,21 +96,21 @@
 ╭─── ⊟ Compaction · 10K→4K ────────────────────────────────╮¶
 │ 10,000 → 4,000 tokens · 60% smaller                      │¶
 │ Compacted test context.                                  │¶
-╰───────────────────────────────────── Ctrl+O to expand ───╯¶
+╰──────────────────────────────────────────────────────────╯¶
 --- styled ---
 {borderMuted}╭─── {/}{b}{accent}⊟ Compaction · 10K→4K{/}{/b}{borderMuted} ────────────────────────────────{/}{borderMuted}╮{/}
 {borderMuted}│{/} {muted}10,000 → 4,000 tokens{/}{dim} · {/}{success}60% smaller{/}{sgr:0}                      {borderMuted}│{/}
 {borderMuted}│{/} {dim}Compacted test context.{/}{sgr:0}                                  {borderMuted}│{/}
-{borderMuted}╰{/}{borderMuted}─────────────────────────────────────{/}{borderMuted} {/}{dim}Ctrl+O to expand{/}{borderMuted} ───{/}{borderMuted}╯{/}
+{borderMuted}╰──────────────────────────────────────────────────────────╯{/}
 
 === boxed · w60 · special/skill ===
 ╭─── ⊟ Skill · release-checklist ──────────────────────────╮¶
 │ Run the release checklist before tagging.                │¶
-╰───────────────────────────────────── Ctrl+O to expand ───╯¶
+╰──────────────────────────────────────────────────────────╯¶
 --- styled ---
 {borderMuted}╭─── {/}{b}{accent}⊟ Skill · release-checklist{/}{/b}{borderMuted} ──────────────────────────{/}{borderMuted}╮{/}
 {borderMuted}│{/} Run the release checklist before tagging.{sgr:0}                {borderMuted}│{/}
-{borderMuted}╰{/}{borderMuted}─────────────────────────────────────{/}{borderMuted} {/}{dim}Ctrl+O to expand{/}{borderMuted} ───{/}{borderMuted}╯{/}
+{borderMuted}╰──────────────────────────────────────────────────────────╯{/}
 
 === boxed · w60 · special/compaction-pi-vcc ===
 ╭─── ⊟ Compaction · 5K tokens ─────────────────────────────╮¶
@@ -144,11 +144,11 @@
 === boxed · w60 · special/branch ===
 ╭─── ⑂ Branch ─────────────────────────────────────────────╮¶
 │ Prepared a test branch.                                  │¶
-╰───────────────────────────────────── Ctrl+O to expand ───╯¶
+╰──────────────────────────────────────────────────────────╯¶
 --- styled ---
 {borderMuted}╭─── {/}{b}{accent}⑂ Branch{/}{/b}{borderMuted} ─────────────────────────────────────────────{/}{borderMuted}╮{/}
 {borderMuted}│{/} Prepared a test branch.{sgr:0}                                  {borderMuted}│{/}
-{borderMuted}╰{/}{borderMuted}─────────────────────────────────────{/}{borderMuted} {/}{dim}Ctrl+O to expand{/}{borderMuted} ───{/}{borderMuted}╯{/}
+{borderMuted}╰──────────────────────────────────────────────────────────╯{/}
 
 === boxed · w60 · user-bash/complete ===
 ¶
@@ -207,21 +207,17 @@
 ⊟ Compaction · 10K→4K                                       ¶
 10,000 → 4,000 tokens · 60% smaller                         ¶
 Compacted test context.                                     ¶
-Ctrl+O to expand                                            ¶
 --- styled ---
 {b}{accent}⊟ Compaction · 10K→4K{/}{/b}                                       
 {muted}10,000 → 4,000 tokens{/}{dim} · {/}{success}60% smaller{/}{sgr:0}                         
 {dim}Compacted test context.{/}{sgr:0}                                     
-{dim}Ctrl+O to expand{/}                                            
 
 === light · w60 · special/skill ===
 ⊟ Skill · release-checklist                                 ¶
 Run the release checklist before tagging.                   ¶
-Ctrl+O to expand                                            ¶
 --- styled ---
 {b}{accent}⊟ Skill · release-checklist{/}{/b}                                 
 Run the release checklist before tagging.{sgr:0}                   
-{dim}Ctrl+O to expand{/}                                            
 
 === light · w60 · special/compaction-pi-vcc ===
 ⊟ Compaction · 5K tokens                                    ¶
@@ -253,11 +249,9 @@ Run the release checklist before tagging.{sgr:0}
 === light · w60 · special/branch ===
 ⑂ Branch                                                    ¶
 Prepared a test branch.                                     ¶
-Ctrl+O to expand                                            ¶
 --- styled ---
 {b}{accent}⑂ Branch{/}{/b}                                                    
 Prepared a test branch.{sgr:0}                                     
-{dim}Ctrl+O to expand{/}                                            
 
 === light · w60 · user-bash/complete ===
 ¶
@@ -316,21 +310,17 @@ $ npm test -- auth
 ● Compaction · 10K→4K¶
   ⎿  10,000 → 4,000 tokens · 60% smaller¶
      Compacted test context.¶
-     Ctrl+O to expand¶
 --- styled ---
 {accent}●{/} {b}{text}Compaction{/}{/b}{dim} · 10K→4K{/}
   {dim}⎿{/}  {muted}10,000 → 4,000 tokens{/}{dim} · {/}{success}60% smaller{/}{sgr:0}
      {dim}Compacted test context.{/}{sgr:0}
-     {dim}Ctrl+O to expand{/}
 
 === inline · w60 · special/skill ===
 ● Skill · release-checklist¶
   ⎿  Run the release checklist before tagging.¶
-     Ctrl+O to expand¶
 --- styled ---
 {accent}●{/} {b}{text}Skill{/}{/b}{dim} · release-checklist{/}
   {dim}⎿{/}  Run the release checklist before tagging.{sgr:0}
-     {dim}Ctrl+O to expand{/}
 
 === inline · w60 · special/compaction-pi-vcc ===
 ● Compaction · 5K tokens¶
@@ -362,11 +352,9 @@ $ npm test -- auth
 === inline · w60 · special/branch ===
 ● Branch¶
   ⎿  Prepared a test branch.¶
-     Ctrl+O to expand¶
 --- styled ---
 {accent}●{/} {b}{text}Branch{/}{/b}
   {dim}⎿{/}  Prepared a test branch.{sgr:0}
-     {dim}Ctrl+O to expand{/}
 
 === inline · w60 · user-bash/complete ===
 ¶

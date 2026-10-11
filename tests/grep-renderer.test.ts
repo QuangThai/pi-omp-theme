@@ -135,6 +135,30 @@ test("tool-level expanded state restores context after a collapsed render", () =
 	assert.ok(expanded.render(120).join("\n").includes("after"));
 });
 
+test("expanded grep follows maxExpandedLines; collapsed keeps its six-row cap", () => {
+	const output = Array.from({ length: 60 }, (_, index) => `src/rows.ts:${index + 1}: needle ${index + 1}`).join("\n");
+	const paint = (tool: typeof grepTool, args: Record<string, unknown>, id: string, expanded: boolean) => {
+		const ctx = { ...context(id, expanded), args } satisfies BoxedToolContext;
+		const component = tool.call(args, theme, ctx);
+		tool.result({ content: [{ type: "text", text: output }], details: undefined }, { expanded, isPartial: false }, theme, ctx);
+		return component.render(120).filter((line) => /needle \d+/.test(line)).length;
+	};
+	const grepArgs = { pattern: "needle", path: "." };
+	const bashArgs = { command: "rg needle src" };
+	try {
+		setToolsRenderConfig({ maxCollapsedLines: 10, maxExpandedLines: 40, nerdFonts: false });
+		assert.ok(paint(grepTool, grepArgs, "grep-collapsed", false) <= 6);
+		assert.ok(paint(grepTool, grepArgs, "grep-expanded", true) > 24, "no longer stops at 24 rows");
+		assert.ok(paint(grepTool, grepArgs, "grep-expanded-cap", true) <= 40);
+		assert.ok(paint(bashTool, bashArgs, "bash-expanded", true) > 24);
+		assert.ok(paint(bashTool, bashArgs, "bash-expanded-cap", true) <= 40);
+		setToolsRenderConfig({ maxCollapsedLines: 10, maxExpandedLines: 12, nerdFonts: false });
+		assert.ok(paint(grepTool, grepArgs, "grep-expanded-small", true) <= 12, "a smaller setting still caps it");
+	} finally {
+		setToolsRenderConfig({ maxCollapsedLines: 10, maxExpandedLines: 50, nerdFonts: false });
+	}
+});
+
 test("native grep parser preserves context and identifies actual matches", () => {
 	const parsed = parseGrepDisplayOutput(
 		["src/file-name.ts-9- before", "src/file-name.ts:10: needle", "src/file-name.ts-11- after"].join("\n"),

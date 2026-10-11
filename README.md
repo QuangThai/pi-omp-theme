@@ -5,7 +5,7 @@
 
 An OMP-inspired visual theme and TUI presentation extension for [Pi](https://pi.dev). It combines Titanium dark/light themes with a coordinated startup view, status line, editor, messages, and tool rendering.
 
-![pi-omp-theme surface gallery](https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/gallery-preview.png?v=gallery-3)
+![pi-omp-theme surface gallery](https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/gallery-preview.png?v=gallery-4)
 
 ## Surface gallery
 
@@ -13,7 +13,7 @@ The gallery is more than a logo preview: it shows the surfaces people see in a r
 
 | Surface | What it demonstrates | Full-size preview |
 |---|---|---|
-| **Welcome** | Startup resources, tool providers, and recent sessions | [open `welcome.png`](https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/welcome.png?v=gallery-3) |
+| **Welcome** | Startup resources, tool providers, and recent sessions | [open `welcome.png`](https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/welcome.png?v=gallery-4) |
 | **Read** | Quiet, single-line file reads with a readable path | [open `read.png`](https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/read.png) |
 | **List** | Bounded directory output rendered as a tree | [open `list.png`](https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/list.png) |
 | **Grep** | Match counts, file grouping, context, and truncation | [open `grep.png`](https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/grep.png) |
@@ -22,7 +22,7 @@ The gallery is more than a logo preview: it shows the surfaces people see in a r
 
 <table>
   <tr>
-    <td width="50%"><strong>Welcome</strong><br><a href="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/welcome.png?v=gallery-3"><img src="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/welcome.png?v=gallery-3" alt="Welcome screen with resources, providers, and recent sessions" width="100%"></a></td>
+    <td width="50%"><strong>Welcome</strong><br><a href="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/welcome.png?v=gallery-4"><img src="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/welcome.png?v=gallery-4" alt="Welcome screen with resources, providers, and recent sessions" width="100%"></a></td>
     <td width="50%"><strong>Read</strong><br><a href="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/read.png"><img src="https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/read.png" alt="Compact read tool surface" width="100%"></a></td>
   </tr>
   <tr>

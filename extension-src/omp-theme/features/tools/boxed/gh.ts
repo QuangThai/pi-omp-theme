@@ -15,10 +15,10 @@
 import type { Component } from "@earendil-works/pi-tui";
 import { type BoxTheme, dimLine, isInlineChrome, renderBoxedToolResult } from "../../../shared/box.js";
 import { formatElapsedMs } from "../../../shared/elapsed.js";
-import { toolExpandKeyText } from "../../../shared/keybinding-hints.js";
+import { fitExpandHint } from "../../../shared/keybinding-hints.js";
 import { safeTruncateToWidth } from "../../../shared/render-budget.js";
 import { parseSimpleBashCommand } from "./command-shape.js";
-import { pluralForm, TREE_INDENT } from "./output-tree.js";
+import { type ListBudget, listBudget, moreRowHint, pluralForm, TREE_INDENT } from "./output-tree.js";
 import { getStateElapsedMs, getToolsRenderConfig } from "./session-config.js";
 import type { BoxedToolContext } from "./shared.js";
 
@@ -780,15 +780,17 @@ function checkStateColor(state: string): string {
 	return "dim"; // skipping / neutral / cancelled / …
 }
 
-function renderMoreRow(theme: BoxTheme, unit: string, more: number, width: number): string {
-	return safeTruncateToWidth(
-		`${TREE_INDENT}${dimLine("└─")} ${theme.fg("dim", `… ${more} more ${pluralForm(unit, more)}`)}`,
-		width,
-		"…",
-	);
+function renderMoreRow(theme: BoxTheme, unit: string, more: number, width: number, hint = ""): string {
+	const row = `${TREE_INDENT}${dimLine("└─")} ${theme.fg("dim", `… ${more} more ${pluralForm(unit, more)}${moreRowHint(hint)}`)}`;
+	return safeTruncateToWidth(fitExpandHint(row, width), width, "…");
 }
 
-function renderListCard(theme: BoxTheme, parsed: GhListParsed, out: string[], width: number): string[] {
+/** Card rows shown collapsed (the head) or expanded (up to `maxExpandedLines`). */
+function cardBudget(total: number, expanded: boolean, collapsedLimit = GH_CARD_HEAD_LIMIT): ListBudget {
+	return listBudget(total, collapsedLimit, expanded, getToolsRenderConfig().maxExpandedLines);
+}
+
+function renderListCard(theme: BoxTheme, parsed: GhListParsed, out: string[], width: number, expanded: boolean): string[] {
 	const rows = parsed.rows;
 	const noun = parsed.kind === "pr-list" ? "PR" : "issue";
 	if (rows.length === 0) {
@@ -797,7 +799,8 @@ function renderListCard(theme: BoxTheme, parsed: GhListParsed, out: string[], wi
 	}
 	out.push(`  ${theme.fg("accent", `${rows.length} ${pluralForm(noun, rows.length)}`)}`);
 
-	const visible = rows.slice(0, GH_CARD_HEAD_LIMIT);
+	const budget = cardBudget(rows.length, expanded);
+	const visible = rows.slice(0, budget.limit);
 	const more = rows.length - visible.length;
 	const lastIndex = visible.length - 1;
 	for (let i = 0; i < visible.length; i++) {
@@ -812,26 +815,26 @@ function renderListCard(theme: BoxTheme, parsed: GhListParsed, out: string[], wi
 		const line = `${TREE_INDENT}${dimLine(branchGlyph)} ${num}  ${title}${stateSuffix}${branchPart}`;
 		out.push(safeTruncateToWidth(line, width, "…"));
 	}
-	if (more > 0) out.push(renderMoreRow(theme, noun, more, width));
+	if (more > 0) out.push(renderMoreRow(theme, noun, more, width, budget.hint));
 	return out;
 }
 
-function renderBodyPreview(theme: BoxTheme, body: string, out: string[], width: number): string[] {
+function renderBodyPreview(theme: BoxTheme, body: string, out: string[], width: number, expanded: boolean): string[] {
 	const bodyLines = body.replace(/\s+$/u, "").split("\n");
-	const visible = bodyLines.slice(0, GH_BODY_PREVIEW_LINES);
+	const budget = cardBudget(bodyLines.length, expanded, GH_BODY_PREVIEW_LINES);
+	const visible = bodyLines.slice(0, budget.limit);
 	for (const line of visible) {
 		out.push(safeTruncateToWidth(`  ${theme.fg("muted", line)}`, width, "…"));
 	}
 	const more = bodyLines.length - visible.length;
 	if (more > 0) {
-		const expandKey = toolExpandKeyText();
-		const hint = expandKey ? ` · ${expandKey}` : "";
-		out.push(safeTruncateToWidth(`  ${theme.fg("dim", `… ${more} more lines${hint}`)}`, width, "…"));
+		const row = `  ${theme.fg("dim", `… ${more} more ${pluralForm("line", more)}${moreRowHint(budget.hint)}`)}`;
+		out.push(safeTruncateToWidth(fitExpandHint(row, width), width, "…"));
 	}
 	return out;
 }
 
-function renderViewCard(theme: BoxTheme, parsed: GhViewParsed, out: string[], width: number): string[] {
+function renderViewCard(theme: BoxTheme, parsed: GhViewParsed, out: string[], width: number, expanded: boolean): string[] {
 	const stateParts = [theme.fg(ghStateColor(parsed.state), parsed.state)];
 	if (parsed.baseRefName && parsed.headRefName) {
 		stateParts.push(theme.fg("dim", "·"), theme.fg("text", `${parsed.baseRefName} → ${parsed.headRefName}`));
@@ -871,17 +874,24 @@ function renderViewCard(theme: BoxTheme, parsed: GhViewParsed, out: string[], wi
 			safeTruncateToWidth(`  ${theme.fg("dim", "mergeable")} ${theme.fg("text", parsed.mergeable)}`, width, "…"),
 		);
 	}
-	if (parsed.body?.trim()) renderBodyPreview(theme, parsed.body, out, width);
+	if (parsed.body?.trim()) renderBodyPreview(theme, parsed.body, out, width, expanded);
 	return out;
 }
 
-function renderChecksCard(theme: BoxTheme, parsed: GhChecksParsed, out: string[], width: number): string[] {
+function renderChecksCard(
+	theme: BoxTheme,
+	parsed: GhChecksParsed,
+	out: string[],
+	width: number,
+	expanded: boolean,
+): string[] {
 	const rows = parsed.rows;
 	if (rows.length === 0) {
 		out.push(theme.fg("muted", "  no checks reported"));
 		return out;
 	}
-	const visible = rows.slice(0, GH_CARD_HEAD_LIMIT);
+	const budget = cardBudget(rows.length, expanded);
+	const visible = rows.slice(0, budget.limit);
 	const more = rows.length - visible.length;
 	const lastIndex = visible.length - 1;
 	for (let i = 0; i < visible.length; i++) {
@@ -894,7 +904,7 @@ function renderChecksCard(theme: BoxTheme, parsed: GhChecksParsed, out: string[]
 		const line = `${TREE_INDENT}${dimLine(branchGlyph)} ${name}  ${state}${duration}`;
 		out.push(safeTruncateToWidth(line, width, "…"));
 	}
-	if (more > 0) out.push(renderMoreRow(theme, "check", more, width));
+	if (more > 0) out.push(renderMoreRow(theme, "check", more, width, budget.hint));
 	return out;
 }
 
@@ -903,13 +913,20 @@ function renderCreateCard(theme: BoxTheme, parsed: GhCreateParsed, out: string[]
 	return out;
 }
 
-function renderRunListCard(theme: BoxTheme, parsed: GhRunListParsed, out: string[], width: number): string[] {
+function renderRunListCard(
+	theme: BoxTheme,
+	parsed: GhRunListParsed,
+	out: string[],
+	width: number,
+	expanded: boolean,
+): string[] {
 	const rows = parsed.rows;
 	if (rows.length === 0) {
 		out.push(theme.fg("muted", "  no recent runs"));
 		return out;
 	}
-	const visible = rows.slice(0, GH_CARD_HEAD_LIMIT);
+	const budget = cardBudget(rows.length, expanded);
+	const visible = rows.slice(0, budget.limit);
 	const more = rows.length - visible.length;
 	const lastIndex = visible.length - 1;
 	for (let i = 0; i < visible.length; i++) {
@@ -923,15 +940,22 @@ function renderRunListCard(theme: BoxTheme, parsed: GhRunListParsed, out: string
 		const line = `${TREE_INDENT}${dimLine(branchGlyph)} ${glyph} ${workflow}${branch}${id}`;
 		out.push(safeTruncateToWidth(line, width, "…"));
 	}
-	if (more > 0) out.push(renderMoreRow(theme, "run", more, width));
+	if (more > 0) out.push(renderMoreRow(theme, "run", more, width, budget.hint));
 	return out;
 }
 
-function renderRunViewCard(theme: BoxTheme, parsed: GhRunViewParsed, out: string[], width: number): string[] {
+function renderRunViewCard(
+	theme: BoxTheme,
+	parsed: GhRunViewParsed,
+	out: string[],
+	width: number,
+	expanded: boolean,
+): string[] {
 	if (parsed.trigger) {
 		out.push(safeTruncateToWidth(`  ${theme.fg("dim", parsed.trigger)}`, width, "…"));
 	}
-	const visibleJobs = parsed.jobs.slice(0, GH_CARD_HEAD_LIMIT);
+	const budget = cardBudget(parsed.jobs.length, expanded);
+	const visibleJobs = parsed.jobs.slice(0, budget.limit);
 	const moreJobs = parsed.jobs.length - visibleJobs.length;
 	const lastJobIndex = visibleJobs.length - 1;
 	for (let i = 0; i < visibleJobs.length; i++) {
@@ -944,7 +968,7 @@ function renderRunViewCard(theme: BoxTheme, parsed: GhRunViewParsed, out: string
 		const line = `${TREE_INDENT}${dimLine(branchGlyph)} ${glyph} ${name}${detail}`;
 		out.push(safeTruncateToWidth(line, width, "…"));
 	}
-	if (moreJobs > 0) out.push(renderMoreRow(theme, "job", moreJobs, width));
+	if (moreJobs > 0) out.push(renderMoreRow(theme, "job", moreJobs, width, budget.hint));
 	for (let i = 0; i < parsed.annotations.length; i++) {
 		const annotation = parsed.annotations[i];
 		if (!annotation) continue;
@@ -965,19 +989,21 @@ export function renderGhCardLines(
 	theme: BoxTheme,
 	state: { readonly cls: GhSemanticClass; readonly parsed?: GhParsedSemantic },
 	width: number,
+	expanded = false,
 ): string[] {
 	const safeWidth = Math.max(1, width);
 	const out: string[] = [safeTruncateToWidth(ghCardHeader(theme, state.cls, state.parsed), safeWidth, "…")];
 	const parsed = state.parsed;
 	if (!parsed) return out;
-	if (parsed.kind === "pr-list" || parsed.kind === "issue-list") renderListCard(theme, parsed, out, safeWidth);
-	else if (parsed.kind === "pr-view" || parsed.kind === "issue-view") renderViewCard(theme, parsed, out, safeWidth);
-	else if (parsed.kind === "pr-checks") renderChecksCard(theme, parsed, out, safeWidth);
+	if (parsed.kind === "pr-list" || parsed.kind === "issue-list") renderListCard(theme, parsed, out, safeWidth, expanded);
+	else if (parsed.kind === "pr-view" || parsed.kind === "issue-view")
+		renderViewCard(theme, parsed, out, safeWidth, expanded);
+	else if (parsed.kind === "pr-checks") renderChecksCard(theme, parsed, out, safeWidth, expanded);
 	else if (parsed.kind === "pr-create") renderCreateCard(theme, parsed, out, safeWidth);
-	else if (parsed.kind === "run-list") renderRunListCard(theme, parsed, out, safeWidth);
-	else if (parsed.kind === "run-view") renderRunViewCard(theme, parsed, out, safeWidth);
+	else if (parsed.kind === "run-list") renderRunListCard(theme, parsed, out, safeWidth, expanded);
+	else if (parsed.kind === "run-view") renderRunViewCard(theme, parsed, out, safeWidth, expanded);
 	// run-job: header only — the log body renders in the boxed result.
-	return out.map((line) => safeTruncateToWidth(line, safeWidth, "…"));
+	return out.map((line) => safeTruncateToWidth(fitExpandHint(line, safeWidth), safeWidth, "…"));
 }
 
 // ── Boxed run-job log result (Phase 8D) ────────────────────────────────────

@@ -272,6 +272,81 @@
 {borderMuted}│{/} {dim}{text}2.2s{/}{/}                                                                         {borderMuted}│{/}
 {borderMuted}╰──────────────────────────────────────────────────────────────────────────────╯{/}
 
+=== boxed · w80 · bash/ls-many ===
+{toolTitle}{b}List:{/b}{/}{dim} 10 files{/}{dim} · in src{/}
+  {dim}├─{/} {toolOutput}file1.ts{/}
+  {dim}├─{/} {toolOutput}file2.ts{/}
+  {dim}├─{/} {toolOutput}file3.ts{/}
+  {dim}├─{/} {toolOutput}file4.ts{/}
+  {dim}├─{/} {toolOutput}file5.ts{/}
+  {dim}├─{/} {toolOutput}file6.ts{/}
+  {dim}└─{/} {dim}… 4 more files · Ctrl+O to expand{/}
+
+=== boxed · w80 · bash/find-many ===
+{toolTitle}{b}Find:{/b}{/} {muted}*.ts{/}{dim} 10 files{/}{dim} · in src{/}
+  {dim}├─{/} {toolOutput}src/lib/file1.ts{/}
+  {dim}├─{/} {toolOutput}src/lib/file2.ts{/}
+  {dim}├─{/} {toolOutput}src/lib/file3.ts{/}
+  {dim}├─{/} {toolOutput}src/lib/file4.ts{/}
+  {dim}├─{/} {toolOutput}src/lib/file5.ts{/}
+  {dim}├─{/} {toolOutput}src/lib/file6.ts{/}
+  {dim}└─{/} {dim}… 4 more files · Ctrl+O to expand{/}
+
+=== boxed · w80 · ls/many ===
+▤ {b}List:{/b} {accent}10 files{/}{dim} · in src{/}
+  {dim}├─{/} {toolOutput}file1.ts{/}
+  {dim}├─{/} {toolOutput}file2.ts{/}
+  {dim}├─{/} {toolOutput}file3.ts{/}
+  {dim}├─{/} {toolOutput}file4.ts{/}
+  {dim}├─{/} {toolOutput}file5.ts{/}
+  {dim}├─{/} {toolOutput}file6.ts{/}
+  {dim}└─{/} {dim}… 4 more files · Ctrl+O to expand{/}
+
+=== boxed · w80 · bash/git-status-many ===
+{b}Git status{/b}
+  {accent}8 modified{/}
+  {dim}├─{/} {toolOutput}M{/}  {toolOutput}src/file1.ts{/}
+  {dim}├─{/} {toolOutput}M{/}  {toolOutput}src/file2.ts{/}
+  {dim}├─{/} {toolOutput}M{/}  {toolOutput}src/file3.ts{/}
+  {dim}├─{/} {toolOutput}M{/}  {toolOutput}src/file4.ts{/}
+  {dim}├─{/} {toolOutput}M{/}  {toolOutput}src/file5.ts{/}
+  {dim}├─{/} {toolOutput}M{/}  {toolOutput}src/file6.ts{/}
+  {dim}└─{/} {dim}… 2 more files · Ctrl+O to expand{/}
+
+=== boxed · w80 · bash/git-log-many ===
+{b}Git log{/b}
+  {dim}├─{/} {accent}abc1231{/}{dim}{/}{toolOutput}  Commit number 1{/}
+  {dim}├─{/} {accent}abc1232{/}{dim}{/}{toolOutput}  Commit number 2{/}
+  {dim}├─{/} {accent}abc1233{/}{dim}{/}{toolOutput}  Commit number 3{/}
+  {dim}├─{/} {accent}abc1234{/}{dim}{/}{toolOutput}  Commit number 4{/}
+  {dim}├─{/} {accent}abc1235{/}{dim}{/}{toolOutput}  Commit number 5{/}
+  {dim}├─{/} {accent}abc1236{/}{dim}{/}{toolOutput}  Commit number 6{/}
+  {dim}└─{/} {dim}… 2 more commits · Ctrl+O to expand{/}
+
+=== boxed · w80 · bash/gh-pr-list-many ===
+{b}PRs{/b}
+  {accent}8 PRs{/}
+  {dim}├─{/} {accent}#41{/}  {toolOutput}Fixture PR 1{/}{dim}  feature-1{/}
+  {dim}├─{/} {accent}#42{/}  {toolOutput}Fixture PR 2{/}{dim}  feature-2{/}
+  {dim}├─{/} {accent}#43{/}  {toolOutput}Fixture PR 3{/}{dim}  feature-3{/}
+  {dim}├─{/} {accent}#44{/}  {toolOutput}Fixture PR 4{/}{dim}  feature-4{/}
+  {dim}├─{/} {accent}#45{/}  {toolOutput}Fixture PR 5{/}{dim}  feature-5{/}
+  {dim}├─{/} {accent}#46{/}  {toolOutput}Fixture PR 6{/}{dim}  feature-6{/}
+  {dim}└─{/} {dim}… 2 more PRs · Ctrl+O to expand{/}
+
+=== boxed · w80 · bash/gh-pr-view-long-body ===
+{b}PR #42 · Fixture PR{/b}
+  {accent}OPEN{/}
+  {muted}Body line 1{/}
+  {muted}Body line 2{/}
+  {muted}Body line 3{/}
+  {muted}Body line 4{/}
+  {muted}Body line 5{/}
+  {muted}Body line 6{/}
+  {muted}Body line 7{/}
+  {muted}Body line 8{/}
+  {dim}… 4 more lines · Ctrl+O to expand{/}
+
 === boxed · w80 · bash/ls ===
 {toolTitle}{b}List:{/b}{/}{dim} 3 files{/}{dim} · in src{/}
   {dim}├─{/} {toolOutput}a.ts{/}
@@ -749,6 +824,81 @@
 {toolOutput}build	Run tests	passed{/}                                                      
 {dim}{text}2.2s{/}{/}                                                                            
 
+=== light · w80 · bash/ls-many ===
+{toolTitle}{b}List:{/b}{/}{dim} 10 files{/}{dim} · in src{/}
+  {dim}├─{/} {toolOutput}file1.ts{/}
+  {dim}├─{/} {toolOutput}file2.ts{/}
+  {dim}├─{/} {toolOutput}file3.ts{/}
+  {dim}├─{/} {toolOutput}file4.ts{/}
+  {dim}├─{/} {toolOutput}file5.ts{/}
+  {dim}├─{/} {toolOutput}file6.ts{/}
+  {dim}└─{/} {dim}… 4 more files · Ctrl+O to expand{/}
+
+=== light · w80 · bash/find-many ===
+{toolTitle}{b}Find:{/b}{/} {muted}*.ts{/}{dim} 10 files{/}{dim} · in src{/}
+  {dim}├─{/} {toolOutput}src/lib/file1.ts{/}
+  {dim}├─{/} {toolOutput}src/lib/file2.ts{/}
+  {dim}├─{/} {toolOutput}src/lib/file3.ts{/}
+  {dim}├─{/} {toolOutput}src/lib/file4.ts{/}
+  {dim}├─{/} {toolOutput}src/lib/file5.ts{/}
+  {dim}├─{/} {toolOutput}src/lib/file6.ts{/}
+  {dim}└─{/} {dim}… 4 more files · Ctrl+O to expand{/}
+
+=== light · w80 · ls/many ===
+▤ {b}List:{/b} {accent}10 files{/}{dim} · in src{/}
+  {dim}├─{/} {toolOutput}file1.ts{/}
+  {dim}├─{/} {toolOutput}file2.ts{/}
+  {dim}├─{/} {toolOutput}file3.ts{/}
+  {dim}├─{/} {toolOutput}file4.ts{/}
+  {dim}├─{/} {toolOutput}file5.ts{/}
+  {dim}├─{/} {toolOutput}file6.ts{/}
+  {dim}└─{/} {dim}… 4 more files · Ctrl+O to expand{/}
+
+=== light · w80 · bash/git-status-many ===
+{b}Git status{/b}
+  {accent}8 modified{/}
+  {dim}├─{/} {toolOutput}M{/}  {toolOutput}src/file1.ts{/}
+  {dim}├─{/} {toolOutput}M{/}  {toolOutput}src/file2.ts{/}
+  {dim}├─{/} {toolOutput}M{/}  {toolOutput}src/file3.ts{/}
+  {dim}├─{/} {toolOutput}M{/}  {toolOutput}src/file4.ts{/}
+  {dim}├─{/} {toolOutput}M{/}  {toolOutput}src/file5.ts{/}
+  {dim}├─{/} {toolOutput}M{/}  {toolOutput}src/file6.ts{/}
+  {dim}└─{/} {dim}… 2 more files · Ctrl+O to expand{/}
+
+=== light · w80 · bash/git-log-many ===
+{b}Git log{/b}
+  {dim}├─{/} {accent}abc1231{/}{dim}{/}{toolOutput}  Commit number 1{/}
+  {dim}├─{/} {accent}abc1232{/}{dim}{/}{toolOutput}  Commit number 2{/}
+  {dim}├─{/} {accent}abc1233{/}{dim}{/}{toolOutput}  Commit number 3{/}
+  {dim}├─{/} {accent}abc1234{/}{dim}{/}{toolOutput}  Commit number 4{/}
+  {dim}├─{/} {accent}abc1235{/}{dim}{/}{toolOutput}  Commit number 5{/}
+  {dim}├─{/} {accent}abc1236{/}{dim}{/}{toolOutput}  Commit number 6{/}
+  {dim}└─{/} {dim}… 2 more commits · Ctrl+O to expand{/}
+
+=== light · w80 · bash/gh-pr-list-many ===
+{b}PRs{/b}
+  {accent}8 PRs{/}
+  {dim}├─{/} {accent}#41{/}  {toolOutput}Fixture PR 1{/}{dim}  feature-1{/}
+  {dim}├─{/} {accent}#42{/}  {toolOutput}Fixture PR 2{/}{dim}  feature-2{/}
+  {dim}├─{/} {accent}#43{/}  {toolOutput}Fixture PR 3{/}{dim}  feature-3{/}
+  {dim}├─{/} {accent}#44{/}  {toolOutput}Fixture PR 4{/}{dim}  feature-4{/}
+  {dim}├─{/} {accent}#45{/}  {toolOutput}Fixture PR 5{/}{dim}  feature-5{/}
+  {dim}├─{/} {accent}#46{/}  {toolOutput}Fixture PR 6{/}{dim}  feature-6{/}
+  {dim}└─{/} {dim}… 2 more PRs · Ctrl+O to expand{/}
+
+=== light · w80 · bash/gh-pr-view-long-body ===
+{b}PR #42 · Fixture PR{/b}
+  {accent}OPEN{/}
+  {muted}Body line 1{/}
+  {muted}Body line 2{/}
+  {muted}Body line 3{/}
+  {muted}Body line 4{/}
+  {muted}Body line 5{/}
+  {muted}Body line 6{/}
+  {muted}Body line 7{/}
+  {muted}Body line 8{/}
+  {dim}… 4 more lines · Ctrl+O to expand{/}
+
 === light · w80 · bash/ls ===
 {toolTitle}{b}List:{/b}{/}{dim} 3 files{/}{dim} · in src{/}
   {dim}├─{/} {toolOutput}a.ts{/}
@@ -1158,6 +1308,77 @@
      {toolOutput}build	Set up job	ok{/}                                                    
      {toolOutput}build	Run tests	passed{/}                                                 
      {dim}{text}2.2s{/}{/}                                                                       
+
+=== inline · w80 · bash/ls-many ===
+{success}●{/} {b}{toolTitle}List{/}{/b}{dim}({/}{text}src{/}{dim}){/}
+  {dim}⎿{/}  {dim}Listed 10 paths · Ctrl+O to expand{/}
+     {dim}├─{/} {toolOutput}file1.ts{/}
+     {dim}├─{/} {toolOutput}file2.ts{/}
+     {dim}├─{/} {toolOutput}file3.ts{/}
+     {dim}├─{/} {toolOutput}file4.ts{/}
+     {dim}├─{/} {toolOutput}file5.ts{/}
+     {dim}├─{/} {toolOutput}file6.ts{/}
+     {dim}└─{/} {dim}… 4 more files{/}
+
+=== inline · w80 · bash/find-many ===
+{success}●{/} {b}{toolTitle}Find{/}{/b}{dim}({/}{text}*.ts in src{/}{dim}){/}
+  {dim}⎿{/}  {dim}Found 10 files · Ctrl+O to expand{/}
+     {dim}├─{/} {toolOutput}src/lib/file1.ts{/}
+     {dim}├─{/} {toolOutput}src/lib/file2.ts{/}
+     {dim}├─{/} {toolOutput}src/lib/file3.ts{/}
+     {dim}├─{/} {toolOutput}src/lib/file4.ts{/}
+     {dim}├─{/} {toolOutput}src/lib/file5.ts{/}
+     {dim}├─{/} {toolOutput}src/lib/file6.ts{/}
+     {dim}└─{/} {dim}… 4 more files{/}
+
+=== inline · w80 · ls/many ===
+{success}●{/} {b}{toolTitle}List{/}{/b}{dim}({/}{text}src{/}{dim}){/}
+  {dim}⎿{/}  {dim}Listed 10 paths · Ctrl+O to expand{/}
+
+=== inline · w80 · bash/git-status-many ===
+{success}●{/} {b}Git status{/b}
+  {dim}⎿{/}  {accent}8 modified{/}
+     {dim}├─{/} {toolOutput}M{/}  {toolOutput}src/file1.ts{/}
+     {dim}├─{/} {toolOutput}M{/}  {toolOutput}src/file2.ts{/}
+     {dim}├─{/} {toolOutput}M{/}  {toolOutput}src/file3.ts{/}
+     {dim}├─{/} {toolOutput}M{/}  {toolOutput}src/file4.ts{/}
+     {dim}├─{/} {toolOutput}M{/}  {toolOutput}src/file5.ts{/}
+     {dim}├─{/} {toolOutput}M{/}  {toolOutput}src/file6.ts{/}
+     {dim}└─{/} {dim}… 2 more files · Ctrl+O to expand{/}
+
+=== inline · w80 · bash/git-log-many ===
+{success}●{/} {b}Git log{/b}
+  {dim}⎿{/}  {dim}├─{/} {accent}abc1231{/}{dim}{/}{toolOutput}  Commit number 1{/}
+     {dim}├─{/} {accent}abc1232{/}{dim}{/}{toolOutput}  Commit number 2{/}
+     {dim}├─{/} {accent}abc1233{/}{dim}{/}{toolOutput}  Commit number 3{/}
+     {dim}├─{/} {accent}abc1234{/}{dim}{/}{toolOutput}  Commit number 4{/}
+     {dim}├─{/} {accent}abc1235{/}{dim}{/}{toolOutput}  Commit number 5{/}
+     {dim}├─{/} {accent}abc1236{/}{dim}{/}{toolOutput}  Commit number 6{/}
+     {dim}└─{/} {dim}… 2 more commits · Ctrl+O to expand{/}
+
+=== inline · w80 · bash/gh-pr-list-many ===
+{success}●{/} {b}PRs{/b}
+  {dim}⎿{/}  {accent}8 PRs{/}
+     {dim}├─{/} {accent}#41{/}  {toolOutput}Fixture PR 1{/}{dim}  feature-1{/}
+     {dim}├─{/} {accent}#42{/}  {toolOutput}Fixture PR 2{/}{dim}  feature-2{/}
+     {dim}├─{/} {accent}#43{/}  {toolOutput}Fixture PR 3{/}{dim}  feature-3{/}
+     {dim}├─{/} {accent}#44{/}  {toolOutput}Fixture PR 4{/}{dim}  feature-4{/}
+     {dim}├─{/} {accent}#45{/}  {toolOutput}Fixture PR 5{/}{dim}  feature-5{/}
+     {dim}├─{/} {accent}#46{/}  {toolOutput}Fixture PR 6{/}{dim}  feature-6{/}
+     {dim}└─{/} {dim}… 2 more PRs · Ctrl+O to expand{/}
+
+=== inline · w80 · bash/gh-pr-view-long-body ===
+{success}●{/} {b}PR #42 · Fixture PR{/b}
+  {dim}⎿{/}  {accent}OPEN{/}
+     {muted}Body line 1{/}
+     {muted}Body line 2{/}
+     {muted}Body line 3{/}
+     {muted}Body line 4{/}
+     {muted}Body line 5{/}
+     {muted}Body line 6{/}
+     {muted}Body line 7{/}
+     {muted}Body line 8{/}
+     {dim}… 4 more lines · Ctrl+O to expand{/}
 
 === inline · w80 · bash/ls ===
 {success}●{/} {b}{toolTitle}List{/}{/b}{dim}({/}{text}src{/}{dim}){/}

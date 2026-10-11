@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased]
+
+### Fixed
+
+- A `gh pr view` or `gh issue view` body longer than eight lines offered `· Ctrl+O`, but expanding showed nothing more. The body now expands.
+- Every list that stops at a short head now opens on Ctrl+O: `ls` and `find` (the tools in boxed and light chrome, and through bash in every chrome), batches of reads and listings, git `status`, `diff --stat`, `show --stat`, `log`, and the commit, pull, merge, and reset cards, and gh pr and issue lists, checks, runs, and the jobs listed by `gh run view` (the `gh run view --job` log frame is unchanged). Collapsed lists look as before plus `· Ctrl+O to expand` on their `… 4 more files` row (inline bash `ls`/`find` carry it on the summary row, like the List and Find tools); expanded lists show up to `tools.maxExpandedLines`.
+
 ## [1.0.18] - 2026-10-11
 
 ### Added

@@ -23,11 +23,11 @@ import {
 	dropOmittedLines,
 } from "../../../shared/box.js";
 import { formatElapsedMs } from "../../../shared/elapsed.js";
-import { toolExpandHint } from "../../../shared/keybinding-hints.js";
+import { fitExpandHint, toolExpandHint } from "../../../shared/keybinding-hints.js";
 import { safeTruncateToWidth } from "../../../shared/render-budget.js";
 import { AdaptiveDiffComponent, buildSplitRows } from "../../../shared/split-diff.js";
 import { parseSimpleBashCommand } from "./command-shape.js";
-import { pluralForm, TREE_INDENT } from "./output-tree.js";
+import { type ListBudget, listBudget, moreRowHint, pluralForm, TREE_INDENT } from "./output-tree.js";
 import { getStateElapsedMs, getToolsRenderConfig } from "./session-config.js";
 import type { BoxedToolContext } from "./shared.js";
 
@@ -1600,7 +1600,13 @@ function statusCounts(theme: BoxTheme, parsed: GitStatusParsed): string[] {
 	return parts;
 }
 
-function renderStatusCard(theme: BoxTheme, parsed: GitStatusParsed, out: string[], width: number): string[] {
+function renderStatusCard(
+	theme: BoxTheme,
+	parsed: GitStatusParsed,
+	out: string[],
+	width: number,
+	expanded: boolean,
+): string[] {
 	const counts = statusCounts(theme, parsed);
 	if (counts.length > 0) out.push(`  ${counts.join(theme.fg("dim", " · "))}`);
 	else out.push(theme.fg("muted", "  nothing to commit, working tree clean"));
@@ -1615,7 +1621,18 @@ function renderStatusCard(theme: BoxTheme, parsed: GitStatusParsed, out: string[
 	}
 
 	const files = parsed.files;
-	return renderStatusFileRows(theme, files, out, width);
+	return renderStatusFileRows(theme, files, out, width, expanded);
+}
+
+/** Card rows shown collapsed (the head) or expanded (up to `maxExpandedLines`). */
+function cardBudget(total: number, expanded: boolean): ListBudget {
+	return listBudget(total, GIT_CARD_HEAD_LIMIT, expanded, getToolsRenderConfig().maxExpandedLines);
+}
+
+/** `└─ … 3 more files`, with Ctrl+O while expanding would show them. */
+function renderMoreRow(theme: BoxTheme, unit: string, more: number, width: number, hint: string): string {
+	const row = `${TREE_INDENT}${dimLine("└─")} ${theme.fg("dim", `… ${more} more ${pluralForm(unit, more)}${moreRowHint(hint)}`)}`;
+	return safeTruncateToWidth(fitExpandHint(row, width), width, "…");
 }
 
 /** Shared `├─ M  path` rows for status-style file lists (status card + reset). */
@@ -1624,8 +1641,10 @@ function renderStatusFileRows(
 	files: readonly GitStatusFile[],
 	out: string[],
 	width: number,
+	expanded: boolean,
 ): string[] {
-	const visible = files.slice(0, GIT_CARD_HEAD_LIMIT);
+	const budget = cardBudget(files.length, expanded);
+	const visible = files.slice(0, budget.limit);
 	const more = files.length - visible.length;
 	const lastIndex = visible.length - 1;
 	for (let i = 0; i < visible.length; i++) {
@@ -1636,19 +1655,17 @@ function renderStatusFileRows(
 		const line = `${TREE_INDENT}${dimLine(branch)} ${theme.fg(statusMarkColor(file), mark)}  ${theme.fg("toolOutput", file.path)}`;
 		out.push(safeTruncateToWidth(line, width, "…"));
 	}
-	if (more > 0) {
-		out.push(
-			safeTruncateToWidth(
-				`${TREE_INDENT}${dimLine("└─")} ${theme.fg("dim", `… ${more} more ${pluralForm("file", more)}`)}`,
-				width,
-				"…",
-			),
-		);
-	}
+	if (more > 0) out.push(renderMoreRow(theme, "file", more, width, budget.hint));
 	return out;
 }
 
-function renderDiffStatCard(theme: BoxTheme, parsed: DiffStatSummary, out: string[], width: number): string[] {
+function renderDiffStatCard(
+	theme: BoxTheme,
+	parsed: DiffStatSummary,
+	out: string[],
+	width: number,
+	expanded: boolean,
+): string[] {
 	const summaryParts: string[] = [];
 	if (parsed.filesChanged !== undefined) {
 		summaryParts.push(theme.fg("accent", `${parsed.filesChanged} ${pluralForm("file", parsed.filesChanged)} changed`));
@@ -1666,7 +1683,8 @@ function renderDiffStatCard(theme: BoxTheme, parsed: DiffStatSummary, out: strin
 	else out.push(theme.fg("muted", "  no changes"));
 
 	const files = parsed.files;
-	const visible = files.slice(0, GIT_CARD_HEAD_LIMIT);
+	const budget = cardBudget(files.length, expanded);
+	const visible = files.slice(0, budget.limit);
 	const more = files.length - visible.length;
 	const lastIndex = visible.length - 1;
 	for (let i = 0; i < visible.length; i++) {
@@ -1678,26 +1696,19 @@ function renderDiffStatCard(theme: BoxTheme, parsed: DiffStatSummary, out: strin
 		const line = `${TREE_INDENT}${dimLine(branch)} ${theme.fg("toolOutput", file.path)} ${detail}`;
 		out.push(safeTruncateToWidth(line, width, "…"));
 	}
-	if (more > 0) {
-		out.push(
-			safeTruncateToWidth(
-				`${TREE_INDENT}${dimLine("└─")} ${theme.fg("dim", `… ${more} more ${pluralForm("file", more)}`)}`,
-				width,
-				"…",
-			),
-		);
-	}
+	if (more > 0) out.push(renderMoreRow(theme, "file", more, width, budget.hint));
 	return out;
 }
 
-function renderLogCard(theme: BoxTheme, parsed: GitLogParsed, out: string[], width: number): string[] {
+function renderLogCard(theme: BoxTheme, parsed: GitLogParsed, out: string[], width: number, expanded: boolean): string[] {
 	const commits = parsed.commits;
 	if (commits.length === 0) {
 		out.push(theme.fg("muted", "  no commits"));
 		return out;
 	}
 
-	const visible = commits.slice(0, GIT_CARD_HEAD_LIMIT);
+	const budget = cardBudget(commits.length, expanded);
+	const visible = commits.slice(0, budget.limit);
 	const more = commits.length - visible.length;
 	const lastIndex = visible.length - 1;
 	for (let i = 0; i < visible.length; i++) {
@@ -1709,15 +1720,7 @@ function renderLogCard(theme: BoxTheme, parsed: GitLogParsed, out: string[], wid
 		const line = `${TREE_INDENT}${dimLine(branch)} ${theme.fg("accent", commit.hash)}${theme.fg("dim", refs)}${theme.fg("toolOutput", subject)}`;
 		out.push(line);
 	}
-	if (more > 0) {
-		out.push(
-			safeTruncateToWidth(
-				`${TREE_INDENT}${dimLine("└─")} ${theme.fg("dim", `… ${more} more ${pluralForm("commit", more)}`)}`,
-				width,
-				"…",
-			),
-		);
-	}
+	if (more > 0) out.push(renderMoreRow(theme, "commit", more, width, budget.hint));
 	return out;
 }
 
@@ -1743,13 +1746,19 @@ function renderDiffCard(theme: BoxTheme, parsed: GitDiffParsed, out: string[], w
 /** Render a state-change card. `commit`/`pull` reuse the diff-stat summary +
  *  `├─/└─` rows; `push`/`fetch` show the remote (dim) and normalized ref rows.
  *  Every line is width-safe (the caller truncates again). */
-function renderActionCard(theme: BoxTheme, parsed: GitActionParsed, out: string[], width: number): string[] {
+function renderActionCard(
+	theme: BoxTheme,
+	parsed: GitActionParsed,
+	out: string[],
+	width: number,
+	expanded: boolean,
+): string[] {
 	if (parsed.command === "commit") {
 		if (parsed.status) {
 			out.push(theme.fg("muted", `  ${parsed.status}`)); // nothing to commit
 			return out;
 		}
-		renderDiffStatCard(theme, parsed, out, width); // success: summary line only (no -v rows)
+		renderDiffStatCard(theme, parsed, out, width, expanded); // success: summary line only (no -v rows)
 		return out;
 	}
 	if (parsed.command === "pull") {
@@ -1760,7 +1769,7 @@ function renderActionCard(theme: BoxTheme, parsed: GitActionParsed, out: string[
 		// Fast-forward: range + Fast-forward + diff-stat summary/rows.
 		if (parsed.range) out.push(`  ${theme.fg("text", parsed.range)}`);
 		out.push(`  ${theme.fg("accent", "Fast-forward")}`);
-		renderDiffStatCard(theme, parsed, out, width);
+		renderDiffStatCard(theme, parsed, out, width, expanded);
 		return out;
 	}
 	if (parsed.command === "push") {
@@ -1786,14 +1795,14 @@ function renderActionCard(theme: BoxTheme, parsed: GitActionParsed, out: string[
 		// Fast-forward / `Merge made by the '…' strategy.` + stat summary/rows.
 		if (parsed.range) out.push(`  ${theme.fg("text", parsed.range)}`);
 		if (parsed.status) out.push(`  ${theme.fg("accent", parsed.status)}`);
-		renderDiffStatCard(theme, parsed, out, width);
+		renderDiffStatCard(theme, parsed, out, width, expanded);
 		return out;
 	}
 	if (parsed.command === "reset") {
 		// Mixed reset with unstaged changes: `M  path` rows (hash/subject live in
 		// the header for --hard/--soft via `HEAD is now at`).
 		if (parsed.resetFiles && parsed.resetFiles.length > 0) {
-			return renderStatusFileRows(theme, parsed.resetFiles, out, width);
+			return renderStatusFileRows(theme, parsed.resetFiles, out, width, expanded);
 		}
 		if (parsed.status) out.push(theme.fg("muted", `  ${parsed.status}`)); // completed, no output
 		return out;
@@ -1844,18 +1853,19 @@ export function renderGitCardLines(
 	theme: BoxTheme,
 	state: { readonly cls: GitSemanticClass; readonly parsed?: GitParsedSemantic },
 	width: number,
+	expanded = false,
 ): string[] {
 	const safeWidth = Math.max(1, width);
 	const out: string[] = [safeTruncateToWidth(gitCardHeader(theme, state.cls, state.parsed), safeWidth, "…")];
 	const parsed = state.parsed;
 	if (!parsed) return out;
-	if (parsed.kind === "status") renderStatusCard(theme, parsed, out, safeWidth);
-	else if (parsed.kind === "diff-stat") renderDiffStatCard(theme, parsed, out, safeWidth);
-	else if (parsed.kind === "show-stat") renderDiffStatCard(theme, parsed, out, safeWidth);
+	if (parsed.kind === "status") renderStatusCard(theme, parsed, out, safeWidth, expanded);
+	else if (parsed.kind === "diff-stat") renderDiffStatCard(theme, parsed, out, safeWidth, expanded);
+	else if (parsed.kind === "show-stat") renderDiffStatCard(theme, parsed, out, safeWidth, expanded);
 	else if (parsed.kind === "diff") renderDiffCard(theme, parsed, out, safeWidth);
-	else if (parsed.kind === "action") renderActionCard(theme, parsed, out, safeWidth);
-	else renderLogCard(theme, parsed, out, safeWidth);
-	return out.map((line) => safeTruncateToWidth(line, safeWidth, "…"));
+	else if (parsed.kind === "action") renderActionCard(theme, parsed, out, safeWidth, expanded);
+	else renderLogCard(theme, parsed, out, safeWidth, expanded);
+	return out.map((line) => safeTruncateToWidth(fitExpandHint(line, safeWidth), safeWidth, "…"));
 }
 
 // ── Boxed diff result (Phase 8B) ──────────────────────────────────────────

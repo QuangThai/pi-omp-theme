@@ -39,10 +39,12 @@ import {
 	inlineMarker,
 	inlineMoreRow,
 } from "../../../shared/inline.js";
-import { toolExpandHint } from "../../../shared/keybinding-hints.js";
+import { fitExpandHint, toolExpandHint } from "../../../shared/keybinding-hints.js";
 import { safeTruncateToWidth } from "../../../shared/render-budget.js";
 import {
 	fileIcon,
+	listBudget,
+	moreRowHint,
 	OUTPUT_TREE_HEAD_LIMIT,
 	pluralForm,
 	renderOutputTree,
@@ -310,9 +312,27 @@ function renderErrorLines(theme: BoxTheme, errorText: string, width: number): st
 	return out;
 }
 
-function renderBatchTree(theme: BoxTheme, batch: BatchState, status: BatchStatus, width: number): string[] {
+/** Rows of a boxed batch list: its head collapsed, up to `maxExpandedLines` once expanded. */
+function batchBudget(total: number, collapsedLimit: number, expanded: boolean) {
+	return listBudget(total, collapsedLimit, expanded, getToolsRenderConfig().maxExpandedLines);
+}
+
+/** A dim `… N more` row that keeps its Ctrl+O hint on a narrow row. */
+function batchMoreRow(theme: BoxTheme, prefix: string, label: string, hint: string, width: number): string {
+	const row = `${prefix}${dimLine("└─")} ${theme.fg("dim", `${label}${moreRowHint(hint)}`)}`;
+	return safeTruncateToWidth(fitExpandHint(row, Math.max(1, width)), Math.max(1, width), "…");
+}
+
+function renderBatchTree(
+	theme: BoxTheme,
+	batch: BatchState,
+	status: BatchStatus,
+	width: number,
+	expanded: boolean,
+): string[] {
 	const showGlyphs = !status.allDone || status.failed > 0;
-	const visible = batch.members.slice(0, BATCH_TREE_HEAD_LIMIT);
+	const budget = batchBudget(batch.members.length, BATCH_TREE_HEAD_LIMIT, expanded);
+	const visible = batch.members.slice(0, budget.limit);
 	const more = batch.members.length - visible.length;
 	const lastIndex = visible.length - 1;
 	const out: string[] = [];
@@ -327,15 +347,7 @@ function renderBatchTree(theme: BoxTheme, batch: BatchState, status: BatchStatus
 		out.push(safeTruncateToWidth(line, Math.max(1, width), "…"));
 		if (member.isError && member.errorText) out.push(...renderErrorLines(theme, member.errorText, width));
 	}
-	if (more > 0) {
-		out.push(
-			safeTruncateToWidth(
-				`${BATCH_TREE_INDENT}${dimLine("└─")} ${theme.fg("dim", `${more} more`)}`,
-				Math.max(1, width),
-				"…",
-			),
-		);
-	}
+	if (more > 0) out.push(batchMoreRow(theme, BATCH_TREE_INDENT, `${more} more`, budget.hint, width));
 	return out;
 }
 
@@ -355,7 +367,13 @@ function formatLoneOutputHeader(theme: BoxTheme, meta: BatchToolMeta, member: Ba
 }
 
 /** Nested file subtree for one member inside a batched (2+) output panel. */
-function renderMemberSubtree(theme: BoxTheme, member: BatchMember, isLastMember: boolean, width: number): string[] {
+function renderMemberSubtree(
+	theme: BoxTheme,
+	member: BatchMember,
+	isLastMember: boolean,
+	width: number,
+	expanded: boolean,
+): string[] {
 	const safeWidth = Math.max(1, width);
 	const trunk = isLastMember ? " " : dimLine("│");
 	const out: string[] = [];
@@ -379,7 +397,8 @@ function renderMemberSubtree(theme: BoxTheme, member: BatchMember, isLastMember:
 	const headerLine = `${BATCH_TREE_INDENT}${dimLine(isLastMember ? "└─" : "├─")} ${theme.fg("accent", member.pathLabel ?? member.detail)}${countLabel}`;
 	out.push(safeTruncateToWidth(headerLine, safeWidth, "…"));
 
-	const visible = entries.slice(0, BATCH_MEMBER_FILE_HEAD_LIMIT);
+	const budget = batchBudget(entries.length, BATCH_MEMBER_FILE_HEAD_LIMIT, expanded);
+	const visible = entries.slice(0, budget.limit);
 	const more = entries.length - visible.length;
 	const lastIndex = visible.length - 1;
 	const icons = getToolsRenderConfig().nerdFonts;
@@ -391,14 +410,20 @@ function renderMemberSubtree(theme: BoxTheme, member: BatchMember, isLastMember:
 		out.push(safeTruncateToWidth(line, safeWidth, "…"));
 	}
 	if (more > 0) {
-		const line = `${BATCH_TREE_INDENT}${trunk}${TREE_CHILD_INDENT}${dimLine("└─")} ${theme.fg("dim", `… ${more} more ${pluralForm("file", more)}`)}`;
-		out.push(safeTruncateToWidth(line, safeWidth, "…"));
+		const prefix = `${BATCH_TREE_INDENT}${trunk}${TREE_CHILD_INDENT}`;
+		out.push(batchMoreRow(theme, prefix, `… ${more} more ${pluralForm("file", more)}`, budget.hint, safeWidth));
 	}
 	return out;
 }
 
 /** ls/find output panel: lone call renders a flat tree; a batch renders nested subtrees. */
-function renderOutputBatchPanel(theme: BoxTheme, batch: BatchState, status: BatchStatus, width: number): string[] {
+function renderOutputBatchPanel(
+	theme: BoxTheme,
+	batch: BatchState,
+	status: BatchStatus,
+	width: number,
+	expanded: boolean,
+): string[] {
 	const safeWidth = Math.max(1, width);
 
 	// Lone successful call with output: flat tree under a `Find:/List:` header.
@@ -406,8 +431,10 @@ function renderOutputBatchPanel(theme: BoxTheme, batch: BatchState, status: Batc
 		const member = batch.members[0];
 		if (member && member.outputEntries !== undefined && !member.isError) {
 			const header = safeTruncateToWidth(formatLoneOutputHeader(theme, batch.meta, member), safeWidth, "…");
+			const budget = batchBudget(member.outputEntries.length, OUTPUT_TREE_HEAD_LIMIT, expanded);
 			return renderOutputTree(theme, header, member.outputEntries, safeWidth, {
-				headLimit: OUTPUT_TREE_HEAD_LIMIT,
+				headLimit: budget.limit,
+				expandHint: budget.hint,
 				moreUnit: "file",
 				entryColor: "toolOutput",
 				indent: BATCH_TREE_INDENT,
@@ -420,17 +447,14 @@ function renderOutputBatchPanel(theme: BoxTheme, batch: BatchState, status: Batc
 	// Batched (2+) or a not-yet-ready lone call: per-member rows/subtrees.
 	const header = safeTruncateToWidth(formatBatchHeader(theme, batch, status), safeWidth, "…");
 	const out: string[] = [header];
-	const visible = batch.members.slice(0, BATCH_TREE_HEAD_LIMIT);
+	const budget = batchBudget(batch.members.length, BATCH_TREE_HEAD_LIMIT, expanded);
+	const visible = batch.members.slice(0, budget.limit);
 	const more = batch.members.length - visible.length;
 	visible.forEach((member, index) => {
 		const isLast = index === visible.length - 1 && more <= 0;
-		out.push(...renderMemberSubtree(theme, member, isLast, safeWidth));
+		out.push(...renderMemberSubtree(theme, member, isLast, safeWidth, expanded));
 	});
-	if (more > 0) {
-		out.push(
-			safeTruncateToWidth(`${BATCH_TREE_INDENT}${dimLine("└─")} ${theme.fg("dim", `${more} more`)}`, safeWidth, "…"),
-		);
-	}
+	if (more > 0) out.push(batchMoreRow(theme, BATCH_TREE_INDENT, `${more} more`, budget.hint, safeWidth));
 	return out;
 }
 
@@ -469,11 +493,11 @@ function renderBatchPanelLines(
 	// ls/find calls keep their tree panels.
 	if (isLoneRead(batch)) return renderLoneReadPanel(theme, batch, status, width);
 	if (isOutputTool(batch.meta) && batch.members.some((member) => member.outputEntries !== undefined)) {
-		return renderOutputBatchPanel(theme, batch, status, width);
+		return renderOutputBatchPanel(theme, batch, status, width, expanded);
 	}
 	const header = safeTruncateToWidth(formatBatchHeader(theme, batch, status), Math.max(1, width), "…");
 	const lines = [header];
-	lines.push(...renderBatchTree(theme, batch, status, width));
+	lines.push(...renderBatchTree(theme, batch, status, width, expanded));
 	return lines;
 }
 

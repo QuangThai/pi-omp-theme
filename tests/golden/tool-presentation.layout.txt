@@ -272,6 +272,81 @@ Run job · 123¶
 │ 2.2s                                                                         │¶
 ╰──────────────────────────────────────────────────────────────────────────────╯¶
 
+=== boxed · w80 · bash/ls-many ===
+List: 10 files · in src¶
+  ├─ file1.ts¶
+  ├─ file2.ts¶
+  ├─ file3.ts¶
+  ├─ file4.ts¶
+  ├─ file5.ts¶
+  ├─ file6.ts¶
+  └─ … 4 more files · Ctrl+O to expand¶
+
+=== boxed · w80 · bash/find-many ===
+Find: *.ts 10 files · in src¶
+  ├─ src/lib/file1.ts¶
+  ├─ src/lib/file2.ts¶
+  ├─ src/lib/file3.ts¶
+  ├─ src/lib/file4.ts¶
+  ├─ src/lib/file5.ts¶
+  ├─ src/lib/file6.ts¶
+  └─ … 4 more files · Ctrl+O to expand¶
+
+=== boxed · w80 · ls/many ===
+▤ List: 10 files · in src¶
+  ├─ file1.ts¶
+  ├─ file2.ts¶
+  ├─ file3.ts¶
+  ├─ file4.ts¶
+  ├─ file5.ts¶
+  ├─ file6.ts¶
+  └─ … 4 more files · Ctrl+O to expand¶
+
+=== boxed · w80 · bash/git-status-many ===
+Git status¶
+  8 modified¶
+  ├─ M  src/file1.ts¶
+  ├─ M  src/file2.ts¶
+  ├─ M  src/file3.ts¶
+  ├─ M  src/file4.ts¶
+  ├─ M  src/file5.ts¶
+  ├─ M  src/file6.ts¶
+  └─ … 2 more files · Ctrl+O to expand¶
+
+=== boxed · w80 · bash/git-log-many ===
+Git log¶
+  ├─ abc1231  Commit number 1¶
+  ├─ abc1232  Commit number 2¶
+  ├─ abc1233  Commit number 3¶
+  ├─ abc1234  Commit number 4¶
+  ├─ abc1235  Commit number 5¶
+  ├─ abc1236  Commit number 6¶
+  └─ … 2 more commits · Ctrl+O to expand¶
+
+=== boxed · w80 · bash/gh-pr-list-many ===
+PRs¶
+  8 PRs¶
+  ├─ #41  Fixture PR 1  feature-1¶
+  ├─ #42  Fixture PR 2  feature-2¶
+  ├─ #43  Fixture PR 3  feature-3¶
+  ├─ #44  Fixture PR 4  feature-4¶
+  ├─ #45  Fixture PR 5  feature-5¶
+  ├─ #46  Fixture PR 6  feature-6¶
+  └─ … 2 more PRs · Ctrl+O to expand¶
+
+=== boxed · w80 · bash/gh-pr-view-long-body ===
+PR #42 · Fixture PR¶
+  OPEN¶
+  Body line 1¶
+  Body line 2¶
+  Body line 3¶
+  Body line 4¶
+  Body line 5¶
+  Body line 6¶
+  Body line 7¶
+  Body line 8¶
+  … 4 more lines · Ctrl+O to expand¶
+
 === boxed · w80 · bash/ls ===
 List: 3 files · in src¶
   ├─ a.ts¶
@@ -749,6 +824,81 @@ build	Set up job	ok                                                         ¶
 build	Run tests	passed                                                      ¶
 2.2s                                                                            ¶
 
+=== light · w80 · bash/ls-many ===
+List: 10 files · in src¶
+  ├─ file1.ts¶
+  ├─ file2.ts¶
+  ├─ file3.ts¶
+  ├─ file4.ts¶
+  ├─ file5.ts¶
+  ├─ file6.ts¶
+  └─ … 4 more files · Ctrl+O to expand¶
+
+=== light · w80 · bash/find-many ===
+Find: *.ts 10 files · in src¶
+  ├─ src/lib/file1.ts¶
+  ├─ src/lib/file2.ts¶
+  ├─ src/lib/file3.ts¶
+  ├─ src/lib/file4.ts¶
+  ├─ src/lib/file5.ts¶
+  ├─ src/lib/file6.ts¶
+  └─ … 4 more files · Ctrl+O to expand¶
+
+=== light · w80 · ls/many ===
+▤ List: 10 files · in src¶
+  ├─ file1.ts¶
+  ├─ file2.ts¶
+  ├─ file3.ts¶
+  ├─ file4.ts¶
+  ├─ file5.ts¶
+  ├─ file6.ts¶
+  └─ … 4 more files · Ctrl+O to expand¶
+
+=== light · w80 · bash/git-status-many ===
+Git status¶
+  8 modified¶
+  ├─ M  src/file1.ts¶
+  ├─ M  src/file2.ts¶
+  ├─ M  src/file3.ts¶
+  ├─ M  src/file4.ts¶
+  ├─ M  src/file5.ts¶
+  ├─ M  src/file6.ts¶
+  └─ … 2 more files · Ctrl+O to expand¶
+
+=== light · w80 · bash/git-log-many ===
+Git log¶
+  ├─ abc1231  Commit number 1¶
+  ├─ abc1232  Commit number 2¶
+  ├─ abc1233  Commit number 3¶
+  ├─ abc1234  Commit number 4¶
+  ├─ abc1235  Commit number 5¶
+  ├─ abc1236  Commit number 6¶
+  └─ … 2 more commits · Ctrl+O to expand¶
+
+=== light · w80 · bash/gh-pr-list-many ===
+PRs¶
+  8 PRs¶
+  ├─ #41  Fixture PR 1  feature-1¶
+  ├─ #42  Fixture PR 2  feature-2¶
+  ├─ #43  Fixture PR 3  feature-3¶
+  ├─ #44  Fixture PR 4  feature-4¶
+  ├─ #45  Fixture PR 5  feature-5¶
+  ├─ #46  Fixture PR 6  feature-6¶
+  └─ … 2 more PRs · Ctrl+O to expand¶
+
+=== light · w80 · bash/gh-pr-view-long-body ===
+PR #42 · Fixture PR¶
+  OPEN¶
+  Body line 1¶
+  Body line 2¶
+  Body line 3¶
+  Body line 4¶
+  Body line 5¶
+  Body line 6¶
+  Body line 7¶
+  Body line 8¶
+  … 4 more lines · Ctrl+O to expand¶
+
 === light · w80 · bash/ls ===
 List: 3 files · in src¶
   ├─ a.ts¶
@@ -1158,6 +1308,77 @@ Exit 1 · 2.23s · ~2 words                                                     
      build	Set up job	ok                                                    ¶
      build	Run tests	passed                                                 ¶
      2.2s                                                                       ¶
+
+=== inline · w80 · bash/ls-many ===
+● List(src)¶
+  ⎿  Listed 10 paths · Ctrl+O to expand¶
+     ├─ file1.ts¶
+     ├─ file2.ts¶
+     ├─ file3.ts¶
+     ├─ file4.ts¶
+     ├─ file5.ts¶
+     ├─ file6.ts¶
+     └─ … 4 more files¶
+
+=== inline · w80 · bash/find-many ===
+● Find(*.ts in src)¶
+  ⎿  Found 10 files · Ctrl+O to expand¶
+     ├─ src/lib/file1.ts¶
+     ├─ src/lib/file2.ts¶
+     ├─ src/lib/file3.ts¶
+     ├─ src/lib/file4.ts¶
+     ├─ src/lib/file5.ts¶
+     ├─ src/lib/file6.ts¶
+     └─ … 4 more files¶
+
+=== inline · w80 · ls/many ===
+● List(src)¶
+  ⎿  Listed 10 paths · Ctrl+O to expand¶
+
+=== inline · w80 · bash/git-status-many ===
+● Git status¶
+  ⎿  8 modified¶
+     ├─ M  src/file1.ts¶
+     ├─ M  src/file2.ts¶
+     ├─ M  src/file3.ts¶
+     ├─ M  src/file4.ts¶
+     ├─ M  src/file5.ts¶
+     ├─ M  src/file6.ts¶
+     └─ … 2 more files · Ctrl+O to expand¶
+
+=== inline · w80 · bash/git-log-many ===
+● Git log¶
+  ⎿  ├─ abc1231  Commit number 1¶
+     ├─ abc1232  Commit number 2¶
+     ├─ abc1233  Commit number 3¶
+     ├─ abc1234  Commit number 4¶
+     ├─ abc1235  Commit number 5¶
+     ├─ abc1236  Commit number 6¶
+     └─ … 2 more commits · Ctrl+O to expand¶
+
+=== inline · w80 · bash/gh-pr-list-many ===
+● PRs¶
+  ⎿  8 PRs¶
+     ├─ #41  Fixture PR 1  feature-1¶
+     ├─ #42  Fixture PR 2  feature-2¶
+     ├─ #43  Fixture PR 3  feature-3¶
+     ├─ #44  Fixture PR 4  feature-4¶
+     ├─ #45  Fixture PR 5  feature-5¶
+     ├─ #46  Fixture PR 6  feature-6¶
+     └─ … 2 more PRs · Ctrl+O to expand¶
+
+=== inline · w80 · bash/gh-pr-view-long-body ===
+● PR #42 · Fixture PR¶
+  ⎿  OPEN¶
+     Body line 1¶
+     Body line 2¶
+     Body line 3¶
+     Body line 4¶
+     Body line 5¶
+     Body line 6¶
+     Body line 7¶
+     Body line 8¶
+     … 4 more lines · Ctrl+O to expand¶
 
 === inline · w80 · bash/ls ===
 ● List(src)¶

@@ -62,6 +62,8 @@ import {
 	type GrepMatch,
 	grepTreeShownLines,
 	groupMatchesByFile,
+	listBudget,
+	OUTPUT_TREE_HEAD_LIMIT,
 	parseFindOutput,
 	parseGrepBareDisplayOutput,
 	parseGrepBareOutput,
@@ -954,6 +956,11 @@ function bashGrepLineBudget(expanded: boolean): number {
 	return Math.max(0, budget);
 }
 
+/** ls/find entries: the tree's head collapsed, up to `maxExpandedLines` once expanded. */
+function bashEntryBudget(total: number, expanded: boolean) {
+	return listBudget(total, OUTPUT_TREE_HEAD_LIMIT, expanded, getToolsRenderConfig().maxExpandedLines);
+}
+
 function renderBashTreeLines(
 	theme: BoxTheme,
 	state: { cls: BashTreeClass; parsed?: ParsedBashTree },
@@ -965,10 +972,13 @@ function renderBashTreeLines(
 	const cls = state.cls;
 	if (state.parsed && "entries" in state.parsed) {
 		const entries = state.parsed.entries;
+		const budget = bashEntryBudget(entries.length, expanded);
 		return renderOutputTree(theme, bashTreeHeader(theme, cls, { files: entries.length }), entries, safeWidth, {
+			headLimit: budget.limit,
 			moreUnit: "file",
 			indent: TREE_INDENT,
 			withIcons: getToolsRenderConfig().nerdFonts,
+			expandHint: budget.hint,
 		});
 	}
 	if (state.parsed && "matches" in state.parsed) {
@@ -1063,9 +1073,13 @@ function renderInlineBashTreeLines(
 	const treeWidth = inlineContentWidth(width) + TREE_INDENT.length;
 	if ("entries" in parsed) {
 		const count = parsed.entries.length;
-		const summary =
+		const counts =
 			cls.kind === "find" ? `Found ${count} ${pluralForm("file", count)}` : `Listed ${count} ${pluralForm("path", count)}`;
+		// Like the inline tools, Ctrl+O sits on the summary rather than the `… N more` row.
+		const budget = bashEntryBudget(count, context.expanded);
+		const summary = budget.hint ? `${counts} · ${budget.hint}` : counts;
 		const tree = renderOutputTree(theme, "", parsed.entries, treeWidth, {
+			headLimit: budget.limit,
 			moreUnit: "file",
 			indent: TREE_INDENT,
 			withIcons: config.nerdFonts,
@@ -1129,11 +1143,11 @@ function renderSemanticPanelBody(theme: BoxTheme, toolCallId: string, context: B
 			if (isGhClass(state.cls)) {
 				const ghState: { cls: GhSemanticClass; parsed?: GhParsedSemantic } = { cls: state.cls };
 				if (state.parsed !== undefined) ghState.parsed = state.parsed as GhParsedSemantic;
-				return renderGhCardLines(theme, ghState, width);
+				return renderGhCardLines(theme, ghState, width, context.expanded);
 			}
 			const gitState: { cls: GitSemanticClass; parsed?: GitParsedSemantic } = { cls: state.cls };
 			if (state.parsed !== undefined) gitState.parsed = state.parsed as GitParsedSemantic;
-			return renderGitCardLines(theme, gitState, width);
+			return renderGitCardLines(theme, gitState, width, context.expanded);
 		},
 	};
 }

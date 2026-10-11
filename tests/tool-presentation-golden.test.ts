@@ -161,6 +161,11 @@ function numbered(count: number, label = "line"): string {
 	return Array.from({ length: count }, (_, index) => `${label} ${index + 1}`).join("\n");
 }
 
+/** `count` output lines built from their 1-based number. */
+function names(count: number, line: (n: number) => string): string {
+	return Array.from({ length: count }, (_, index) => line(index + 1)).join("\n");
+}
+
 const MCP_TOOL = "mcp__exa__web_search_exa";
 const MCP_ARGS = { query: "pi coding agent", numResults: 5 };
 const BASH_ARGS = { command: "npm run check", timeout: 300 };
@@ -269,6 +274,34 @@ const TOOL_CASES: readonly GoldenCase[] = [
 		tool: "bash",
 		args: { command: "gh run view --job=123 --log" },
 		result: text("build\tSet up job\tok\nbuild\tRun tests\tpassed"),
+	}),
+	// Lists longer than their collapsed head: Ctrl+O shows the rest.
+	single("bash/ls-many", { tool: "bash", args: { command: "ls src" }, result: text(names(10, (n) => `file${n}.ts`)) }),
+	single("bash/find-many", {
+		tool: "bash",
+		args: { command: "find src -name '*.ts'" },
+		result: text(names(10, (n) => `src/lib/file${n}.ts`)),
+	}),
+	single("ls/many", { tool: "ls", args: { path: "src" }, result: text(names(10, (n) => `file${n}.ts`)) }),
+	single("bash/git-status-many", {
+		tool: "bash",
+		args: { command: "git status" },
+		result: text(["On branch main", "Changes not staged for commit:", names(8, (n) => `\tmodified:   src/file${n}.ts`)].join("\n")),
+	}),
+	single("bash/git-log-many", {
+		tool: "bash",
+		args: { command: "git log --oneline" },
+		result: text(names(8, (n) => `${(0xabc1230 + n).toString(16)} Commit number ${n}`)),
+	}),
+	single("bash/gh-pr-list-many", {
+		tool: "bash",
+		args: { command: "gh pr list" },
+		result: text(names(8, (n) => `${40 + n}\tFixture PR ${n}\tfeature-${n}\tOPEN\t2026-10-01T00:00:00Z`)),
+	}),
+	single("bash/gh-pr-view-long-body", {
+		tool: "bash",
+		args: { command: "gh pr view 42" },
+		result: text(["title:\tFixture PR", "state:\tOPEN", "number:\t42", "--", names(12, (n) => `Body line ${n}`)].join("\n")),
 	}),
 	single("bash/ls", { tool: "bash", args: { command: "ls src" }, result: text("a.ts\nb.ts\nlib/") }),
 	single("bash/find", { tool: "bash", args: { command: "find src -name '*.ts'" }, result: text("src/a.ts\nsrc/lib/b.ts") }),
@@ -699,6 +732,42 @@ test("inline blocks open the result gutter once", () => {
 			}
 		}
 		assert.deepEqual(reopened, [], `w${width}: these blocks open a second gutter under one marker`);
+	}
+});
+
+// ── Boxed batches ────────────────────────────────────────────────────────────
+// Batches are multi-step, so the expand-hint property never replays them; the
+// same promise is checked here: Ctrl+O while rows are left out, and expanding
+// paints them.
+
+function paintBatch(tool: string, members: ReadonlyArray<{ args: Record<string, unknown>; output: string }>, expanded: boolean) {
+	resetRegistries();
+	const running = members.map(({ args }) => runTool({ tool, args, phase: "running" }));
+	const settled = members.map(({ args, output }, index) =>
+		runTool({ tool, args, result: text(output), expanded }, running[index]?.toolCallId),
+	);
+	return settled.flatMap((painter) => painter.paint(80)).map(plainLine);
+}
+
+test("boxed batches show their hidden members and files on Ctrl+O", () => {
+	for (const chrome of ["boxed", "light"] as const) {
+		setBoxChrome(chrome);
+		setToolsRenderConfig(toolsConfigFor({ chrome, width: 80 }));
+		const reads = Array.from({ length: 7 }, (_, index) => ({ args: { path: `/repo/src/f${index + 1}.ts` }, output: "body" }));
+		const collapsedReads = paintBatch("read", reads, false);
+		assert.ok(collapsedReads.some((line) => /2 more · Ctrl\+O to expand/.test(line)), `${chrome}: collapsed reads offer the rest`);
+		assert.ok(!collapsedReads.some((line) => line.includes("src/f7.ts")));
+		const expandedReads = paintBatch("read", reads, true);
+		assert.ok(expandedReads.some((line) => line.includes("src/f7.ts")), `${chrome}: expanded reads list every member`);
+		assert.ok(!expandedReads.some((line) => /Ctrl\+O|more/.test(line)));
+
+		const listing = names(6, (n) => `file${n}.ts`);
+		const dirs = [{ args: { path: "src" }, output: listing }, { args: { path: "lib" }, output: listing }];
+		const collapsedLs = paintBatch("ls", dirs, false);
+		assert.ok(collapsedLs.some((line) => /… 2 more files · Ctrl\+O to expand/.test(line)), `${chrome}: collapsed members offer their files`);
+		const expandedLs = paintBatch("ls", dirs, true);
+		assert.equal(expandedLs.filter((line) => line.includes("file6.ts")).length, 2, `${chrome}: expanded members list every file`);
+		assert.ok(!expandedLs.some((line) => /Ctrl\+O|more files/.test(line)));
 	}
 });
 

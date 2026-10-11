@@ -21,7 +21,7 @@
 
 import type { BoxTheme } from "../../../shared/box.js";
 import { dimLine, replaceTabs } from "../../../shared/box.js";
-import { fitExpandHint } from "../../../shared/keybinding-hints.js";
+import { fitExpandHint, toolExpandHint } from "../../../shared/keybinding-hints.js";
 import { safeTruncateToWidth } from "../../../shared/render-budget.js";
 
 /** Indent for top-level tree rows; matches the quiet-tool batch panel. */
@@ -283,6 +283,29 @@ export function groupMatchesByFile(matches: readonly GrepMatch[]): { file: strin
 	return order.map((file) => ({ file, matches: buckets.get(file) ?? [] }));
 }
 
+/** How many rows of a collapsible list to paint, and the Ctrl+O hint its `… N more` row carries. */
+export interface ListBudget {
+	readonly limit: number;
+	readonly hint: string;
+}
+
+/**
+ * A collapsible list shows its head while collapsed and up to `expandedLimit`
+ * rows once expanded. Ctrl+O is offered only when the expanded list paints
+ * rows the collapsed one leaves out.
+ */
+export function listBudget(total: number, collapsedLimit: number, expanded: boolean, expandedLimit: number): ListBudget {
+	const collapsed = Math.max(0, Math.floor(collapsedLimit));
+	const open = Math.max(collapsed, Math.floor(expandedLimit));
+	const hint = !expanded && Math.min(total, open) > Math.min(total, collapsed) ? toolExpandHint() : "";
+	return { limit: expanded ? open : collapsed, hint };
+}
+
+/** ` · Ctrl+O to expand` for a `… N more` row, or nothing. */
+export function moreRowHint(hint: string): string {
+	return hint ? ` · ${hint}` : "";
+}
+
 export interface OutputTreeOptions {
 	/** Maximum entries shown before the "… N more" row. */
 	headLimit?: number;
@@ -294,6 +317,8 @@ export interface OutputTreeOptions {
 	indent?: string;
 	/** Nerd Font mode: prefix each entry with its file-type icon. */
 	withIcons?: boolean;
+	/** Configured hint appended to the "… N more" row while collapsed. */
+	expandHint?: string;
 }
 
 /**
@@ -327,8 +352,9 @@ export function renderOutputTree(
 		out.push(safeTruncateToWidth(line, safeWidth, "…"));
 	}
 	if (more > 0) {
-		const line = `${indent}${dimLine("└─")} ${theme.fg("dim", `… ${more} more ${pluralForm(moreUnit, more)}`)}`;
-		out.push(safeTruncateToWidth(line, safeWidth, "…"));
+		const moreLabel = `… ${more} more ${pluralForm(moreUnit, more)}${moreRowHint(options.expandHint ?? "")}`;
+		const line = `${indent}${dimLine("└─")} ${theme.fg("dim", moreLabel)}`;
+		out.push(safeTruncateToWidth(fitExpandHint(line, safeWidth), safeWidth, "…"));
 	}
 	return out;
 }

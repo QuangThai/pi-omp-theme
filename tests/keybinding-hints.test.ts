@@ -227,13 +227,13 @@ function renderGitDiff(expanded = false): string {
 		.join("\n");
 }
 
-function renderGhPreview(): string {
+function renderGhPreview(expanded = false): string {
 	const cls = classifyGhCommand("gh pr view 42");
 	assert.ok(cls, "GitHub fixture command should be classified");
-	const body = Array.from({ length: 9 }, (_, index) => `body line ${index + 1}`).join("\n");
+	const body = Array.from({ length: 12 }, (_, index) => `body line ${index + 1}`).join("\n");
 	const parsed = parseGhOutput(cls, `title:\tFixture PR\nstate:\tOPEN\nnumber:\t42\n--\n${body}`);
 	assert.ok(parsed, "GitHub fixture output should parse");
-	return renderGhCardLines(theme, { cls, parsed }, 100).join("\n");
+	return renderGhCardLines(theme, { cls, parsed }, 100, expanded).join("\n");
 }
 
 function renderAdaptiveDiff(expanded = false): string {
@@ -300,7 +300,7 @@ test("every changed collapsed surface renders the default display key", () => {
 	for (const [name, render] of Object.entries(fullHintRenderers())) {
 		assert.match(render(), /Ctrl\+O to expand/, `${name} should render the default expansion hint`);
 	}
-	assert.match(renderGhPreview(), /more lines · Ctrl\+O/, "GitHub's narrow preview should render the compact key");
+	assert.match(renderGhPreview(), /4 more lines · Ctrl\+O to expand/, "GitHub's body preview should offer the rest");
 });
 
 test("every changed collapsed surface follows a configured remap", () => {
@@ -311,7 +311,7 @@ test("every changed collapsed surface follows a configured remap", () => {
 		assert.doesNotMatch(output, /Ctrl\+O|ctrl\+o/, `${name} should not retain the default binding`);
 	}
 	const gh = renderGhPreview();
-	assert.match(gh, /more lines · Alt\+X/);
+	assert.match(gh, /more lines · Alt\+X to expand/);
 	assert.doesNotMatch(gh, /Ctrl\+O|ctrl\+o/);
 });
 
@@ -360,6 +360,9 @@ test("expanded surfaces do not keep a stale expansion affordance", () => {
 	for (const [name, render] of Object.entries(fullHintRenderers(true))) {
 		assert.doesNotMatch(render(), /to expand|Ctrl\+O|ctrl\+o/, `${name} should be hint-free when expanded`);
 	}
+	const gh = renderGhPreview(true);
+	assert.doesNotMatch(gh, /to expand|Ctrl\+O|more lines/, "an expanded GitHub body shows every line");
+	assert.match(gh, /body line 12/);
 });
 
 test("extension source cannot bypass the configured display-key helper", () => {

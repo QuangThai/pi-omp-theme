@@ -121,8 +121,8 @@ export function renderWelcome(theme: ResolvedTheme, data: WelcomeData, width: nu
 	if (rightColumn < MIN_RIGHT_COLUMN) return [];
 
 	// Centre the logo as one block, not line by line: its rows differ in width
-	// (one carries a trailing space), and centring each on its own shifts rows
-	// against each other by half a cell and ragged-edges the glyph.
+	// (the cap is 12 cells, the rows with the i stem 16), and centring each on
+	// its own shifts rows against each other and breaks the glyph apart.
 	const logoIndent = " ".repeat(Math.max(0, Math.floor((leftColumn - logoWidth) / 2)));
 	const logo = styledLogoLines(theme).map((line) => `${logoIndent}${line}`);
 	const left = [

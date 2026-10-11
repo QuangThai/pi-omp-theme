@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased]
+
+### Changed
+
+- The startup logo is the block Pi in its coral, blue, and gold brand colors, in the welcome card and in the compact header on narrow terminals (silhouette and colors as in `@quandev104/pi-style`). It replaces the accent-gradient logo with box-drawing shadows; under `NO_COLOR` it stays plain blocks. The welcome card keeps its size and layout.
+
 ## [1.0.19] - 2026-10-11
 
 ### Fixed

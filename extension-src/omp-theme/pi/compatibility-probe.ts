@@ -10,10 +10,12 @@ import {
 	InteractiveMode,
 	SkillInvocationMessageComponent,
 	ToolExecutionComponent,
+	UserMessageComponent,
 } from "@earendil-works/pi-coding-agent";
 import {
 	decorateMessageRender,
 	decorateMessageUpdate,
+	decorateUserMessageRebuild,
 	type MessageDecorationSnapshot,
 } from "../features/messages/index.js";
 import { withCachedHighlight } from "../features/messages/markdown-highlight-cache.js";
@@ -95,6 +97,26 @@ export const KNOWN_NATIVE_IDENTITIES: Readonly<Record<string, readonly KnownNati
 			arity: 1,
 			fingerprint: "a9be09a3",
 			sourceMarkers: Object.freeze(["hasToolCalls", "OSC133_ZONE_START", "OSC133_ZONE_END", "OSC133_ZONE_FINAL"]),
+		}),
+	]),
+	"native-user-message:rebuild": Object.freeze([
+		// Pi 0.85: a band Box around the Markdown.
+		Object.freeze({
+			name: "rebuild",
+			arity: 0,
+			fingerprint: "38930ded",
+		}),
+		// Pi 1.1: the Markdown paints its own band.
+		Object.freeze({
+			name: "rebuild",
+			arity: 0,
+			fingerprint: "ac4305ac",
+		}),
+		Object.freeze({
+			name: "rebuild",
+			arity: 0,
+			fingerprint: "dca665dc",
+			sourceMarkers: Object.freeze(["userMessageText", "userMessageBg", "outputPad", "markdownTransformers"]),
 		}),
 	]),
 	"native-assistant-message:updateContent": Object.freeze([
@@ -617,6 +639,8 @@ function surfaceDisabled(spec: TargetSpec, config: CompatibilityProbeOptions["co
 			!config.messages.assistantMarker &&
 			!config.messages.interruptHint
 		);
+	// The prompt marker only exists to line up with the assistant marker.
+	if (spec.subtype === "native-user-message") return !config.messages.assistantMarker;
 	if (isSpecialBlock(spec)) return !config.messages.specialBlocks;
 	return true;
 }
@@ -685,6 +709,8 @@ function probeSpec(options: {
 				return filterExtensionWidget(original, target, args, hiddenWidgets);
 			if (spec.subtype === "native-markdown-theme")
 				return withCachedHighlight(Reflect.apply(original as (...values: unknown[]) => unknown, target, args));
+			if (spec.subtype === "native-user-message")
+				return decorateUserMessageRebuild(original, target, args, messageSnapshot);
 			if (spec.subtype === "native-assistant-message") {
 				if (spec.method === "updateContent") return decorateMessageUpdate(original, target, args, messageSnapshot);
 				return decorateMessageRender(original, target, args, messageSnapshot);
@@ -739,6 +765,14 @@ export const targetSpecs: readonly TargetSpec[] = [
 		target: AssistantMessageComponent.prototype,
 		method: "updateContent",
 		adapterId: "message-thinking-collapse-v1",
+		status: "certified",
+	},
+	{
+		feature: "messages",
+		subtype: "native-user-message",
+		target: UserMessageComponent.prototype,
+		method: "rebuild",
+		adapterId: "message-user-marker-v1",
 		status: "certified",
 	},
 	{

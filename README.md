@@ -148,7 +148,7 @@ Each part is an ordinary option, so it can also be enabled on its own:
 | Option | Effect |
 |---|---|
 | `tools.chrome: "inline"` | Tool calls render as `● Name(args)` with a `⎿` result gutter instead of a frame. The marker colour shows the status (running, done, failed); todo lists render as a checklist. |
-| `messages.assistantMarker: true` | Each assistant answer starts with `●`, its lines hanging under it. Replaces the `messages.assistantPrefix` gutter. |
+| `messages.assistantMarker: true` | Each assistant answer starts with `●`, its lines hanging under it. Your messages start with the prompt's `❯` (or your `theme.glyphs.prompt`), so their text lines up with the answers. Replaces the `messages.assistantPrefix` gutter. |
 | `messages.thinkingSummary: true` | Hidden thinking reads `● Thinking…` while it streams and `● Thought for 6s` afterwards; click it or press the thinking toggle to show it. Restored sessions show `● Thought`. |
 | `theme.workingElapsed: true` | The working row shows the run time: `Working... (14s · Escape to interrupt)`. |
 | `theme.workingTokens: true` | The working row shows the run's output tokens: `(14s · ↓ 1.2k tokens · Escape to interrupt)`. Streamed text counts at about four characters a token until each message reports its real usage. |

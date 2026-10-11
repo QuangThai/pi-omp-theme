@@ -11,7 +11,7 @@ import {
 import type { CompatibilitySubtype } from "./compatibility-registry.js";
 import type { HostBinding } from "./host-binding.js";
 
-const ASSISTANT_MESSAGE_SUBTYPES: readonly CompatibilitySubtype[] = ["native-assistant-message"];
+const ASSISTANT_MESSAGE_SUBTYPES: readonly CompatibilitySubtype[] = ["native-assistant-message", "native-user-message"];
 const SPECIAL_BLOCK_SUBTYPES: readonly CompatibilitySubtype[] = [
 	"native-compaction-message",
 	"native-branch-message",

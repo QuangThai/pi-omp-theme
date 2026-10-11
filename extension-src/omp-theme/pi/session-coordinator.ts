@@ -164,6 +164,8 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 			theme: sessionTheme as never,
 			assistantMarker: resolved.glyph("toolMarker"),
 			thinkingMarker: resolved.glyph("thinkingMarker"),
+			// The same glyph the editor's prompt uses (features/editor: prompt()).
+			userMarker: config.theme.glyphs.prompt || (resolved.mode === "ascii" ? ">" : "❯"),
 		});
 	};
 	/**

@@ -356,6 +356,65 @@ export function decorateMessageUpdate(
 	return result;
 }
 
+/**
+ * Pi's user message is one child that paints the band and pads the text
+ * `outputPad` columns in: a Markdown with its own background (Pi 1.x) or a
+ * band Box around a Markdown (Pi 0.85). With markers on, the assistant's text
+ * starts two columns further, after its `●`, so the prompt gets the editor's
+ * `❯` in the marker column and its text lines up with the answer below it, as
+ * in Claude Code. Pi's band, colours, and OSC 133 zone are kept.
+ */
+export function decorateUserMessageRebuild(
+	original: unknown,
+	instance: object,
+	args: unknown[],
+	snapshot: MessageDecorationSnapshot | undefined,
+): unknown {
+	if (typeof original !== "function") return undefined;
+	const result = Reflect.apply(original, instance, args);
+	if (!snapshot?.assistantMarker) return result;
+	const target = instance as { outputPad?: unknown; children?: unknown[] };
+	const children = target.children;
+	const child = children?.length === 1 ? (children[0] as MarkableChild | undefined) : undefined;
+	if (!children || typeof child?.render !== "function") return result;
+	children[0] = promptMarkedChild(child, messageStyle.userMarker, outputPad(target));
+	return result;
+}
+
+const LEADING_SGR = /^(?:\x1b\[[0-9;:]*m)*/;
+
+/**
+ * The band rendered `markerWidth + 1` columns narrower, then widened again
+ * right after its left padding: the marker and a space on the first text row,
+ * spaces on every other row. The inserted cells sit inside the band's
+ * background, so the band still spans the full width.
+ */
+function promptMarkedChild(child: MarkableChild, marker: string, lead: number): MarkableChild {
+	const shift = Math.max(1, visibleWidth(marker)) + 1;
+	const padding = " ".repeat(lead);
+	return {
+		render(width: number): string[] {
+			if (width <= lead * 2 + shift + 1) return child.render(width);
+			const styled = messageStyle.theme ? messageStyle.theme.fg("dim", marker) : marker;
+			let marked = false;
+			return child.render(width - shift).map((line) => {
+				const head = LEADING_SGR.exec(line)?.[0] ?? "";
+				const body = line.slice(head.length);
+				if (!body.startsWith(padding)) return line;
+				const text = !marked && contentText(body).trim() !== "";
+				if (text) marked = true;
+				return `${head}${padding}${text ? `${styled} ` : " ".repeat(shift)}${body.slice(lead)}`;
+			});
+		},
+		invalidate() {
+			child.invalidate?.();
+		},
+		handleMouse(event: unknown) {
+			return child.handleMouse?.(event);
+		},
+	};
+}
+
 /** What Claude Code asks after an interrupted turn, worded for any agent. */
 export const INTERRUPT_HINT = "What should the agent do instead?";
 
@@ -413,9 +472,11 @@ interface MessageStyle {
 	assistantMarker: string;
 	/** Leading marker of a thinking run (`●`, accent-coloured). */
 	thinkingMarker: string;
+	/** Leading marker of a user message: the editor's prompt glyph (`❯`). */
+	userMarker: string;
 }
 
-let messageStyle: MessageStyle = { theme: undefined, assistantMarker: "●", thinkingMarker: "●" };
+let messageStyle: MessageStyle = { theme: undefined, assistantMarker: "●", thinkingMarker: "●", userMarker: "❯" };
 
 /** Set by the session coordinator: the session theme and resolved glyphs. */
 export function setMessageDecorationStyle(style: Partial<MessageStyle>): void {

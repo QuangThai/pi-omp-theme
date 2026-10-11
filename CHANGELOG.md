@@ -8,6 +8,10 @@ All notable changes to this project are documented here.
 
 - Code blocks drawn before Pi finished loading its syntax grammars stayed dim and unhighlighted: after resuming, forking, or switching to a session, its ` ```text ` and ` ```yaml ` blocks (and code in thinking) kept the plain code-block color while Pi without the theme highlights them. Pi registers a few grammars at startup, loads the rest in the background, and repaints; the theme's highlight cache had kept the pre-load fallback and served it to the repaint. Results that match the no-language fallback are no longer cached, so the repaint highlights them; settled highlighted blocks are still served from the cache. Fenced blocks with no language keep Pi's `mdCodeBlock` color by design, as they do without the theme.
 
+### Changed
+
+- The README gallery shows the block Pi brand logo in the welcome card (`media/welcome.png` and the `gallery-preview.png` preview, which is also the pi.dev package image). Only the logo region of each image was redrawn, on the capture's own character grid.
+
 ## [1.0.20] - 2026-10-11
 
 ### Changed

@@ -9,7 +9,7 @@ import {
 	topRowScrolledAway,
 	type PresentationTui,
 } from "../../shared/viewport.js";
-import { renderWelcome, type WelcomeProvider, WELCOME_PROVIDER_SLOTS } from "./welcome.js";
+import { renderWelcome, type WelcomeProvider } from "./welcome.js";
 import { compactLogoHeader } from "./logo.js";
 
 export type StartupReason = "startup" | "reload" | "new" | "resume" | "fork";
@@ -268,16 +268,18 @@ function groupToolDetails(tools: readonly StartupToolItem[]): { source: string; 
 
 /**
  * Tool sources as welcome-card rows. Pi has no LSP servers, so the card slot
- * omp gives them carries the providers this session can reach — MCP servers
- * and the built-in core — with a sample of what each offers.
+ * omp gives them carries the providers this session can reach — MCP servers,
+ * extensions, and the built-in core. Core leads; the rest go by how much they
+ * add, so a cut list keeps the largest sources and names the rest.
  */
 function welcomeProviders(tools: readonly StartupToolItem[]): WelcomeProvider[] {
 	return groupToolDetails(tools)
-		.slice(0, WELCOME_PROVIDER_SLOTS)
-		.map((group) => ({
-			name: group.source,
-			detail: group.names.slice(0, 3).join("  ") + (group.names.length > 3 ? `  +${group.names.length - 3}` : ""),
-		}));
+		.sort((a, b) => {
+			if (a.source === "core") return -1;
+			if (b.source === "core") return 1;
+			return b.names.length - a.names.length || a.source.localeCompare(b.source);
+		})
+		.map((group) => ({ name: group.source, tools: group.names }));
 }
 
 /** Boxed Available Tools table. */
@@ -334,12 +336,18 @@ function renderToolsPanel(resolved: ResolvedTheme, tools: readonly StartupToolIt
 	return lines;
 }
 
-/** Left margin for the whole startup block so it does not touch the terminal edge. */
-const STARTUP_INDENT = "    ";
-/** Blank rows above the block, separating it from the status line / terminal top. */
-const STARTUP_PADDING_TOP = 2;
-/** Blank rows below the block, separating it from the editor / chat. */
-const STARTUP_PADDING_BOTTOM = 2;
+/**
+ * Side gutter of the startup block: the column Pi pads its own rows by
+ * (messages, tool output, the working row), kept on both edges.
+ */
+const STARTUP_INDENT = " ";
+/** Blank rows above the block, separating it from the terminal top. */
+const STARTUP_PADDING_TOP = 1;
+/**
+ * Blank rows below the block. Pi spaces each transcript block one row from
+ * the one before, so the header adds none of its own.
+ */
+const STARTUP_PADDING_BOTTOM = 0;
 
 function styledLines(
 	theme: ActiveTheme,
@@ -352,7 +360,7 @@ function styledLines(
 	const resolved = resolveTheme(theme, config);
 	const lines: string[] = [];
 	const indentWidth = visibleWidth(STARTUP_INDENT);
-	const bodyWidth = Math.max(1, width - indentWidth);
+	const bodyWidth = Math.max(1, width - indentWidth * 2);
 	const indent = (content: string): string => `${STARTUP_INDENT}${content}`;
 
 	// Breathing room above the block (separates it from the status line / terminal top).
@@ -363,8 +371,9 @@ function styledLines(
 	const card = renderWelcome(
 		resolved,
 		{
-			label: `v${PI_VERSION}`,
-			title: "Welcome back!",
+			label: `Pi v${PI_VERSION}`,
+			// "back" only when there is a session to come back to.
+			title: (snapshot.resources?.sessions?.length ?? 0) > 0 ? "Welcome back!" : "Welcome!",
 			model: snapshot.model,
 			provider: snapshot.startupProvider,
 			providers: welcomeProviders(snapshot.resources?.toolDetails ?? []),

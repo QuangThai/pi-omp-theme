@@ -72,8 +72,8 @@ test("the compact header fits every width it is given", () => {
 
 test("the welcome card keeps its height and frame with the new logo", () => {
 	const theme = themeWith(false);
-	const card = renderWelcome(theme, { label: "v1.1.0", title: "Welcome back!", providers: [], sessions: [] }, 100);
-	assert.equal(card.length, 19);
+	const card = renderWelcome(theme, { label: "Pi v1.1.0", title: "Welcome back!", providers: [], sessions: [] }, 100);
+	assert.equal(card.length, 17);
 	for (const line of card) assert.equal(visibleWidth(line), 100);
 	const plain = card.map(stripAnsi);
 	// The logo sits centred as one block in the 26-cell left column.
@@ -89,9 +89,10 @@ test("startup renders the welcome card wide and the compact logo narrow", () => 
 	const snapshot = { reason: "startup" as const, project: "pi-omp-theme", resources: { sessions: [] } };
 	const wide = renderStartup(snapshot, config, theme, 110).map(stripAnsi);
 	const narrow = renderStartup(snapshot, config, theme, 40).map(stripAnsi);
-	assert.ok(wide.some((line) => line.includes("Welcome back!") && line.startsWith("    │")));
+	// No recent session yet, so no "back"; the card starts on Pi's one-column gutter.
+	assert.ok(wide.some((line) => line.includes("Welcome!") && line.startsWith(" │")));
 	assert.ok(wide.some((line) => line.includes(PI_LOGO_LINES[4])));
-	assert.ok(!narrow.some((line) => line.includes("Welcome back!")));
+	assert.ok(!narrow.some((line) => line.includes("Welcome")));
 	assert.ok(narrow.some((line) => line.includes(PI_LOGO_LINES[4])));
 	for (const line of narrow) assert.ok(visibleWidth(line) <= 40);
 });

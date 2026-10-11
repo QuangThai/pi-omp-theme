@@ -39,8 +39,10 @@ test("the startup card paints resources, so dropping them rewrites its top rows 
 
 	assert.equal(withResources.length, without.length, "the card keeps a fixed height");
 	const firstDifference = withResources.findIndex((line, index) => line !== without[index]);
-	// Row 9 is the first "Tool providers" slot — the row the redraw log pointed at.
-	assert.equal(firstDifference, 9);
+	// Row 3 is the title row: "Welcome back!" needs a session to come back to.
+	assert.equal(firstDifference, 3);
+	assert.ok(withResources[3]?.includes("Welcome back!"));
+	assert.ok(without[3]?.includes("Welcome!"));
 	assert.notEqual(startupHeaderKey({ ...baseSnapshot, resources }), startupHeaderKey(baseSnapshot));
 });
 

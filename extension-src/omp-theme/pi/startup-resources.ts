@@ -28,9 +28,25 @@ function compactSourcePathLabel(path: string): string {
 	return stripKnownExtension(last);
 }
 
+/**
+ * The package's own name, the way it is talked about: `npm:@scope/pi-teams@0.1.6`
+ * → `pi-teams`, `git:github.com/owner/pi-review@fix/branch` → `pi-review`. The
+ * scope and the pinned version or ref are install details that crowd the label.
+ */
 function compactPackageSourceLabel(source: string): string {
-	if (source.startsWith("npm:")) return source.slice("npm:".length) || source;
-	if (source.startsWith("git:")) return compactSourcePathLabel(source.replace(/\.git(?:#.*)?$/i, "")) || source;
+	if (source.startsWith("npm:")) {
+		const spec = source.slice("npm:".length);
+		const name = spec.startsWith("@") ? (spec.split("/")[1] ?? "") : spec;
+		return name.split("@")[0] || spec || source;
+	}
+	if (source.startsWith("git:")) {
+		const location = source
+			.slice("git:".length)
+			.replace(/^[a-z][a-z0-9+.-]*:\/\//i, "")
+			.replace(/^[^@/:]+@/, "");
+		const repository = location.split(/[#@]/)[0] ?? location;
+		return compactSourcePathLabel(repository.replace(/\.git$/i, "").replace(/:/g, "/")) || source;
+	}
 	return source;
 }
 

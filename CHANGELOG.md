@@ -2,6 +2,30 @@
 
 All notable changes to this project are documented here.
 
+## [1.0.23] - 2026-10-11
+
+### Changed
+
+- **Everything the theme draws now uses the same side margin.** Pi keeps one column clear on each side of the transcript; its `outputPad` setting controls this for messages and tool output, and its `Working...` row and prompt also sit one column in. The theme had set that padding to zero for tool boxes, inline blocks, and markers, and it drew the status row and the `!` bash block from the edge. As a result, some rows started at column 0 and others at column 1.
+  - Transcript blocks now follow Pi's `outputPad` on both sides. This covers the inline `●` markers and `⎿` rows, tool boxes in every chrome, custom message blocks, and the `!` bash block. It includes the edit tool, which Pi renders without padding.
+  - The status row and the welcome card keep one column on each side, like Pi's working row and prompt.
+  - The `Working...` spinner was never drawn by the theme. When the theme's editor is in place, Pi draws its own working row one column in. That row now lines up with everything else instead of looking one column off.
+  - The editor frame and rules still run edge to edge, as Pi's do, and clicks map as before. Messages you type are drawn by Pi and keep Pi's layout.
+- **Welcome card.**
+  - It stops growing at 100 columns and sits on the same one-column margin.
+  - There is now one blank row above it; before, there were two above and three below.
+  - Its frame uses the same quiet border color as the theme's other boxes.
+  - Both columns open and close with a blank row, and the title lines up with the tips.
+  - A thin rule separates Tips, Tool providers, and Recent sessions. The rule is inset from the divider and from the frame.
+  - Tips fit on one row (`/ commands   ! bash   !! bash, no context`). Keys stand out and meanings are dim.
+  - Tool providers list core first, then the others by tool count. Each row shows the tool count and as many tool names as fit, with `+N` for the rest.
+  - With more than four providers, the last row reads `+N more` and names the remaining providers. They used to be dropped without notice.
+  - Provider names drop the npm scope and the pinned version or git ref: `npm:@scope/pi-teams@0.1.6` shows as `pi-teams`.
+  - Long session titles are cut to fit, and their ages share one right-aligned column.
+  - The title reads "Welcome back!" only when there is a recent session, and "Welcome!" otherwise. The top border reads `Pi v<version>`.
+  - The card keeps a fixed height, so it never forces Pi to replay the screen.
+- The README gallery's welcome image and the gallery preview, which is also the pi.dev package image, now show the new card.
+
 ## [1.0.22] - 2026-10-11
 
 ### Fixed

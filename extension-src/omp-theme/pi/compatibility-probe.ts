@@ -554,6 +554,7 @@ export interface CompatibilityProbeOptions {
 			hideInterimText: boolean;
 			thinkingSummary?: boolean;
 			assistantMarker?: boolean;
+			interruptHint?: boolean;
 		};
 		tools: { enabled: boolean; style: string; maxCollapsedLines: number; maxExpandedLines: number; dimOutput: boolean };
 		theme?: { cacheHighlight?: boolean };
@@ -613,7 +614,8 @@ function surfaceDisabled(spec: TargetSpec, config: CompatibilityProbeOptions["co
 			!config.messages.hideThinkingLabel &&
 			!config.messages.hideInterimText &&
 			!config.messages.thinkingSummary &&
-			!config.messages.assistantMarker
+			!config.messages.assistantMarker &&
+			!config.messages.interruptHint
 		);
 	if (isSpecialBlock(spec)) return !config.messages.specialBlocks;
 	return true;

@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- `theme.workingTokens`: the working row counts the run's output tokens, `Working... (14s · ↓ 1.2k tokens · Escape to interrupt)`. Streamed text is estimated at about four characters a token until each message reports its real usage.
+- `tools.editSummary`: inline file changes read like Claude Code's. An edit opens with `Updated src/auth.ts with 1 addition and 1 removal` above the existing `+1 −1 · 0.2s` row and diff; a write names its file, `Wrote 3 lines to notes/todo.txt · 0.2s`. Narrow rows shorten the sentence to `Updated src/auth.ts` and leave the write's path out rather than cut the run time.
+- `messages.interruptHint`: an interrupted turn keeps Pi's notice and adds `· What should the agent do instead?`, both for an answer (`Operation aborted`) and for a tool run (`Error: This operation was aborted`, which is how Pi reports Esc during a tool).
+- The `claude-code` preset turns all three on. They are off by default, so other presets render exactly as before, and each only adds to what was shown.
+
 ### Fixed
 
 - `/reload` left the transcript half-themed: the reloaded copy found the previous copy's core patches still installed and fell back to Pi's native rendering, while the retired copy kept rendering, so restored history could repeat, new tool calls could go missing, and `/pi-omp-theme doctor` reported the surfaces as native. The reloaded copy now takes the patches over, and `widgets.hide` changes apply on `/reload`.

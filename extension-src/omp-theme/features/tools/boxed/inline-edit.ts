@@ -6,7 +6,7 @@
 // renderer already computed.
 
 import type { Component } from "@earendil-works/pi-tui";
-import { stripAnsi } from "../../../shared/ansi.js";
+import { stripAnsi, visibleWidth } from "../../../shared/ansi.js";
 import type { BoxTheme } from "../../../shared/box.js";
 import {
 	inlineBlock,
@@ -17,7 +17,7 @@ import {
 	inlineStatus,
 } from "../../../shared/inline.js";
 import { toolExpandHint } from "../../../shared/keybinding-hints.js";
-import { getStateElapsedMs, isResultSeen } from "./session-config.js";
+import { getStateElapsedMs, getToolsRenderConfig, isResultSeen } from "./session-config.js";
 import type { BoxedToolContext } from "./shared.js";
 
 const ERROR_ROWS = 3;
@@ -66,19 +66,39 @@ export function inlineFilePlain(theme: BoxTheme, message: string, context: Boxed
 	return inlineBlock(theme, undefined, () => [inlineMeta(theme, [text, elapsedOf(context)])]);
 }
 
-/** `+2 −1 · 2.2s` above the diff rows; a hint when rows were left out. */
+function countOf(count: number, noun: string): string {
+	return `${count} ${noun}${count === 1 ? "" : "s"}`;
+}
+
+/** Claude Code's edit sentence: `Updated a.ts with 2 additions and 1 removal`. */
+export function editSentence(path: string, stats: { additions: number; removals: number }): string {
+	const parts = [
+		stats.additions > 0 ? countOf(stats.additions, "addition") : "",
+		stats.removals > 0 ? countOf(stats.removals, "removal") : "",
+	].filter(Boolean);
+	return parts.length > 0 ? `Updated ${path} with ${parts.join(" and ")}` : `Updated ${path}`;
+}
+
+/**
+ * `+2 −1 · 2.2s` above the diff rows; a hint when rows were left out. With
+ * `tools.editSummary` the edit sentence opens the gutter above that row.
+ */
 export function inlineFileDiff(
 	theme: BoxTheme,
 	diffView: Component & { hasCollapsed?(): boolean },
 	stats: { additions: number; removals: number },
 	expanded: boolean,
 	context: BoxedToolContext,
+	path?: string,
 ): Component {
 	const plus = theme.fg(stats.additions > 0 ? "toolDiffAdded" : "dim", `+${stats.additions}`);
 	const minus = theme.fg(stats.removals > 0 ? "toolDiffRemoved" : "dim", `−${stats.removals}`);
 	const summary = inlineMeta(theme, [`${plus} ${minus}`, elapsedOf(context)]);
+	const sentence = path && getToolsRenderConfig().editSummary ? editSentence(path, stats) : "";
 	const block = inlineBlock(theme, undefined, (contentWidth) => {
-		const rows = [summary, ...diffView.render(contentWidth)];
+		// Too narrow for the counts: the row below carries them, so the sentence keeps the path.
+		const opener = visibleWidth(sentence) <= contentWidth ? sentence : `Updated ${path}`;
+		const rows = [...(sentence ? [theme.fg("dim", opener)] : []), summary, ...diffView.render(contentWidth)];
 		const hint = !expanded && diffView.hasCollapsed?.() ? toolExpandHint() : "";
 		if (hint) rows.push(theme.fg("dim", `… ${hint}`));
 		return rows;
@@ -93,8 +113,9 @@ export function inlineFileDiff(
 }
 
 /**
- * Settled write: `Wrote 3 lines · 0.2s`, then the numbered head of what was
- * written within the line budget.
+ * Settled write: `Wrote 3 lines · 0.2s` (`Wrote 3 lines to a.ts · 0.2s` with
+ * `tools.editSummary`, when the row has room for it), then the numbered head of
+ * what was written within the line budget.
  */
 export function inlineFileWritten(
 	theme: BoxTheme,
@@ -102,10 +123,17 @@ export function inlineFileWritten(
 	totalLines: number,
 	expanded: boolean,
 	context: BoxedToolContext,
+	path?: string,
 ): Component {
-	const noun = totalLines === 1 ? "line" : "lines";
-	const rows = [inlineMeta(theme, [`Wrote ${totalLines} ${noun}`, elapsedOf(context)]), ...previewRows];
+	const wrote = `Wrote ${countOf(totalLines, "line")}`;
+	const plain = inlineMeta(theme, [wrote, elapsedOf(context)]);
+	const named = path && getToolsRenderConfig().editSummary ? inlineMeta(theme, [`${wrote} to ${path}`, elapsedOf(context)]) : plain;
 	const omitted = totalLines - previewRows.length;
-	if (omitted > 0) rows.push(inlineMoreRow(theme, omitted, expanded));
-	return inlineBlock(theme, undefined, () => rows);
+	const more = omitted > 0 ? [inlineMoreRow(theme, omitted, expanded)] : [];
+	// The path only adds to the row; where it would push the run time off, it is left out.
+	return inlineBlock(theme, undefined, (contentWidth) => [
+		visibleWidth(named) <= contentWidth ? named : plain,
+		...previewRows,
+		...more,
+	]);
 }

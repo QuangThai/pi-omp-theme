@@ -72,7 +72,10 @@ export function createCompatibilityCoordinator(dispose = disposePiCompatibilityP
 		state(config) {
 			const version = detectPiVersion();
 			const assistantConfigured =
-				config.messages.assistantPrefix || config.messages.assistantMarker || config.messages.thinkingSummary;
+				config.messages.assistantPrefix ||
+				config.messages.assistantMarker ||
+				config.messages.thinkingSummary ||
+				config.messages.interruptHint;
 			const messagesConfigured =
 				config.enabled && config.messages.enabled && (assistantConfigured || config.messages.specialBlocks);
 			const toolsConfigured = config.enabled && config.tools.enabled;
@@ -176,10 +179,15 @@ export function createCompatibilityCoordinator(dispose = disposePiCompatibilityP
 			);
 			const thinkingSummaryEnabled = inlineMessagesAuthorized && config.messages.thinkingSummary;
 			const assistantMarkerEnabled = inlineMessagesAuthorized && config.messages.assistantMarker;
+			const interruptHintEnabled = inlineMessagesAuthorized && config.messages.interruptHint;
 			// The marker replaces the gutter prefix; both would stack on one line.
 			const assistantPrefixEnabled = assistantEnabled && !assistantMarkerEnabled;
 			const messagesEnabled =
-				(assistantEnabled || specialBlocksEnabled || thinkingSummaryEnabled || assistantMarkerEnabled) &&
+				(assistantEnabled ||
+					specialBlocksEnabled ||
+					thinkingSummaryEnabled ||
+					assistantMarkerEnabled ||
+					interruptHintEnabled) &&
 				config.messages.enabled;
 			// The hidden-thinking collapse is an assistant-message surface patch: it needs
 			// the assistant flag and `messages.hideThinkingLabel`, independent of the
@@ -213,6 +221,7 @@ export function createCompatibilityCoordinator(dispose = disposePiCompatibilityP
 						hideThinkingLabel: thinkingCollapseEnabled,
 						thinkingSummary: thinkingSummaryEnabled,
 						assistantMarker: assistantMarkerEnabled,
+						interruptHint: interruptHintEnabled,
 						specialBlocks: messagesEnabled && config.messages.specialBlocks && specialBlocksEnabled,
 					},
 					tools: {
@@ -228,6 +237,7 @@ export function createCompatibilityCoordinator(dispose = disposePiCompatibilityP
 					hideInterimText: config.messages.hideInterimText && messagesEnabled,
 					thinkingSummary: thinkingSummaryEnabled,
 					assistantMarker: assistantMarkerEnabled,
+					interruptHint: interruptHintEnabled,
 				},
 				toolSnapshot: {
 					callMarker: "[tool] ",

@@ -23,6 +23,7 @@ import {
 	configureWorkingShimmer,
 	installWorkingIndicator,
 	setWorkingElapsed,
+	setWorkingTokens,
 	restoreWorkingIndicator,
 } from "../features/working-indicator/index.js";
 import { createCompatibilityCoordinator } from "./compatibility-coordinator.js";
@@ -212,6 +213,7 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 			applyToolsRenderConfig(config);
 			applyMessagesConfig(config);
 			setWorkingElapsed(config.theme.workingElapsed);
+			setWorkingTokens(config.theme.workingTokens);
 			if (compatibility.report) {
 				const cleanup = compatibility.dispose();
 				if (!cleanup.complete) {
@@ -309,7 +311,8 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 						app.config,
 					);
 				};
-				installWorkingIndicator(ctx.ui, resolveWorkingTheme().mode === "ascii");
+				const asciiWorkingRow = resolveWorkingTheme().mode === "ascii";
+				installWorkingIndicator(ctx.ui, asciiWorkingRow);
 				configureWorkingShimmer(
 					ctx.ui,
 					app.config.theme.shimmer,
@@ -322,7 +325,11 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 							bold: true,
 						};
 					},
-					{ elapsed: app.config.theme.workingElapsed },
+					{
+						elapsed: app.config.theme.workingElapsed,
+						tokens: app.config.theme.workingTokens,
+						ascii: asciiWorkingRow,
+					},
 				);
 			} else restoreWorkingIndicator(ctx.ui);
 			const toolDetails = collectToolDetails(pi.getActiveTools?.(), pi.getAllTools?.());

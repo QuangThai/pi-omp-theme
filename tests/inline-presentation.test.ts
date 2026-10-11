@@ -6,7 +6,21 @@ import { after, before, mock, test } from "node:test";
 import { AssistantMessageComponent, initTheme } from "@earendil-works/pi-coding-agent";
 import { getKeybindings, KeybindingsManager, setKeybindings, visibleWidth } from "@earendil-works/pi-tui";
 import { resolveConfigDetailed, validateConfigLayer } from "../extension-src/omp-theme/domain/config-normalization.js";
-import { decorateMessageUpdate, THINKING_SUMMARY_LABEL } from "../extension-src/omp-theme/features/messages/index.js";
+import {
+	decorateMessageUpdate,
+	INTERRUPT_HINT,
+	type MessageDecorationSnapshot,
+	THINKING_SUMMARY_LABEL,
+} from "../extension-src/omp-theme/features/messages/index.js";
+import {
+	editSentence,
+	inlineFileDiff,
+	inlineFileWritten,
+} from "../extension-src/omp-theme/features/tools/boxed/inline-edit.js";
+import {
+	getToolsRenderConfig,
+	setToolsRenderConfig,
+} from "../extension-src/omp-theme/features/tools/boxed/session-config.js";
 import {
 	noteThinkingEvent,
 	resetThinkingTimings,
@@ -16,6 +30,10 @@ import {
 	configureWorkingShimmer,
 	disposeWorkingShimmer,
 	formatRunElapsed,
+	formatTokenCount,
+	noteMessageEnd,
+	noteStreamedDelta,
+	runOutputTokens,
 	startWorkingShimmer,
 } from "../extension-src/omp-theme/features/working-indicator/index.js";
 import {
@@ -52,6 +70,9 @@ test("the claude-code preset turns on the whole inline transcript", () => {
 	assert.equal(config.messages.assistantMarker, true);
 	assert.equal(config.messages.thinkingSummary, true);
 	assert.equal(config.theme.workingElapsed, true);
+	assert.equal(config.theme.workingTokens, true);
+	assert.equal(config.messages.interruptHint, true);
+	assert.equal(config.tools.editSummary, true);
 	assert.equal(config.editor.frame, "claude");
 	assert.ok(!diagnostics.some((diagnostic) => diagnostic.code === "CFG-PRESET-OVERRIDE"));
 });
@@ -63,16 +84,20 @@ test("the default and claude presets keep every inline option off", () => {
 		assert.equal(config.messages.assistantMarker, false, preset);
 		assert.equal(config.messages.thinkingSummary, false, preset);
 		assert.equal(config.theme.workingElapsed, false, preset);
+		assert.equal(config.theme.workingTokens, false, preset);
+		assert.equal(config.messages.interruptHint, false, preset);
+		assert.equal(config.tools.editSummary, false, preset);
 	}
 });
 
 test("inline options validate like every other leaf", () => {
 	const accepted = validateConfigLayer({
 		tools: { chrome: "inline" },
-		messages: { assistantMarker: true, thinkingSummary: true },
-		theme: { workingElapsed: true },
+		messages: { assistantMarker: true, thinkingSummary: true, interruptHint: true },
+		theme: { workingElapsed: true, workingTokens: true },
 	});
 	assert.deepEqual(accepted.diagnostics, []);
+	assert.deepEqual(validateConfigLayer({ tools: { editSummary: true } }).diagnostics, []);
 	const rejected = validateConfigLayer({ tools: { chrome: "cozy" }, messages: { assistantMarker: "yes" } });
 	assert.equal(rejected.diagnostics.length, 2);
 });
@@ -175,6 +200,167 @@ test("the working row counts the run time inside its hint", () => {
 	}
 	assert.equal(formatRunElapsed(999), "");
 	assert.equal(formatRunElapsed(61_000), "1m 1s");
+});
+
+test("the working row counts the run's output tokens inside its hint", () => {
+	mock.timers.enable({ apis: ["setInterval", "Date"], now: 0 });
+	const messages: Array<string | undefined> = [];
+	const palette = () => ({ low: "", mid: "", high: "" });
+	try {
+		configureWorkingShimmer({ setWorkingMessage: (message) => messages.push(message) }, "off", palette, {
+			elapsed: true,
+			tokens: true,
+		});
+		startWorkingShimmer();
+		assert.match(plainLine(messages.at(-1) ?? ""), /^Working\.\.\. \(Escape to interrupt\)$/, "no count before output");
+		noteStreamedDelta({ type: "thinking_delta", delta: "x".repeat(400) });
+		noteStreamedDelta({ type: "text_delta", delta: "y".repeat(400) });
+		noteStreamedDelta({ type: "text_start", delta: "ignored" });
+		mock.timers.tick(3000);
+		assert.match(plainLine(messages.at(-1) ?? ""), /^Working\.\.\. \(3s · ↓ 200 tokens · Escape to interrupt\)$/);
+		// The finished message's reported usage replaces the estimate.
+		noteMessageEnd({ role: "assistant", usage: { output: 1234 } });
+		noteMessageEnd({ role: "toolResult", usage: { output: 99 } });
+		noteStreamedDelta({ type: "toolcall_delta", delta: "z".repeat(40) });
+		mock.timers.tick(1000);
+		assert.match(plainLine(messages.at(-1) ?? ""), /\(4s · ↓ 1\.2k tokens · Escape to interrupt\)$/);
+		assert.equal(runOutputTokens(), 1244);
+		// A message without reported usage keeps its estimate.
+		noteMessageEnd({ role: "assistant", usage: { output: 0 } });
+		assert.equal(runOutputTokens(), 1244);
+		disposeWorkingShimmer();
+		configureWorkingShimmer({ setWorkingMessage: (message) => messages.push(message) }, "off", palette, {
+			tokens: true,
+			ascii: true,
+		});
+		startWorkingShimmer();
+		assert.equal(runOutputTokens(), 0, "a new run starts from zero");
+		noteStreamedDelta({ type: "text_delta", delta: "y".repeat(40) });
+		mock.timers.tick(1000);
+		assert.match(plainLine(messages.at(-1) ?? ""), /^Working\.\.\. \(10 tokens · Escape to interrupt\)$/, "no arrow in ASCII");
+	} finally {
+		disposeWorkingShimmer();
+		mock.timers.reset();
+	}
+	assert.equal(formatTokenCount(312), "312");
+	assert.equal(formatTokenCount(1000), "1k");
+	assert.equal(formatTokenCount(1250), "1.3k");
+	assert.equal(formatTokenCount(9999), "10k");
+	assert.equal(formatTokenCount(24_400), "24k");
+	assert.equal(formatTokenCount(999_499), "999k");
+	assert.equal(formatTokenCount(999_500), "1M");
+	assert.equal(formatTokenCount(1_234_567), "1.2M");
+});
+
+const INTERRUPT_SNAPSHOT: MessageDecorationSnapshot = {
+	assistantPrefix: "│ ",
+	assistantEnabled: false,
+	collapseHiddenThinking: false,
+	hideInterimText: false,
+	assistantMarker: true,
+	interruptHint: true,
+};
+
+function renderedMessage(message: object, snapshot: MessageDecorationSnapshot): string[] {
+	const component = new AssistantMessageComponent(undefined, true);
+	decorateMessageUpdate(AssistantMessageComponent.prototype.updateContent, component, [message, false], snapshot);
+	return component
+		.render(80)
+		.map(plainLine)
+		.filter((line) => line.trim() !== "");
+}
+
+test("an interrupted turn keeps Pi's notice and gains the interrupt hint", () => {
+	const interrupted = {
+		role: "assistant",
+		content: [{ type: "text", text: "Partial answer" }],
+		stopReason: "aborted",
+		errorMessage: "Request was aborted",
+		timestamp: 51,
+	};
+	const lines = renderedMessage(interrupted, INTERRUPT_SNAPSHOT);
+	assert.equal(lines.at(-1)?.trim(), `Operation aborted · ${INTERRUPT_HINT}`);
+	assert.match(lines[0] ?? "", /Partial answer/);
+	const retried = renderedMessage({ ...interrupted, errorMessage: "Aborted after 2 retry attempts" }, INTERRUPT_SNAPSHOT);
+	assert.equal(retried.at(-1)?.trim(), `Aborted after 2 retry attempts · ${INTERRUPT_HINT}`);
+	// Off, errors, and turns that ended on tool calls render exactly as Pi does.
+	const off = renderedMessage(interrupted, { ...INTERRUPT_SNAPSHOT, interruptHint: false });
+	assert.equal(off.at(-1)?.trim(), "Operation aborted");
+	const failed = renderedMessage({ ...interrupted, stopReason: "error", errorMessage: "boom" }, INTERRUPT_SNAPSHOT);
+	assert.equal(failed.at(-1)?.trim(), "Error: boom");
+	// Esc during a tool run: the next request fails its setup on the aborted signal.
+	const toolRun = { ...interrupted, content: [], stopReason: "error", errorMessage: "This operation was aborted" };
+	assert.equal(renderedMessage(toolRun, INTERRUPT_SNAPSHOT).at(-1)?.trim(), `Error: This operation was aborted · ${INTERRUPT_HINT}`);
+	// The same error after streamed output is not that setup failure.
+	const streamed = renderedMessage({ ...toolRun, content: interrupted.content }, INTERRUPT_SNAPSHOT);
+	assert.equal(streamed.at(-1)?.trim(), "Error: This operation was aborted");
+	const withTool = renderedMessage(
+		{ ...interrupted, content: [{ type: "toolCall", id: "t1", name: "bash", arguments: { command: "sleep 8" } }] },
+		INTERRUPT_SNAPSHOT,
+	);
+	assert.ok(!withTool.some((line) => line.includes(INTERRUPT_HINT)));
+});
+
+test("an interrupt hint alone installs the updateContent decoration", () => {
+	const report = probePiCompatibility("99.99.99", {
+		config: {
+			messages: {
+				enabled: true,
+				assistantPrefix: false,
+				specialBlocks: false,
+				hideThinkingLabel: false,
+				hideInterimText: false,
+				interruptHint: true,
+			},
+			tools: { enabled: false, style: "compact-box", maxCollapsedLines: 4, maxExpandedLines: 50, dimOutput: false },
+			preset: "claude-code",
+		},
+	});
+	try {
+		const disabled = report.unsupported.filter((item) => item.cause === "disabled").map((item) => item.method);
+		assert.ok(!disabled.includes("updateContent"), "updateContent must stay decorated for the hint");
+	} finally {
+		assert.equal(disposePiCompatibilityProbe(report).complete, true);
+	}
+});
+
+test("inline file changes add Claude Code's sentences to what they showed", () => {
+	assert.equal(editSentence("a.ts", { additions: 2, removals: 1 }), "Updated a.ts with 2 additions and 1 removal");
+	assert.equal(editSentence("a.ts", { additions: 1, removals: 0 }), "Updated a.ts with 1 addition");
+	assert.equal(editSentence("a.ts", { additions: 0, removals: 3 }), "Updated a.ts with 3 removals");
+	assert.equal(editSentence("a.ts", { additions: 0, removals: 0 }), "Updated a.ts");
+	const diffView = { render: () => ["-   3  old", "+   3  new"], invalidate() {} };
+	const context = { state: {} } as never;
+	const stats = { additions: 1, removals: 1 };
+	const previous = getToolsRenderConfig().editSummary;
+	try {
+		setToolsRenderConfig({ editSummary: false });
+		const plain = inlineFileDiff(goldenTheme, diffView, stats, false, context, "a.ts").render(60).map(plainLine);
+		setToolsRenderConfig({ editSummary: true });
+		const summed = inlineFileDiff(goldenTheme, diffView, stats, false, context, "a.ts").render(60).map(plainLine);
+		assert.match(summed[0] ?? "", /⎿ +Updated a\.ts with 1 addition and 1 removal$/);
+		// Everything the block showed before is still there, below the sentence.
+		assert.deepEqual(
+			summed.slice(1).map((line) => line.trim()),
+			plain.map((line) => line.replace("⎿", "").trim()),
+		);
+		const pathless = inlineFileDiff(goldenTheme, diffView, stats, false, context).render(60).map(plainLine);
+		assert.equal(pathless.length, plain.length, "no path, no sentence");
+		// A write names its file in the row it already had.
+		const written = inlineFileWritten(goldenTheme, ["1  a"], 3, false, context, "a.ts").render(60).map(plainLine);
+		assert.match(written[0] ?? "", /⎿ +Wrote 3 lines to a.ts$/);
+		// Narrow rows keep what they showed before: the counts sit on the next row, the run time stays.
+		const narrowEdit = inlineFileDiff(goldenTheme, diffView, stats, false, context, "a.ts").render(30).map(plainLine);
+		assert.match(narrowEdit[0] ?? "", /⎿ +Updated a.ts$/);
+		const timed = { state: { __piOmpThemeStartedAt: 0, __piOmpThemeEndedAt: 2200 } } as never;
+		const narrowWrite = inlineFileWritten(goldenTheme, [], 3, false, timed, "notes/summary.txt").render(30).map(plainLine);
+		assert.match(narrowWrite[0] ?? "", /⎿ +Wrote 3 lines · 2.2s$/);
+		setToolsRenderConfig({ editSummary: false });
+		const unnamed = inlineFileWritten(goldenTheme, ["1  a"], 1, false, context, "a.ts").render(60).map(plainLine);
+		assert.match(unnamed[0] ?? "", /⎿ +Wrote 1 line$/);
+	} finally {
+		setToolsRenderConfig({ editSummary: previous });
+	}
 });
 
 test("todo arguments become a checklist by shape, whatever the tool is called", () => {

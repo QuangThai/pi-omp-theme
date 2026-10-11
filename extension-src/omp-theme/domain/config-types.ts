@@ -62,6 +62,8 @@ export interface PiOmpThemeConfig {
 		assistantMarker?: boolean;
 		/** Show hidden thinking as one `● Thought for 6s` line instead of no trace. */
 		thinkingSummary?: boolean;
+		/** Follow Pi's interrupted-turn notice with `· What should the agent do instead?`. */
+		interruptHint?: boolean;
 	};
 	tools?: {
 		enabled?: boolean;
@@ -76,12 +78,16 @@ export interface PiOmpThemeConfig {
 		chrome?: string;
 		/** Also collapse mutating tools (edit/write/…) into the summary; off keeps them visible. */
 		collapseMutatingTools?: boolean;
+		/** Inline edits open with `Updated <path> with 2 additions and 1 removal`. */
+		editSummary?: boolean;
 	};
 	theme?: {
 		nerdFonts?: string;
 		shimmer?: string;
 		/** Show the run's elapsed time on the working row (`Working… (14s · …)`). */
 		workingElapsed?: boolean;
+		/** Show the run's output tokens on the working row (`↓ 1.2k tokens`). */
+		workingTokens?: boolean;
 		cacheHighlight?: boolean;
 		sessionAccent?: boolean;
 		terminalBackgroundSync?: string;
@@ -137,6 +143,8 @@ export interface NormalizedPiOmpThemeConfig {
 		assistantMarker: boolean;
 		/** Show hidden thinking as one `● Thought for 6s` line instead of no trace. */
 		thinkingSummary: boolean;
+		/** Follow Pi's interrupted-turn notice with `· What should the agent do instead?`. */
+		interruptHint: boolean;
 	};
 	readonly tools: {
 		enabled: boolean;
@@ -153,6 +161,8 @@ export interface NormalizedPiOmpThemeConfig {
 		chrome: ToolChrome;
 		/** Also collapse mutating tools (edit/write/…) into the summary; off keeps them visible. */
 		collapseMutatingTools: boolean;
+		/** Inline edits open with `Updated <path> with 2 additions and 1 removal`. */
+		editSummary: boolean;
 	};
 	readonly theme: {
 		nerdFonts: NerdFontsMode;
@@ -160,6 +170,8 @@ export interface NormalizedPiOmpThemeConfig {
 		shimmer: ShimmerMode;
 		/** Show the run's elapsed time on the working row. */
 		workingElapsed: boolean;
+		/** Show the run's output tokens on the working row. */
+		workingTokens: boolean;
 		/** Memoize Pi's syntax highlighting across streaming deltas. */
 		cacheHighlight: boolean;
 		/** Tint a named session's editor border with a colour derived from its name. */

@@ -136,7 +136,10 @@ export const editTool: BoxedToolDefinition = {
 		// Render adaptive diff (unified/split per width) with syntax colors for small outputs.
 		const maxRows = expanded ? 160 : 36;
 		const diffView = new AdaptiveDiffComponent(theme, rows, maxRows, shouldHighlight ? language : undefined);
-		if (isInlineChrome()) return inlineFileDiff(theme, diffView, stats, expanded, context);
+		if (isInlineChrome()) {
+			const shownPath = argPath || sourcePath;
+			return inlineFileDiff(theme, diffView, stats, expanded, context, shownPath ? displayPath(shownPath, context) : undefined);
+		}
 		const expandHint = !expanded && diffView.hasCollapsed() ? toolExpandHint() : "";
 
 		return renderBoxedToolResult(

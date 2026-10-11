@@ -23,8 +23,8 @@ export const CONFIG_PRESETS: Readonly<Record<PresetName, Readonly<PiOmpThemeConf
 	}),
 	/**
 	 * The `claude` composer plus Claude Code's transcript: `● Tool(args)` calls
-	 * with a `⎿` result gutter, marked assistant text, one-line thinking and a
-	 * timed working row.
+	 * with a `⎿` result gutter, marked assistant text, one-line thinking, edit
+	 * sentences, an interrupt prompt, and a working row with run time and tokens.
 	 */
 	"claude-code": Object.freeze({
 		placement: "below",
@@ -38,9 +38,9 @@ export const CONFIG_PRESETS: Readonly<Record<PresetName, Readonly<PiOmpThemeConf
 			},
 		},
 		startup: { mode: "compact" },
-		messages: { assistantMarker: true, thinkingSummary: true },
-		tools: { chrome: "inline", maxCollapsedLines: 4 },
-		theme: { workingElapsed: true },
+		messages: { assistantMarker: true, thinkingSummary: true, interruptHint: true },
+		tools: { chrome: "inline", maxCollapsedLines: 4, editSummary: true },
+		theme: { workingElapsed: true, workingTokens: true },
 	}),
 	/**
 	 * omp's default composer: a rounded box whose top border carries the status

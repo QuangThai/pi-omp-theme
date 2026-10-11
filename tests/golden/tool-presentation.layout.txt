@@ -969,7 +969,7 @@ Exit 1 · 2.23s · ~2 words                                                     
 
 === inline · w80 · write/trailing-newline ===
 ● Write(notes/summary.txt)¶
-  ⎿  Wrote 3 lines · 2.2s¶
+  ⎿  Wrote 3 lines to notes/summary.txt · 2.2s¶
      1 one¶
      2 two¶
      3 three¶
@@ -1000,7 +1000,8 @@ Exit 1 · 2.23s · ~2 words                                                     
 
 === inline · w80 · edit/diff ===
 ● Edit(src/plan.txt)¶
-  ⎿  +2 −1 · 2.2s¶
+  ⎿  Updated src/plan.txt with 2 additions and 1 removal¶
+     +2 −1 · 2.2s¶
          1  alpha                                                               ¶
      -   2  beta                                                                ¶
      +   2  BETA                                                                ¶
@@ -1018,20 +1019,21 @@ Exit 1 · 2.23s · ~2 words                                                     
 
 === inline · w80 · quick-edit/diff ===
 ● Quick Edit(src/plan.txt)¶
-  ⎿  +1 −1 · 2.2s¶
+  ⎿  Updated src/plan.txt with 1 addition and 1 removal¶
+     +1 −1 · 2.2s¶
      -   2  beta                                                                ¶
      +   2  BETA                                                                ¶
 
 === inline · w80 · write/settled ===
 ● Write(notes/todo.txt)¶
-  ⎿  Wrote 3 lines · 2.2s¶
+  ⎿  Wrote 3 lines to notes/todo.txt · 2.2s¶
      1 one¶
      2 two¶
      3 three¶
 
 === inline · w80 · write/long-collapsed ===
 ● Write(notes/long.txt)¶
-  ⎿  Wrote 20 lines · 2.2s¶
+  ⎿  Wrote 20 lines to notes/long.txt · 2.2s¶
       1 line 1¶
       2 line 2¶
       3 line 3¶
@@ -1074,7 +1076,8 @@ Exit 1 · 2.23s · ~2 words                                                     
 === inline · w80 · turn/collapsed-run ===
 ● Read 1 file, ran 2 shell commands, listed 1 path · 8.9s · Ctrl+O to expand¶
 ● Edit(src/plan.txt)¶
-  ⎿  +2 −1 · 2.2s¶
+  ⎿  Updated src/plan.txt with 2 additions and 1 removal¶
+     +2 −1 · 2.2s¶
          1  alpha                                                               ¶
      -   2  beta                                                                ¶
      +   2  BETA                                                                ¶
@@ -1215,7 +1218,8 @@ Exit 1 · 2.23s · ~2 words           ¶
 
 === inline · w36 · edit/diff ===
 ● Edit(src/plan.txt)¶
-  ⎿  +2 −1 · 2.2s¶
+  ⎿  Updated src/plan.txt¶
+     +2 −1 · 2.2s¶
          1  alpha                   ¶
      -   2  beta                    ¶
      +   2  BETA                    ¶

@@ -118,7 +118,9 @@ function renderInlineWriteResult(
 	const config = getToolsRenderConfig();
 	const budget = options.expanded ? config.maxExpandedLines : config.maxCollapsedLines;
 	const rows = preview.slice(0, budget).map((line) => formatNumberedLine(theme, line));
-	return inlineFileWritten(theme, rows, preview.length, options.expanded, context);
+	const rawPath = String(context.args?.path ?? context.args?.file_path ?? "");
+	const path = rawPath ? displayPath(rawPath, context) : undefined;
+	return inlineFileWritten(theme, rows, preview.length, options.expanded, context, path);
 }
 
 export const writeTool: BoxedToolDefinition = {

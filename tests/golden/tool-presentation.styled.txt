@@ -969,7 +969,7 @@
 
 === inline · w80 · write/trailing-newline ===
 {success}●{/} {b}{toolTitle}Write{/}{/b}{dim}({/}{text}notes/summary.txt{/}{dim}){/}
-  {dim}⎿{/}  {dim}Wrote 3 lines{/}{dim} · {/}{dim}2.2s{/}
+  {dim}⎿{/}  {dim}Wrote 3 lines to notes/summary.txt{/}{dim} · {/}{dim}2.2s{/}
      {dim}1 {/}{toolOutput}one{/}
      {dim}2 {/}{toolOutput}two{/}
      {dim}3 {/}{toolOutput}three{/}
@@ -1000,7 +1000,8 @@
 
 === inline · w80 · edit/diff ===
 {success}●{/} {b}{toolTitle}Edit{/}{/b}{dim}({/}{text}src/plan.txt{/}{dim}){/}
-  {dim}⎿{/}  {toolDiffAdded}+2{/} {toolDiffRemoved}−1{/}{dim} · {/}{dim}2.2s{/}
+  {dim}⎿{/}  {dim}Updated src/plan.txt with 2 additions and 1 removal{/}
+     {toolDiffAdded}+2{/} {toolDiffRemoved}−1{/}{dim} · {/}{dim}2.2s{/}
      {dim} {/} {dim}  1{/}  alpha                                                               
      {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43;49}                                                                {sgr:49}
      {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  2{/}  {sgr:48;2;57;96;62}BETA{sgr:48;2;45;68;53}                                                                {sgr:49}
@@ -1018,20 +1019,21 @@
 
 === inline · w80 · quick-edit/diff ===
 {success}●{/} {b}{toolTitle}Quick Edit{/}{/b}{dim}({/}{text}src/plan.txt{/}{dim}){/}
-  {dim}⎿{/}  {toolDiffAdded}+1{/} {toolDiffRemoved}−1{/}{dim} · {/}{dim}2.2s{/}
+  {dim}⎿{/}  {dim}Updated src/plan.txt with 1 addition and 1 removal{/}
+     {toolDiffAdded}+1{/} {toolDiffRemoved}−1{/}{dim} · {/}{dim}2.2s{/}
      {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43;49}                                                                {sgr:49}
      {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  2{/}  {sgr:48;2;57;96;62}BETA{sgr:48;2;45;68;53}                                                                {sgr:49}
 
 === inline · w80 · write/settled ===
 {success}●{/} {b}{toolTitle}Write{/}{/b}{dim}({/}{text}notes/todo.txt{/}{dim}){/}
-  {dim}⎿{/}  {dim}Wrote 3 lines{/}{dim} · {/}{dim}2.2s{/}
+  {dim}⎿{/}  {dim}Wrote 3 lines to notes/todo.txt{/}{dim} · {/}{dim}2.2s{/}
      {dim}1 {/}{toolOutput}one{/}
      {dim}2 {/}{toolOutput}two{/}
      {dim}3 {/}{toolOutput}three{/}
 
 === inline · w80 · write/long-collapsed ===
 {success}●{/} {b}{toolTitle}Write{/}{/b}{dim}({/}{text}notes/long.txt{/}{dim}){/}
-  {dim}⎿{/}  {dim}Wrote 20 lines{/}{dim} · {/}{dim}2.2s{/}
+  {dim}⎿{/}  {dim}Wrote 20 lines to notes/long.txt{/}{dim} · {/}{dim}2.2s{/}
      {dim} 1 {/}{toolOutput}line 1{/}
      {dim} 2 {/}{toolOutput}line 2{/}
      {dim} 3 {/}{toolOutput}line 3{/}
@@ -1074,7 +1076,8 @@
 === inline · w80 · turn/collapsed-run ===
 {success}●{/} {text}Read 1 file, ran 2 shell commands, listed 1 path{/}{dim} · 8.9s{/}{dim} · Ctrl+O to expand{/}
 {success}●{/} {b}{toolTitle}Edit{/}{/b}{dim}({/}{text}src/plan.txt{/}{dim}){/}
-  {dim}⎿{/}  {toolDiffAdded}+2{/} {toolDiffRemoved}−1{/}{dim} · {/}{dim}2.2s{/}
+  {dim}⎿{/}  {dim}Updated src/plan.txt with 2 additions and 1 removal{/}
+     {toolDiffAdded}+2{/} {toolDiffRemoved}−1{/}{dim} · {/}{dim}2.2s{/}
      {dim} {/} {dim}  1{/}  alpha                                                               
      {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43;49}                                                                {sgr:49}
      {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  2{/}  {sgr:48;2;57;96;62}BETA{sgr:48;2;45;68;53}                                                                {sgr:49}
@@ -1215,7 +1218,8 @@
 
 === inline · w36 · edit/diff ===
 {success}●{/} {b}{toolTitle}Edit{/}{/b}{dim}({/}{text}src/plan.txt{/}{dim}){/}
-  {dim}⎿{/}  {toolDiffAdded}+2{/} {toolDiffRemoved}−1{/}{dim} · {/}{dim}2.2s{/}
+  {dim}⎿{/}  {dim}Updated src/plan.txt{/}
+     {toolDiffAdded}+2{/} {toolDiffRemoved}−1{/}{dim} · {/}{dim}2.2s{/}
      {dim} {/} {dim}  1{/}  alpha                   
      {sgr:48;2;52;43;49}{toolDiffRemoved}-{/} {toolDiffRemoved}  2{/}  {sgr:48;2;75;51;57}beta{sgr:48;2;52;43;49}                    {sgr:49}
      {sgr:48;2;45;68;53}{toolDiffAdded}+{/} {toolDiffAdded}  2{/}  {sgr:48;2;57;96;62}BETA{sgr:48;2;45;68;53}                    {sgr:49}

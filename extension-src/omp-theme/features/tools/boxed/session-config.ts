@@ -25,6 +25,8 @@ export interface ToolsRenderConfig {
 	batchQuietCalls: boolean;
 	/** Also collapse mutating tools (edit/write/…) into the summary; off keeps them visible. */
 	collapseMutatingTools: boolean;
+	/** Inline edits open with `Updated <path> with 2 additions and 1 removal`. */
+	editSummary: boolean;
 }
 
 let sessionToolsConfig: ToolsRenderConfig = {
@@ -37,6 +39,7 @@ let sessionToolsConfig: ToolsRenderConfig = {
 	collapseAfterTurn: true,
 	collapseMutatingTools: false,
 	batchQuietCalls: true,
+	editSummary: false,
 };
 
 export function setToolsRenderConfig(config: Partial<ToolsRenderConfig>): void {

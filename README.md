@@ -47,7 +47,7 @@ pi install npm:@nguyenquangthai/pi-omp-theme
 - Responsive status segments for model, effort, path, Git, context, usage, cost, time, and session state.
 - Compact startup header or optional welcome card.
 - Boxed tool rendering, quiet-call batching, adaptive diffs, elapsed time, and completed-turn summaries.
-- Optional Claude Code transcript (`claude-code` preset): `● Tool(args)` calls with a `⎿` result gutter, marked answers, one-line thinking, and a timed working row.
+- Optional Claude Code transcript (`claude-code` preset): `● Tool(args)` calls with a `⎿` result gutter, marked answers, one-line thinking, edit sentences, an interrupt prompt, and a working row with run time and tokens.
 - Optional message/tool compatibility patches with per-surface identity checks and native fallback.
 - Titanium dark/light themes, Nerd Font/Unicode/ASCII modes, shimmer, syntax-highlight caching, and session accents.
 
@@ -125,13 +125,14 @@ The `claude-code` preset keeps the `claude` composer and status row and renders 
      ✘ Exit 1 · 2.2s · ~41 words
 
 ● Edit(src/auth.ts)
-  ⎿  +1 −1 · 0.2s
+  ⎿  Updated src/auth.ts with 1 addition and 1 removal
+     +1 −1 · 0.2s
      -  42  if (exp < now) return true;
      +  42  if (exp <= now) return true;
 
 ● Read 1 file, ran 2 shell commands · 6.7s · Ctrl+O to expand
 
-⣾ Working... (14s · Escape to interrupt)
+⣾ Working... (14s · ↓ 1.2k tokens · Escape to interrupt)
 ```
 
 ```json
@@ -150,6 +151,9 @@ Each part is an ordinary option, so it can also be enabled on its own:
 | `messages.assistantMarker: true` | Each assistant answer starts with `●`, its lines hanging under it. Replaces the `messages.assistantPrefix` gutter. |
 | `messages.thinkingSummary: true` | Hidden thinking reads `● Thinking…` while it streams and `● Thought for 6s` afterwards; click it or press the thinking toggle to show it. Restored sessions show `● Thought`. |
 | `theme.workingElapsed: true` | The working row shows the run time: `Working... (14s · Escape to interrupt)`. |
+| `theme.workingTokens: true` | The working row shows the run's output tokens: `(14s · ↓ 1.2k tokens · Escape to interrupt)`. Streamed text counts at about four characters a token until each message reports its real usage. |
+| `tools.editSummary: true` | File changes read like Claude Code's: an inline edit opens with `Updated src/auth.ts with 1 addition and 1 removal` above the `+1 −1 · 0.2s` row and the diff, and a write reads `Wrote 3 lines to notes/todo.txt · 0.2s`. On a row too narrow for it, the sentence shortens to `Updated src/auth.ts` and the write drops its path, so nothing shown before is cut. |
+| `messages.interruptHint: true` | An interrupted turn keeps Pi's notice and adds `· What should the agent do instead?`: `Operation aborted · …` when Esc stops an answer, `Error: This operation was aborted · …` when it stops a tool run. Esc while a tool call's arguments are still streaming shows on that tool block, unchanged. |
 
 The preset also lowers `tools.maxCollapsedLines` to 4. Glyphs follow the Nerd Font/Unicode/ASCII mode and can be overridden through `theme.glyphs` (`toolMarker`, `resultGutter`, `todoDone`, `todoOpen`, `thinkingMarker`); ASCII mode uses `*`, `|`, `[x]`, `[ ]`, and `~`. Message blocks (compaction, skills, branches) and user `!commands` follow the same `●`/`⎿` form, todo lists render as checklists and stay visible after a turn collapses, and the `git diff`/`gh run` views hang under the gutter without frames.
 
@@ -175,7 +179,7 @@ Use the `piOmpTheme` key in Pi's global or trusted project `settings.json`:
 ```json
 {
   "piOmpTheme": {
-    "preset": "claude",
+    "preset": "claude", // claude-code | omp
     "theme": {
       "autoApply": "titanium"
     },

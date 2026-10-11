@@ -13,6 +13,8 @@ import {
 import { requestToolPresentationRender } from "../features/tools/index.js";
 import {
 	disposeWorkingShimmer,
+	noteMessageEnd,
+	noteStreamedDelta,
 	startWorkingShimmer,
 	stopWorkingShimmer,
 } from "../features/working-indicator/index.js";
@@ -114,12 +116,17 @@ export default function piOmpThemeExtension(pi: ExtensionAPI): void {
 	pi.on("message_update", (event) => {
 		// Thinking start/end times feed the collapsed `● Thought for 6s` line.
 		noteThinkingEvent(event.message, event.assistantMessageEvent);
+		// Streamed characters feed the working row's token count.
+		noteStreamedDelta(event.assistantMessageEvent);
 		coordinator.app.update({}, "coalesced");
 	});
 	// Usage (tokens + cost) is aggregated from finalized session entries at
 	// message/turn boundaries, mirroring Pi's native footer; per-chunk updates
 	// stay usage-free to keep streaming cheap.
-	pi.on("message_end", (_event, ctx) => coordinator.app.update({ ...usagePatch(ctx) }, "coalesced"));
+	pi.on("message_end", (event, ctx) => {
+		noteMessageEnd(event.message);
+		coordinator.app.update({ ...usagePatch(ctx) }, "coalesced");
+	});
 	pi.on("turn_end", (event, ctx) => {
 		// Append the finalized assistant message's tool batch to the current run.
 		registerTurnFromMessage(event.message, event.toolResults);

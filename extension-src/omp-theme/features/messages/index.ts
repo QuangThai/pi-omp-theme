@@ -191,6 +191,8 @@ export type MessageDecorationSnapshot = Readonly<{
 	assistantMarker?: boolean;
 	/** Replace the hidden-thinking label with `● Thinking…` / `● Thought for 6s`. */
 	thinkingSummary?: boolean;
+	/** Follow Pi's interrupted-turn notice with `· What should the agent do instead?`. */
+	interruptHint?: boolean;
 }>;
 
 export function decorateMessageRender(
@@ -347,7 +349,53 @@ export function decorateMessageUpdate(
 				children[index] = markedChild(children[index] as MarkableChild, messageStyle.assistantMarker);
 		}
 	}
+	if (children && snapshot.interruptHint) appendInterruptHint(children, args[0]);
 	return result;
+}
+
+/** What Claude Code asks after an interrupted turn, worded for any agent. */
+export const INTERRUPT_HINT = "What should the agent do instead?";
+
+/** Node's AbortError message for a signal aborted without a reason, as Pi aborts a run. */
+const ABORT_ERROR = "This operation was aborted";
+
+/**
+ * The notice row Pi closes an interrupted turn with, worded as Pi words it:
+ * `Operation aborted` (or `Aborted after 2 retry attempts`) for an aborted
+ * answer. An interruption during a tool run reads `Error: This operation was
+ * aborted`: Pi starts the next request on the aborted signal, its setup throws
+ * Node's AbortError, and Pi records that as an error message with no content.
+ * A turn that ended on tool calls carries no notice (Pi shows the abort on the
+ * tool blocks).
+ */
+function interruptNotice(message: unknown): string | undefined {
+	const { stopReason, errorMessage, content } = (message ?? {}) as {
+		stopReason?: unknown;
+		errorMessage?: unknown;
+		content?: unknown;
+	};
+	if (hasToolCallItems(message)) return undefined;
+	if (stopReason === "aborted")
+		return typeof errorMessage === "string" && errorMessage && errorMessage !== "Request was aborted"
+			? errorMessage
+			: "Operation aborted";
+	const empty = !Array.isArray(content) || !(content as MessageContent[]).some(isVisibleContent);
+	if (stopReason === "error" && errorMessage === ABORT_ERROR && empty) return `Error: ${ABORT_ERROR}`;
+	return undefined;
+}
+
+/**
+ * Only Pi's notice row, the message's last block, gains the hint; it keeps
+ * Pi's text and colour.
+ */
+function appendInterruptHint(children: unknown[], message: unknown): void {
+	const notice = interruptNotice(message);
+	if (!notice) return;
+	const row = children.at(-1) as { text?: unknown; setText?: (text: string) => void; options?: unknown } | undefined;
+	if (typeof row?.text !== "string" || typeof row.setText !== "function" || row.options !== undefined) return;
+	if (contentText(row.text).trim() !== notice) return;
+	const hint = ` · ${INTERRUPT_HINT}`;
+	row.setText(`${row.text}${messageStyle.theme ? messageStyle.theme.fg("dim", hint) : hint}`);
 }
 
 // ── Inline message style (Claude Code transcript) ────────────────────────────

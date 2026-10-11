@@ -29,9 +29,9 @@ const WORKING_TEXT = "Working...";
  * Repainting the row every frame would otherwise drop it, leaving the bare word
  * where the whole line used to be.
  */
-function interruptHint(elapsed = ""): string {
+function interruptHint(meta: readonly string[] = []): string {
 	const hint = displayKeyHint("app.interrupt", "to interrupt");
-	const parts = [elapsed, hint].filter(Boolean);
+	const parts = [...meta, hint].filter(Boolean);
 	return parts.length > 0 ? ` (${parts.join(" · ")})` : "";
 }
 
@@ -41,6 +41,54 @@ export function formatRunElapsed(ms: number): string {
 	if (seconds < 1) return "";
 	if (seconds < 60) return `${seconds}s`;
 	return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+}
+
+/** Token count as Claude Code shows it: `312`, `1.2k`, `24k`, `1.2M`. */
+export function formatTokenCount(tokens: number): string {
+	const count = Math.max(0, Math.round(tokens));
+	if (count < 1000) return String(count);
+	if (count < 10_000) return `${(count / 1000).toFixed(1).replace(/\.0$/, "")}k`;
+	if (count < 999_500) return `${Math.round(count / 1000)}k`;
+	return `${(count / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+}
+
+// ── Run output tokens ────────────────────────────────────────────────────────
+//
+// A finished message reports its real output tokens in `usage.output`; until it
+// does, the text streamed so far stands in at about four characters a token.
+// A provider that reports no usage keeps the estimate for its messages.
+
+const CHARS_PER_TOKEN = 4;
+let settledTokens = 0;
+let streamedChars = 0;
+
+/** Output tokens of the current run so far. */
+export function runOutputTokens(): number {
+	return settledTokens + Math.round(streamedChars / CHARS_PER_TOKEN);
+}
+
+/** A `message_update` event: text, thinking and tool-argument deltas count. */
+export function noteStreamedDelta(event: unknown): void {
+	const { type, delta } = (event ?? {}) as { type?: unknown; delta?: unknown };
+	if (typeof delta !== "string") return;
+	if (type === "text_delta" || type === "thinking_delta" || type === "toolcall_delta") streamedChars += delta.length;
+}
+
+/** A `message_end` event: an assistant message's reported usage replaces its estimate. */
+export function noteMessageEnd(message: unknown): void {
+	const { role, usage } = (message ?? {}) as { role?: unknown; usage?: { output?: unknown } };
+	if (role !== "assistant") return;
+	const reported = usage?.output;
+	settledTokens +=
+		typeof reported === "number" && Number.isFinite(reported) && reported > 0
+			? reported
+			: Math.round(streamedChars / CHARS_PER_TOKEN);
+	streamedChars = 0;
+}
+
+function resetRunTokens(): void {
+	settledTokens = 0;
+	streamedChars = 0;
 }
 
 export interface WorkingIndicatorHost {
@@ -94,9 +142,13 @@ interface ShimmerState {
 	animated: boolean;
 	/** Show the run's elapsed time inside the hint (`(14s · Escape to interrupt)`). */
 	elapsed: boolean;
-	/** Run start (agent_start) and the elapsed text the current renderer was built for. */
+	/** Show the run's output tokens inside the hint (`(14s · ↓ 1.2k tokens · …)`). */
+	tokens: boolean;
+	/** Leave the `↓` off in ASCII mode. */
+	ascii: boolean;
+	/** Run start (agent_start) and the hint text the current renderer was built for. */
 	startedAt?: number;
-	elapsedText?: string;
+	metaText?: string;
 	timer?: ReturnType<typeof setInterval> | undefined;
 }
 
@@ -110,8 +162,8 @@ interface ShimmerState {
  * early for the same kind of reason. Compiling here still happens once per run,
  * not once per frame, and it picks up a theme the user switched to mid-session.
  */
-function buildRowRenderer(state: ShimmerState, elapsed = ""): (time: number) => string {
-	const hint = interruptHint(elapsed);
+function buildRowRenderer(state: ShimmerState, meta: readonly string[] = []): (time: number) => string {
+	const hint = interruptHint(meta);
 	const palette = state.palette();
 	// The hint sits one tier below the message so it reads as an aside; the same
 	// wave still passes through it, as omp lights the row.
@@ -139,11 +191,19 @@ export function configureWorkingShimmer(
 	ui: WorkingIndicatorHost | undefined,
 	mode: ShimmerMode,
 	palette: () => ShimmerPalette,
-	options: { elapsed?: boolean } = {},
+	options: { elapsed?: boolean; tokens?: boolean; ascii?: boolean } = {},
 ): void {
 	disposeWorkingShimmer();
 	if (!ui || typeof ui.setWorkingMessage !== "function") return;
-	shimmer = { host: ui, mode, palette, animated: mode !== "off", elapsed: options.elapsed === true };
+	shimmer = {
+		host: ui,
+		mode,
+		palette,
+		animated: mode !== "off",
+		elapsed: options.elapsed === true,
+		tokens: options.tokens === true,
+		ascii: options.ascii === true,
+	};
 }
 
 /** Follow a live config change; the next run picks it up. */
@@ -151,22 +211,38 @@ export function setWorkingElapsed(enabled: boolean): void {
 	if (shimmer) shimmer.elapsed = enabled;
 }
 
+/** Follow a live config change; the next run picks it up. */
+export function setWorkingTokens(enabled: boolean): void {
+	if (shimmer) shimmer.tokens = enabled;
+}
+
+/** The hint's run details: `14s`, `↓ 1.2k tokens`. */
+function runMeta(state: ShimmerState, now: number): string[] {
+	const meta: string[] = [];
+	if (state.elapsed) meta.push(formatRunElapsed(now - (state.startedAt ?? now)));
+	const tokens = state.tokens ? runOutputTokens() : 0;
+	if (tokens > 0) meta.push(`${state.ascii ? "" : "↓ "}${formatTokenCount(tokens)} tokens`);
+	return meta.filter(Boolean);
+}
+
 /** Begin sweeping. Safe to call repeatedly; a second call does not stack timers. */
 export function startWorkingShimmer(): void {
+	resetRunTokens();
 	const state = shimmer;
 	if (!state || state.timer) return;
 	state.startedAt = Date.now();
-	state.elapsedText = "";
+	state.metaText = "";
 	state.render = buildRowRenderer(state);
 	const paint = () => {
 		try {
 			const now = Date.now();
-			if (state.elapsed) {
-				// The text changes once a second; only then is the row recompiled.
-				const elapsed = formatRunElapsed(now - (state.startedAt ?? now));
-				if (elapsed !== state.elapsedText) {
-					state.elapsedText = elapsed;
-					state.render = buildRowRenderer(state, elapsed);
+			if (state.elapsed || state.tokens) {
+				// The row is recompiled only when its details change, at most once a paint.
+				const meta = runMeta(state, now);
+				const text = meta.join(" · ");
+				if (text !== state.metaText) {
+					state.metaText = text;
+					state.render = buildRowRenderer(state, meta);
 				}
 			}
 			state.host.setWorkingMessage?.(state.render?.(now) ?? WORKING_TEXT);
@@ -175,9 +251,9 @@ export function startWorkingShimmer(): void {
 		}
 	};
 	paint();
-	// A static palette needs no timer unless the run time ticks: one paint holds
-	// the color for the whole run.
-	if (!state.animated && !state.elapsed) return;
+	// A static palette needs no timer unless the run details tick: one paint
+	// holds the color for the whole run.
+	if (!state.animated && !state.elapsed && !state.tokens) return;
 	state.timer = setInterval(paint, state.animated ? SHIMMER_INTERVAL_MS : 1000);
 	// Never hold the process open for a decoration.
 	state.timer.unref?.();

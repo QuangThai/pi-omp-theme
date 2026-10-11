@@ -34,6 +34,10 @@ export function resetMarkdownHighlightCache(): void {
 	cachedFor = undefined;
 }
 
+function sameLines(left: readonly string[], right: readonly string[]): boolean {
+	return left.length === right.length && left.every((line, index) => line === right[index]);
+}
+
 function memoize(native: Highlighter, owner: unknown): Highlighter {
 	return (code, lang) => {
 		if (cachedFor !== owner) {
@@ -49,6 +53,13 @@ function memoize(native: Highlighter, owner: unknown): Highlighter {
 			return hit;
 		}
 		const value = native(code, lang);
+		// Pi registers a few grammars at startup and loads the rest in the
+		// background, then repaints. Until a grammar arrives its language renders
+		// as plain code-block text, the same as a block with no language, and a
+		// cached copy of that would keep the block plain after the repaint (a
+		// resumed session's `text` and `yaml` blocks stayed dim). Such results are
+		// recomputed each time; a block with no language is final and cached.
+		if (lang && sameLines(value, native(code, undefined))) return value;
 		cache.set(key, value);
 		if (cache.size > MAX_ENTRIES) {
 			const oldest = cache.keys().next().value;

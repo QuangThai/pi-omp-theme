@@ -46,6 +46,12 @@ export type CompatibilityTestHooks = {
 	gitRunner?: import("../domain/providers.js").GitCommandRunner;
 };
 
+/** Global slot naming the extension copy whose prototype patches are installed. */
+const PATCH_OWNER = Symbol.for("pi-omp-theme.compatibility-owner");
+interface PatchOwner {
+	dispose(): { readonly complete: boolean };
+}
+
 export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: CompatibilityTestHooks = {}) {
 	const filePort = hooks.filePort ?? createPiConfigFilePort();
 	const gitRunner =
@@ -73,6 +79,23 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 	const compatibility = createCompatibilityCoordinator(
 		(report) => hooks.dispose?.(report) ?? disposePiCompatibilityProbe(report),
 	);
+	/** This copy's claim on the prototype patches, handed to the next copy on `/reload`. */
+	const patchOwner: PatchOwner = { dispose: () => compatibility.dispose() };
+	/**
+	 * Retire the patches a previous copy of this extension left installed. Its
+	 * prototype wrappers stay in place across session switches by design, and
+	 * `/reload` imports a fresh copy that would otherwise see foreign wrappers,
+	 * fall back to native, and leave the retired copy rendering new tool calls.
+	 */
+	const retirePreviousOwner = () => {
+		const slot = globalThis as { [PATCH_OWNER]?: PatchOwner };
+		const previous = slot[PATCH_OWNER];
+		if (!previous || previous === patchOwner) return;
+		if (previous.dispose().complete) delete slot[PATCH_OWNER];
+	};
+	const claimPatches = () => {
+		if (compatibility.report) (globalThis as { [PATCH_OWNER]?: PatchOwner })[PATCH_OWNER] = patchOwner;
+	};
 	// Initial read may be empty in real Pi (flag values apply after extension load);
 	// start() re-reads and re-captures at every session_start.
 	let authorization = readSessionAuthorization(pi);
@@ -197,6 +220,7 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 				}
 			}
 			compatibility.install(config, tuiSession, productGate, hostBinding);
+			claimPatches();
 			clearHiddenWidgets(config);
 			syncOperational(config);
 		},
@@ -216,6 +240,7 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 				authorization.tools,
 				authorization.ascii,
 			);
+			retirePreviousOwner();
 			// Replacement is failure-atomic: retain the current runtime until
 			// compatibility ownership has been restored successfully.
 			if (compatibility.report) {
@@ -260,6 +285,7 @@ export function createPiOmpThemeSessionCoordinator(pi: ExtensionAPI, hooks: Comp
 			}
 			active = true;
 			compatibility.install(app.config, ctx.mode === "tui", productGate, hostBinding);
+			claimPatches();
 			// Auto-apply the configured theme before surfaces capture the active one.
 			applyAutoTheme(app.config, ctx);
 			// Session-scoped render configuration for the boxed tool/message surfaces.

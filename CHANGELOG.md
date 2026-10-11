@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased]
+
+### Fixed
+
+- `/reload` left the transcript half-themed: the reloaded copy found the previous copy's core patches still installed and fell back to Pi's native rendering, while the retired copy kept rendering, so restored history could repeat, new tool calls could go missing, and `/pi-omp-theme doctor` reported the surfaces as native. The reloaded copy now takes the patches over, and `widgets.hide` changes apply on `/reload`.
+
 ## [1.0.17] - 2026-10-11
 
 ### Added

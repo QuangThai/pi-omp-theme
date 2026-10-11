@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import { join, resolve } from "node:path";
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { type ExtensionAPI, type ExtensionContext, InteractiveMode } from "@earendil-works/pi-coding-agent";
 import type { ConfigFilePort } from "../extension-src/omp-theme/app/config-storage.js";
 import { decorateMessageUpdate } from "../extension-src/omp-theme/features/messages/index.js";
 import { resolveConfigDetailed } from "../extension-src/omp-theme/domain/config-normalization.js";
@@ -37,7 +37,10 @@ import {
 } from "../extension-src/omp-theme/pi/compatibility-probe.js";
 import { probeHostBinding } from "../extension-src/omp-theme/pi/host-binding.js";
 import piOmpThemeExtension from "../extension-src/omp-theme/pi/index.js";
-import { createPiOmpThemeSessionCoordinator } from "../extension-src/omp-theme/pi/session-coordinator.js";
+import {
+	type CompatibilityTestHooks,
+	createPiOmpThemeSessionCoordinator,
+} from "../extension-src/omp-theme/pi/session-coordinator.js";
 
 function packageFixture() {
 	const hostRoot = resolve(".virtual-tests", "host", "node_modules", "@earendil-works", "pi-coding-agent");
@@ -337,6 +340,75 @@ test("session coordinator leaves Pi's thinking-cycle input unclaimed", async () 
 	} finally {
 		coordinator.shutdown();
 	}
+});
+
+test("a reloaded extension copy takes over the prototype patches of the copy it replaces", async () => {
+	const nativeSetWidget = () =>
+		(InteractiveMode.prototype as unknown as Record<string, (...args: unknown[]) => void>).setExtensionWidget;
+	const native = nativeSetWidget();
+	const pi = {
+		getFlag: (name: string) => name === "pi-omp-theme-core-patches",
+	} as unknown as ExtensionAPI;
+	const filePort: ConfigFilePort = {
+		async read() {
+			return JSON.stringify({
+				piOmpTheme: {
+					startup: { mode: "off" },
+					statusLine: { enabled: false },
+					editor: { enabled: false },
+					theme: { autoApply: "off" },
+					compatibility: { allowCorePatches: true },
+					widgets: { hide: ["pi-todo"] },
+				},
+			});
+		},
+		async writeAtomic() {},
+	};
+	const ctx = {
+		mode: "tui",
+		hasUI: true,
+		cwd: "D:\\Personal\\pi-omp-theme",
+		isProjectTrusted: () => true,
+		ui: { onTerminalInput: () => () => {} },
+		sessionManager: {
+			getEntries: () => [],
+			getSessionFile: () => undefined,
+			getSessionName: () => undefined,
+		},
+		getContextUsage: () => undefined,
+	} as unknown as ExtensionContext;
+	const coordinatorFor = (dispose?: CompatibilityTestHooks["dispose"]) =>
+		createPiOmpThemeSessionCoordinator(pi, {
+			filePort,
+			paths: () => ({ globalPath: "<global>", projectPath: "<project>" }),
+			gitRunner: { run: async () => ({ stdout: "", stderr: "", code: 0 }) },
+			...(dispose ? { dispose } : {}),
+		});
+	let retired = 0;
+	// `/reload` imports a fresh copy and starts it after the old copy's shutdown,
+	// which leaves its prototype wrappers installed.
+	const previous = coordinatorFor((report) => {
+		retired++;
+		return disposePiCompatibilityProbe(report);
+	});
+	const current = coordinatorFor();
+	const slot = globalThis as unknown as Record<symbol, { dispose(): { complete: boolean } } | undefined>;
+	const owner = Symbol.for("pi-omp-theme.compatibility-owner");
+	try {
+		await previous.start({ reason: "startup" }, ctx);
+		const previousWrapper = nativeSetWidget();
+		assert.notEqual(previousWrapper, native, "the first copy installs the widget filter");
+		previous.shutdown();
+		await current.start({ reason: "reload" }, ctx);
+		assert.equal(retired, 1, "the replaced copy's patches are disposed");
+		assert.notEqual(nativeSetWidget(), native, "the new copy keeps the surface patched");
+		assert.notEqual(nativeSetWidget(), previousWrapper, "the new copy owns the surface");
+	} finally {
+		current.shutdown();
+		assert.equal(slot[owner]?.dispose().complete, true);
+		delete slot[owner];
+	}
+	assert.equal(nativeSetWidget(), native);
 });
 
 function lifecycleHandlers(): Map<string, (...args: unknown[]) => unknown> {

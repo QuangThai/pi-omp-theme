@@ -166,7 +166,7 @@ The preset also lowers `tools.maxCollapsedLines` to 4. Glyphs follow the Nerd Fo
 }
 ```
 
-The value is a list of widget keys (pi-todo uses `pi-todo`); other widgets are untouched, and the list is empty by default. It is a core patch, so it needs `compatibility.allowCorePatches`, and `/pi-omp-theme doctor` reports it as **Widgets**. `/todos` still shows the list. Changes to the list take effect when Pi restarts.
+The value is a list of widget keys (pi-todo uses `pi-todo`); other widgets are untouched, and the list is empty by default. It is a core patch, so it needs `compatibility.allowCorePatches`, and `/pi-omp-theme doctor` reports it as **Widgets**. `/todos` still shows the list. Changes to the list take effect on `/reload` or when Pi restarts.
 
 ## Configuration
 

@@ -174,6 +174,46 @@ const MESSAGE_CASES: readonly MessageCase[] = [
 		],
 		snapshot: { assistantMarker: true },
 	},
+	// Models that interleave reasoning with short text (Codex commentary) put a
+	// text block before a thinking run, or two text blocks, in one message.
+	{
+		id: "assistant/text-then-thinking",
+		content: [
+			{ type: "text", text: "The test passes." },
+			{ type: "thinking", thinking: THINKING },
+			{ type: "text", text: ANSWER },
+		],
+	},
+	{
+		id: "inline/text-then-thinking",
+		content: [
+			{ type: "text", text: "The test passes." },
+			{ type: "thinking", thinking: THINKING },
+			{ type: "text", text: ANSWER },
+		],
+		snapshot: { assistantMarker: true, thinkingSummary: true },
+		timestamp: 6,
+	},
+	{
+		id: "inline/text-then-thinking-summary",
+		content: [
+			{ type: "text", text: "The test passes." },
+			{ type: "thinking", thinking: THINKING },
+			{ type: "text", text: ANSWER },
+		],
+		hideThinkingBlock: true,
+		hiddenThinkingLabel: THINKING_SUMMARY_LABEL,
+		snapshot: { assistantMarker: true, thinkingSummary: true },
+		timestamp: 7,
+	},
+	{
+		id: "inline/text-then-text",
+		content: [
+			{ type: "text", text: "The test passes." },
+			{ type: "text", text: ANSWER },
+		],
+		snapshot: { assistantMarker: true },
+	},
 ];
 
 function renderMessage(entry: MessageCase): string[] {

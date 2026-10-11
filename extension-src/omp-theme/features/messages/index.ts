@@ -342,6 +342,8 @@ export function decorateMessageUpdate(
 		}
 	}
 	const children = target.contentContainer?.children;
+	// Before the markers wrap the blocks, while text and thinking still read apart.
+	if (children && (snapshot.assistantMarker || snapshot.thinkingSummary)) separateMarkedBlocks(children);
 	if (children && snapshot.thinkingSummary) decorateThinkingRuns(children, target, args[0]);
 	if (children && snapshot.assistantMarker) {
 		for (let index = 0; index < children.length; index++) {
@@ -456,6 +458,26 @@ function markedChild(child: MarkableChild, marker: string): MarkableChild {
 function isThinkingRegion(child: unknown): boolean {
 	const candidate = child as { child?: unknown; onMouse?: unknown } | undefined;
 	return typeof candidate?.onMouse === "function" && candidate.child !== undefined;
+}
+
+/** One blank row, shaped like Pi's Spacer so later passes still read it as one. */
+function blankRow(): { render(width: number): string[]; invalidate(): void; setLines(lines: number): void } {
+	return { render: () => [""], invalidate() {}, setLines() {} };
+}
+
+/**
+ * Pi spaces a thinking run from the block after it, but never a text block
+ * from the block after it, so a text block followed by a thinking run or by
+ * another text block in the same message (models that interleave reasoning
+ * with short text) paints flush against it. With markers every block is its
+ * own `●` entry, so give these the blank row the other entries already have.
+ */
+function separateMarkedBlocks(children: unknown[]): void {
+	for (let index = children.length - 2; index >= 0; index--) {
+		if (!isInterimTextChild(children[index])) continue;
+		const next = children[index + 1];
+		if (isInterimTextChild(next) || isThinkingRegion(next)) children.splice(index + 1, 0, blankRow());
+	}
 }
 
 type MessageContent = { type?: unknown; text?: unknown; thinking?: unknown };

@@ -92,6 +92,45 @@
 ¶
 ● Let me run the tests.                                     ¶
 
+=== w60 · assistant/text-then-thinking ===
+¶
+ The test passes.                                           ¶
+ The failing test is about expiry. Let me look at the       ¶
+ comparison in auth.ts before changing anything.            ¶
+¶
+ The expiry check compared with < instead of <=, so tokens  ¶
+ expiring this very millisecond were still accepted. I      ¶
+ changed the comparison and added a regression test.        ¶
+
+=== w60 · inline/text-then-thinking ===
+¶
+● The test passes.                                          ¶
+¶
+● The failing test is about expiry. Let me look at the      ¶
+  comparison in auth.ts before changing anything.           ¶
+¶
+● The expiry check compared with < instead of <=, so tokens ¶
+  expiring this very millisecond were still accepted. I     ¶
+  changed the comparison and added a regression test.       ¶
+
+=== w60 · inline/text-then-thinking-summary ===
+¶
+● The test passes.                                          ¶
+¶
+● Thought · Ctrl+T to show                                  ¶
+¶
+● The expiry check compared with < instead of <=, so tokens ¶
+  expiring this very millisecond were still accepted. I     ¶
+  changed the comparison and added a regression test.       ¶
+
+=== w60 · inline/text-then-text ===
+¶
+● The test passes.                                          ¶
+¶
+● The expiry check compared with < instead of <=, so tokens ¶
+  expiring this very millisecond were still accepted. I     ¶
+  changed the comparison and added a regression test.       ¶
+
 === boxed · w60 · special/compaction ===
 ╭─── ⊟ Compaction · 10K→4K ────────────────────────────────╮¶
 │ 10,000 → 4,000 tokens · 60% smaller                      │¶

@@ -131,14 +131,31 @@ function collapsedLines(theme: BoxTheme, rows: readonly string[]): (contentWidth
 			.map((row, index) => truncateAnsi(index === 0 ? row : theme.fg("dim", row), contentWidth, "…"));
 }
 
+/** What Pi's theme emits for a colour token left empty: the terminal's own foreground. */
+const TERMINAL_FOREGROUND = "\x1b[39m";
+
+/**
+ * The body's default text style. Pi's Markdown strips the default style's escape
+ * from the end of each inline run, and for an empty `customMessageText` (Titanium
+ * leaves it empty) that escape is the same `\x1b[39m` that closes inline code, so
+ * a table cell ending in code kept the code colour on the borders after it. Text
+ * in the terminal's foreground needs no default style, so none is passed then;
+ * the text renders the same, and inline styles keep their own reset.
+ */
+function bodyTextStyle(theme: BoxTheme): { color: (text: string) => string } | undefined {
+	const sentinel = "\u0000";
+	const styled = theme.fg("customMessageText", sentinel);
+	const at = styled.indexOf(sentinel);
+	if (at >= 0 && styled.slice(0, at) === TERMINAL_FOREGROUND) return undefined;
+	return { color: (t: string) => theme.fg("customMessageText", t) };
+}
+
 function createMarkdownBody(
 	text: string,
 	markdownTheme: MarkdownTheme | undefined,
 	theme: BoxTheme,
 ): (contentWidth: number) => string[] {
-	const md = new Markdown(text || "", 0, 0, markdownTheme as MarkdownTheme, {
-		color: (t: string) => theme.fg("customMessageText", t),
-	});
+	const md = new Markdown(text || "", 0, 0, markdownTheme as MarkdownTheme, bodyTextStyle(theme));
 	return (contentWidth: number) => md.render(contentWidth);
 }
 

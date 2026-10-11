@@ -310,6 +310,7 @@ export function decorateMessageUpdate(
 	const target = instance as {
 		hideThinkingBlock?: boolean;
 		hiddenThinkingLabel?: string;
+		outputPad?: unknown;
 		contentContainer?: { children?: unknown[] };
 	};
 	// Only meaningful when Pi renders the hidden-block label (hideThinkingBlock)
@@ -348,7 +349,7 @@ export function decorateMessageUpdate(
 	if (children && snapshot.assistantMarker) {
 		for (let index = 0; index < children.length; index++) {
 			if (isInterimTextChild(children[index]))
-				children[index] = markedChild(children[index] as MarkableChild, messageStyle.assistantMarker);
+				children[index] = markedChild(children[index] as MarkableChild, messageStyle.assistantMarker, outputPad(target));
 		}
 	}
 	if (children && snapshot.interruptHint) appendInterruptHint(children, args[0]);
@@ -430,20 +431,28 @@ type MarkableChild = {
 	handleMouse?(event: unknown): unknown;
 };
 
+/** Pi's side padding for this message (`outputPad`: 1, or 0 when turned off). */
+function outputPad(target: { outputPad?: unknown }): number {
+	return typeof target.outputPad === "number" && target.outputPad >= 0 ? target.outputPad : 1;
+}
+
 /**
- * A block with a marker in the first column and every line hanging after it.
+ * A block with a marker on Pi's gutter and every line hanging after it.
  * Mouse events pass straight through, so a thinking run still toggles on click.
+ *
+ * Pi pads its blocks `lead` columns from the edge (its `outputPad`, 1 unless
+ * turned off), and its working row and tool output start there too, so the
+ * marker sits in that column and the block's own padding follows it.
  */
-function markedChild(child: MarkableChild, marker: string): MarkableChild {
+function markedChild(child: MarkableChild, marker: string, lead: number): MarkableChild {
 	const markerWidth = Math.max(1, visibleWidth(marker));
-	const hang = " ".repeat(markerWidth);
+	const before = " ".repeat(lead);
+	const hang = " ".repeat(lead + markerWidth);
 	return {
 		render(width: number): string[] {
-			if (width <= markerWidth + 1) return child.render(width);
-			const lines = child.render(width - markerWidth);
-			// Pi pads its blocks one column from the edge; the marker takes that slot's
-			// neighbour, so content keeps the column it had.
-			return lines.map((line, index) => `${index === 0 ? marker : hang}${line}`);
+			if (width <= lead + markerWidth + 1) return child.render(width);
+			const lines = child.render(width - lead - markerWidth);
+			return lines.map((line, index) => `${index === 0 ? `${before}${marker}` : hang}${line}`);
 		},
 		invalidate() {
 			child.invalidate?.();
@@ -517,7 +526,11 @@ function thinkingSummaryText(message: unknown, run: { indices: number[]; last: n
  * THINKING_SUMMARY_LABEL) is rewritten in place, so its styling, click toggle
  * and spacing stay native.
  */
-function decorateThinkingRuns(children: unknown[], target: { hiddenThinkingLabel?: string; isStreaming?: boolean }, message: unknown): void {
+function decorateThinkingRuns(
+	children: unknown[],
+	target: { hiddenThinkingLabel?: string; isStreaming?: boolean; outputPad?: unknown },
+	message: unknown,
+): void {
 	const content = ((message as { content?: unknown })?.content ?? []) as MessageContent[];
 	if (!Array.isArray(content)) return;
 	const runs = thinkingRuns(content);
@@ -537,7 +550,7 @@ function decorateThinkingRuns(children: unknown[], target: { hiddenThinkingLabel
 				inner.setText(inner.text.replace(label, thinkingSummaryText(message, run, target.isStreaming === true)));
 			}
 		}
-		children[index] = markedChild(child as MarkableChild, marker);
+		children[index] = markedChild(child as MarkableChild, marker, outputPad(target));
 	}
 }
 

@@ -2,7 +2,7 @@
 // grapheme segmentation and emoji regexes per call, which dominates the per-frame
 // cost on long messages. The fast path answers plain SGR + ASCII directly and
 // falls back to Pi's for anything else, so the measure stays identical.
-import type { Component } from "@earendil-works/pi-tui";
+import type { Component, TuiMouseEvent } from "@earendil-works/pi-tui";
 import type { BoxTheme } from "../../shared/box.js";
 import { safeVisibleWidth as visibleWidth } from "../../shared/render-budget.js";
 import { EMPTY_BATCH_COMPONENT } from "./boxed/batch.js";
@@ -22,6 +22,35 @@ function hideBatchMember(instance: object): void {
 	(instance as { hideComponent?: boolean }).hideComponent = true;
 }
 
+type ToolComponentFit = <T>(component: T) => T;
+
+/**
+ * Pi pads tool output `outputPad` columns from each edge (1 unless the user
+ * turned it off), the same gutter as its messages and working row. A tool with
+ * Pi's self render shell sits in a plain Container that Pi never pads (its own
+ * renderers pad themselves), so the theme's component takes the gutter here.
+ */
+function withSideGutter<T>(component: T, gutter: number): T {
+	const inner = component as unknown as Component;
+	if (gutter <= 0 || typeof inner?.render !== "function" || (component as unknown) === EMPTY_BATCH_COMPONENT)
+		return component;
+	const padded: Component = {
+		render(width: number): string[] {
+			if (width <= gutter * 2) return inner.render(width);
+			const lead = " ".repeat(gutter);
+			return inner.render(width - gutter * 2).map((line) => `${lead}${line}`);
+		},
+		invalidate() {
+			inner.invalidate();
+		},
+	};
+	if (typeof inner.handleMouse === "function") {
+		padded.handleMouse = (event: TuiMouseEvent) =>
+			inner.handleMouse?.({ ...event, x: event.x - gutter, width: Math.max(1, event.width - gutter * 2) });
+	}
+	return padded as unknown as T;
+}
+
 /**
  * Neutralize the native ToolExecutionComponent status background for boxed
  * rendering: Pi's updateDisplay sets contentBox/selfRenderContainer bgFn to
@@ -30,21 +59,26 @@ function hideBatchMember(instance: object): void {
  * container fill is removed (no background slab).
  * Runs on every boxed dispatch; updateDisplay re-applies the bgFn on the next
  * pass and this wrapper re-neutralizes it.
+ *
+ * The horizontal padding stays Pi's: every block lines up with Pi's messages and
+ * its working row. The returned fit gives a self-shell component that gutter.
  */
-function neutralizeToolContainerBackground(instance: object): void {
+function neutralizeToolContainerBackground(instance: object): ToolComponentFit {
 	const host = instance as {
 		getRenderShell?(): string;
+		outputPad?: unknown;
 		selfRenderContainer?: { setBgFn?(fn: (text: string) => string): void; paddingX?: number; paddingY?: number };
 		contentBox?: { setBgFn?(fn: (text: string) => string): void; paddingX?: number; paddingY?: number };
 	};
-	const container =
-		typeof host.getRenderShell === "function" && host.getRenderShell() === "self"
-			? host.selfRenderContainer
-			: host.contentBox;
-	if (!container) return;
-	container.paddingX = 0;
-	container.paddingY = 0;
-	if (typeof container.setBgFn === "function") container.setBgFn((text) => text);
+	const gutter = typeof host.outputPad === "number" && host.outputPad >= 0 ? host.outputPad : 1;
+	const selfShell = typeof host.getRenderShell === "function" && host.getRenderShell() === "self";
+	const container = selfShell ? host.selfRenderContainer : host.contentBox;
+	if (container) {
+		if (!selfShell) container.paddingX = gutter;
+		container.paddingY = 0;
+		if (typeof container.setBgFn === "function") container.setBgFn((text) => text);
+	}
+	return selfShell ? (component) => withSideGutter(component, gutter) : (component) => component;
 }
 
 type RenderFunction = (this: object, ...args: unknown[]) => unknown;
@@ -431,7 +465,7 @@ export function createToolDecorationOwner(snapshot: Partial<ToolDecorationSnapsh
 				// fallback renderer, mirroring the generic boxed fallback used for
 				// unknown tool names.
 				if (typeof renderer !== "function") {
-					neutralizeToolContainerBackground(instance);
+					const fit = neutralizeToolContainerBackground(instance);
 					if (subtype === "tool-call-renderer")
 						return (callArgs: unknown, theme: unknown, context: unknown) => {
 							const component = renderBoxedToolCall(
@@ -445,7 +479,7 @@ export function createToolDecorationOwner(snapshot: Partial<ToolDecorationSnapsh
 							// singleton and must be hidden, or Pi leaves a stray native
 							// placeholder row per block after the collapse.
 							if (component === EMPTY_BATCH_COMPONENT) hideBatchMember(instance);
-							return component;
+							return fit(component);
 						};
 					return (result: unknown, options: unknown, theme: unknown, context: unknown) => {
 						const component = renderBoxedToolResult(
@@ -456,7 +490,7 @@ export function createToolDecorationOwner(snapshot: Partial<ToolDecorationSnapsh
 							context as never,
 						);
 						if (component === EMPTY_BATCH_COMPONENT) hideBatchMember(instance);
-						return component;
+						return fit(component);
 					};
 				}
 				return function (this: unknown, ...rendererArgs: unknown[]) {
@@ -473,8 +507,8 @@ export function createToolDecorationOwner(snapshot: Partial<ToolDecorationSnapsh
 						];
 						const body = Reflect.apply(renderer, this, rendererArgs) as Component;
 						noteBoxedResultPhase(context, options.isPartial);
-						neutralizeToolContainerBackground(instance);
-						return frameNativeToolResult(theme, body, { isError: context.isError });
+						const fit = neutralizeToolContainerBackground(instance);
+						return fit(frameNativeToolResult(theme, body, { isError: context.isError }));
 					}
 					const component =
 						subtype === "tool-call-renderer"
@@ -497,9 +531,9 @@ export function createToolDecorationOwner(snapshot: Partial<ToolDecorationSnapsh
 										context as never,
 									);
 								})();
-					neutralizeToolContainerBackground(instance);
+					const fit = neutralizeToolContainerBackground(instance);
 					if (component === EMPTY_BATCH_COMPONENT) hideBatchMember(instance);
-					return component;
+					return fit(component);
 				};
 			}
 			if (typeof renderer !== "function") return renderer;

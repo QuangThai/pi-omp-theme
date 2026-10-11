@@ -40,6 +40,8 @@ interface BashExecutionInstance {
 	status: "running" | "cancelled" | "error" | "complete";
 	exitCode?: number | null;
 	contentContainer: { render(width: number): string[] };
+	/** Pi's side padding for transcript blocks (1, or 0 when turned off). */
+	outputPad?: unknown;
 	/** Wall-clock start captured on the first boxed render for the live `◌ Running · Ns` footer. */
 	piOmpThemeStart?: number;
 }
@@ -98,25 +100,35 @@ export function renderBashExecutionBox(instance: unknown, args: unknown[]): stri
 	if (!content || typeof content.render !== "function") return undefined;
 	try {
 		if (host.piOmpThemeStart === undefined) host.piOmpThemeStart = Date.now();
-		if (isInlineChrome()) return renderInlineBashExecution(theme, host, width);
-		const renderedWidth = boxWidth(width);
-		const inner = boxInnerWidth(renderedWidth);
-		// The native Text children render one leading padding space per line;
-		// drop it so boxLine's own side padding produces symmetric borders.
-		const wrapped = content
-			.render(inner)
-			.map((line) => boxLine(theme, line.startsWith(" ") ? line.slice(1) : line, renderedWidth));
-		return dropOmittedLines([
-			"",
-			boxLabeledBorder(theme, TOP_LEFT, TOP_RIGHT, bashBoxTitle(theme, host), undefined, renderedWidth),
-			boxBlankLine(theme, renderedWidth),
-			...wrapped,
-			boxBlankLine(theme, renderedWidth),
-			boxLabeledBorder(theme, BOTTOM_LEFT, BOTTOM_RIGHT, bashBoxFooter(theme, host), undefined, renderedWidth),
-		]);
+		// Pi pads its transcript blocks `outputPad` columns from each edge; the block
+		// keeps that gutter so it lines up with the messages and tools around it.
+		const pad = typeof host.outputPad === "number" && host.outputPad >= 0 ? host.outputPad : 1;
+		const gutter = width > pad * 2 + 1 ? pad : 0;
+		const lead = " ".repeat(gutter);
+		return renderBashLines(theme, host, width - gutter * 2).map((line) => (line === "" ? line : `${lead}${line}`));
 	} catch {
 		return undefined;
 	}
+}
+
+/** The block at `width`, inside the side gutter. */
+function renderBashLines(theme: BoxTheme, host: BashExecutionInstance, width: number): string[] {
+	if (isInlineChrome()) return renderInlineBashExecution(theme, host, width);
+	const renderedWidth = boxWidth(width);
+	const inner = boxInnerWidth(renderedWidth);
+	// The native Text children render one leading padding space per line;
+	// drop it so boxLine's own side padding produces symmetric borders.
+	const wrapped = host.contentContainer
+		.render(inner)
+		.map((line) => boxLine(theme, line.startsWith(" ") ? line.slice(1) : line, renderedWidth));
+	return dropOmittedLines([
+		"",
+		boxLabeledBorder(theme, TOP_LEFT, TOP_RIGHT, bashBoxTitle(theme, host), undefined, renderedWidth),
+		boxBlankLine(theme, renderedWidth),
+		...wrapped,
+		boxBlankLine(theme, renderedWidth),
+		boxLabeledBorder(theme, BOTTOM_LEFT, BOTTOM_RIGHT, bashBoxFooter(theme, host), undefined, renderedWidth),
+	]);
 }
 
 function inlineExecutionStatus(host: BashExecutionInstance): InlineStatus {

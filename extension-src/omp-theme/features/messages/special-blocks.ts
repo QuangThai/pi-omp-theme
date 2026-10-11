@@ -8,7 +8,7 @@
 
 import { Markdown, type MarkdownTheme } from "@earendil-works/pi-tui";
 import { truncateAnsi, visibleWidth } from "../../shared/ansi.js";
-import { type BoxTheme, isInlineChrome } from "../../shared/box.js";
+import type { BoxTheme } from "../../shared/box.js";
 import { toolExpandHint } from "../../shared/keybinding-hints.js";
 import { setFullTheme } from "../../shared/theme-extras.js";
 import { renderBoxedMessageBlock } from "./boxed-block.js";
@@ -162,15 +162,14 @@ function createMarkdownBody(
 /**
  * Neutralize the native customMessageBg fill for boxed blocks: the boxed block
  * owns its visual boundary, so the parent background is removed (the box sits
- * directly on the terminal/page background).
+ * directly on the terminal/page background). Pi's side padding stays, so the
+ * block lines up with Pi's messages, the tool blocks, and the working row.
  */
 function neutralizeMessageBlockBackground(
-	target: { setBgFn?(fn: (text: string) => string): void; paddingX?: unknown } | undefined,
+	target: { setBgFn?(fn: (text: string) => string): void } | undefined,
 ): void {
 	if (!target) return;
 	if (typeof target.setBgFn === "function") target.setBgFn((text) => text);
-	// Inline blocks start at the transcript's marker column, like tool blocks.
-	if (isInlineChrome() && typeof target.paddingX === "number") target.paddingX = 0;
 }
 
 function patchCompaction(instance: MessageBlockInstance, _original: () => void, theme: BoxTheme): boolean {

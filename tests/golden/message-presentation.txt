@@ -55,42 +55,46 @@
 
 === w60 · inline/text-marked ===
 ¶
-● The expiry check compared with < instead of <=, so tokens ¶
-  expiring this very millisecond were still accepted. I     ¶
-  changed the comparison and added a regression test.       ¶
+ ● The expiry check compared with < instead of <=, so       ¶
+   tokens expiring this very millisecond were still         ¶
+   accepted. I changed the comparison and added a           ¶
+   regression test.                                         ¶
 
 === w60 · inline/thinking-summary-timed ===
 ¶
-● Thought for 6.2s · Ctrl+T to show                         ¶
+ ● Thought for 6.2s · Ctrl+T to show                        ¶
 ¶
-● The expiry check compared with < instead of <=, so tokens ¶
-  expiring this very millisecond were still accepted. I     ¶
-  changed the comparison and added a regression test.       ¶
+ ● The expiry check compared with < instead of <=, so       ¶
+   tokens expiring this very millisecond were still         ¶
+   accepted. I changed the comparison and added a           ¶
+   regression test.                                         ¶
 
 === w60 · inline/thinking-summary-restored ===
 ¶
-● Thought · Ctrl+T to show                                  ¶
+ ● Thought · Ctrl+T to show                                 ¶
 ¶
-● The expiry check compared with < instead of <=, so tokens ¶
-  expiring this very millisecond were still accepted. I     ¶
-  changed the comparison and added a regression test.       ¶
+ ● The expiry check compared with < instead of <=, so       ¶
+   tokens expiring this very millisecond were still         ¶
+   accepted. I changed the comparison and added a           ¶
+   regression test.                                         ¶
 
 === w60 · inline/thinking-summary-streaming ===
 ¶
-● Thinking…                                                 ¶
+ ● Thinking…                                                ¶
 
 === w60 · inline/thinking-visible-marked ===
 ¶
-● The failing test is about expiry. Let me look at the      ¶
-  comparison in auth.ts before changing anything.           ¶
+ ● The failing test is about expiry. Let me look at the     ¶
+   comparison in auth.ts before changing anything.          ¶
 ¶
-● The expiry check compared with < instead of <=, so tokens ¶
-  expiring this very millisecond were still accepted. I     ¶
-  changed the comparison and added a regression test.       ¶
+ ● The expiry check compared with < instead of <=, so       ¶
+   tokens expiring this very millisecond were still         ¶
+   accepted. I changed the comparison and added a           ¶
+   regression test.                                         ¶
 
 === w60 · inline/interim-text-marked ===
 ¶
-● Let me run the tests.                                     ¶
+ ● Let me run the tests.                                    ¶
 
 === w60 · assistant/text-then-thinking ===
 ¶
@@ -104,32 +108,35 @@
 
 === w60 · inline/text-then-thinking ===
 ¶
-● The test passes.                                          ¶
+ ● The test passes.                                         ¶
 ¶
-● The failing test is about expiry. Let me look at the      ¶
-  comparison in auth.ts before changing anything.           ¶
+ ● The failing test is about expiry. Let me look at the     ¶
+   comparison in auth.ts before changing anything.          ¶
 ¶
-● The expiry check compared with < instead of <=, so tokens ¶
-  expiring this very millisecond were still accepted. I     ¶
-  changed the comparison and added a regression test.       ¶
+ ● The expiry check compared with < instead of <=, so       ¶
+   tokens expiring this very millisecond were still         ¶
+   accepted. I changed the comparison and added a           ¶
+   regression test.                                         ¶
 
 === w60 · inline/text-then-thinking-summary ===
 ¶
-● The test passes.                                          ¶
+ ● The test passes.                                         ¶
 ¶
-● Thought · Ctrl+T to show                                  ¶
+ ● Thought · Ctrl+T to show                                 ¶
 ¶
-● The expiry check compared with < instead of <=, so tokens ¶
-  expiring this very millisecond were still accepted. I     ¶
-  changed the comparison and added a regression test.       ¶
+ ● The expiry check compared with < instead of <=, so       ¶
+   tokens expiring this very millisecond were still         ¶
+   accepted. I changed the comparison and added a           ¶
+   regression test.                                         ¶
 
 === w60 · inline/text-then-text ===
 ¶
-● The test passes.                                          ¶
+ ● The test passes.                                         ¶
 ¶
-● The expiry check compared with < instead of <=, so tokens ¶
-  expiring this very millisecond were still accepted. I     ¶
-  changed the comparison and added a regression test.       ¶
+ ● The expiry check compared with < instead of <=, so       ¶
+   tokens expiring this very millisecond were still         ¶
+   accepted. I changed the comparison and added a           ¶
+   regression test.                                         ¶
 
 === boxed · w60 · special/compaction ===
 ╭─── ⊟ Compaction · 10K→4K ────────────────────────────────╮¶
@@ -191,56 +198,56 @@
 
 === boxed · w60 · user-bash/complete ===
 ¶
-╭─── ❯ Bash ───────────────────────────────────────────────╮¶
-│ $ npm test -- auth                                       │¶
-│                                                          │¶
-│ ✓ 12 passed                                              │¶
-│                                                          │¶
-╰─── Exit 0 ───────────────────────────────────────────────╯¶
+ ╭─── ❯ Bash ─────────────────────────────────────────────╮¶
+ │ $ npm test -- auth                                     │¶
+ │                                                        │¶
+ │ ✓ 12 passed                                            │¶
+ │                                                        │¶
+ ╰─── Exit 0 ─────────────────────────────────────────────╯¶
 --- styled ---
 
-{borderMuted}╭─── {/}{b}{bashMode}❯ Bash{/}{/b}{borderMuted} ───────────────────────────────────────────────{/}{borderMuted}╮{/}
-{borderMuted}│{/} $ npm test -- auth                                       {borderMuted}│{/}
-{borderMuted}│{/}                                                          {borderMuted}│{/}
-{borderMuted}│{/} ✓ 12 passed                                              {borderMuted}│{/}
-{borderMuted}│{/} {sgr:90}{/}                                                         {borderMuted}│{/}
-{borderMuted}╰─── {/}{text}Exit 0{/}{borderMuted} ───────────────────────────────────────────────{/}{borderMuted}╯{/}
+ {borderMuted}╭─── {/}{b}{bashMode}❯ Bash{/}{/b}{borderMuted} ─────────────────────────────────────────────{/}{borderMuted}╮{/}
+ {borderMuted}│{/} $ npm test -- auth                                     {borderMuted}│{/}
+ {borderMuted}│{/}                                                        {borderMuted}│{/}
+ {borderMuted}│{/} ✓ 12 passed                                            {borderMuted}│{/}
+ {borderMuted}│{/} {sgr:90}{/}                                                       {borderMuted}│{/}
+ {borderMuted}╰─── {/}{text}Exit 0{/}{borderMuted} ─────────────────────────────────────────────{/}{borderMuted}╯{/}
 
 === boxed · w60 · user-bash/error ===
 ¶
-╭─── ❯ Bash ✘ ─────────────────────────────────────────────╮¶
-│ $ npm test -- auth                                       │¶
-│                                                          │¶
-│ ✕ rejects expired tokens                                 │¶
-│ (exit 1)                                                 │¶
-│                                                          │¶
-╰─── Exit 1 ───────────────────────────────────────────────╯¶
+ ╭─── ❯ Bash ✘ ───────────────────────────────────────────╮¶
+ │ $ npm test -- auth                                     │¶
+ │                                                        │¶
+ │ ✕ rejects expired tokens                               │¶
+ │ (exit 1)                                               │¶
+ │                                                        │¶
+ ╰─── Exit 1 ─────────────────────────────────────────────╯¶
 --- styled ---
 
-{borderMuted}╭─── {/}{b}{error}❯ Bash ✘{/}{/b}{borderMuted} ─────────────────────────────────────────────{/}{borderMuted}╮{/}
-{borderMuted}│{/} $ npm test -- auth                                       {borderMuted}│{/}
-{borderMuted}│{/}                                                          {borderMuted}│{/}
-{borderMuted}│{/} ✕ rejects expired tokens                                 {borderMuted}│{/}
-{borderMuted}│{/} (exit 1)                                                 {borderMuted}│{/}
-{borderMuted}│{/} {sgr:90}{/}                                                         {borderMuted}│{/}
-{borderMuted}╰─── {/}{error}Exit 1{/}{borderMuted} ───────────────────────────────────────────────{/}{borderMuted}╯{/}
+ {borderMuted}╭─── {/}{b}{error}❯ Bash ✘{/}{/b}{borderMuted} ───────────────────────────────────────────{/}{borderMuted}╮{/}
+ {borderMuted}│{/} $ npm test -- auth                                     {borderMuted}│{/}
+ {borderMuted}│{/}                                                        {borderMuted}│{/}
+ {borderMuted}│{/} ✕ rejects expired tokens                               {borderMuted}│{/}
+ {borderMuted}│{/} (exit 1)                                               {borderMuted}│{/}
+ {borderMuted}│{/} {sgr:90}{/}                                                       {borderMuted}│{/}
+ {borderMuted}╰─── {/}{error}Exit 1{/}{borderMuted} ─────────────────────────────────────────────{/}{borderMuted}╯{/}
 
 === boxed · w60 · user-bash/running ===
 ¶
-╭─── ❯ Bash ⟳ ─────────────────────────────────────────────╮¶
-│ $ npm test -- auth                                       │¶
-│                                                          │¶
-│ ⠋ Running...                                             │¶
-│                                                          │¶
-╰─── ◌ Running · 12.4s ────────────────────────────────────╯¶
+ ╭─── ❯ Bash ⟳ ───────────────────────────────────────────╮¶
+ │ $ npm test -- auth                                     │¶
+ │                                                        │¶
+ │ ⠋ Running...                                           │¶
+ │                                                        │¶
+ ╰─── ◌ Running · 12.4s ──────────────────────────────────╯¶
 --- styled ---
 
-{borderMuted}╭─── {/}{b}{bashMode}❯ Bash{/} {text}⟳{/}{/b}{borderMuted} ─────────────────────────────────────────────{/}{borderMuted}╮{/}
-{borderMuted}│{/} $ npm test -- auth                                       {borderMuted}│{/}
-{borderMuted}│{/}                                                          {borderMuted}│{/}
-{borderMuted}│{/} ⠋ Running...                                             {borderMuted}│{/}
-{borderMuted}│{/} {sgr:90}{/}                                                         {borderMuted}│{/}
-{borderMuted}╰─── {/}{dim}◌ Running{/}{text} · 12.4s{/}{borderMuted} ────────────────────────────────────{/}{borderMuted}╯{/}
+ {borderMuted}╭─── {/}{b}{bashMode}❯ Bash{/} {text}⟳{/}{/b}{borderMuted} ───────────────────────────────────────────{/}{borderMuted}╮{/}
+ {borderMuted}│{/} $ npm test -- auth                                     {borderMuted}│{/}
+ {borderMuted}│{/}                                                        {borderMuted}│{/}
+ {borderMuted}│{/} ⠋ Running...                                           {borderMuted}│{/}
+ {borderMuted}│{/} {sgr:90}{/}                                                       {borderMuted}│{/}
+ {borderMuted}╰─── {/}{dim}◌ Running{/}{text} · 12.4s{/}{borderMuted} ──────────────────────────────────{/}{borderMuted}╯{/}
 
 === light · w60 · special/compaction ===
 ⊟ Compaction · 10K→4K                                       ¶
@@ -294,56 +301,56 @@ Prepared a test branch.{sgr:0}
 
 === light · w60 · user-bash/complete ===
 ¶
-❯ Bash                                                      ¶
-$ npm test -- auth                                          ¶
-                                                            ¶
-✓ 12 passed                                                 ¶
-                                                            ¶
-Exit 0                                                      ¶
+ ❯ Bash                                                    ¶
+ $ npm test -- auth                                        ¶
+                                                           ¶
+ ✓ 12 passed                                               ¶
+                                                           ¶
+ Exit 0                                                    ¶
 --- styled ---
 
-{b}{bashMode}❯ Bash{/}{/b}                                                      
-$ npm test -- auth                                          
-                                                            
-✓ 12 passed                                                 
-{sgr:90}{/}                                                            
-{text}Exit 0{/}                                                      
+ {b}{bashMode}❯ Bash{/}{/b}                                                    
+ $ npm test -- auth                                        
+                                                           
+ ✓ 12 passed                                               
+ {sgr:90}{/}                                                          
+ {text}Exit 0{/}                                                    
 
 === light · w60 · user-bash/error ===
 ¶
-❯ Bash ✘                                                    ¶
-$ npm test -- auth                                          ¶
-                                                            ¶
-✕ rejects expired tokens                                    ¶
-(exit 1)                                                    ¶
-                                                            ¶
-Exit 1                                                      ¶
+ ❯ Bash ✘                                                  ¶
+ $ npm test -- auth                                        ¶
+                                                           ¶
+ ✕ rejects expired tokens                                  ¶
+ (exit 1)                                                  ¶
+                                                           ¶
+ Exit 1                                                    ¶
 --- styled ---
 
-{b}{error}❯ Bash ✘{/}{/b}                                                    
-$ npm test -- auth                                          
-                                                            
-✕ rejects expired tokens                                    
-(exit 1)                                                    
-{sgr:90}{/}                                                            
-{error}Exit 1{/}                                                      
+ {b}{error}❯ Bash ✘{/}{/b}                                                  
+ $ npm test -- auth                                        
+                                                           
+ ✕ rejects expired tokens                                  
+ (exit 1)                                                  
+ {sgr:90}{/}                                                          
+ {error}Exit 1{/}                                                    
 
 === light · w60 · user-bash/running ===
 ¶
-❯ Bash ⟳                                                    ¶
-$ npm test -- auth                                          ¶
-                                                            ¶
-⠋ Running...                                                ¶
-                                                            ¶
-◌ Running · 12.4s                                           ¶
+ ❯ Bash ⟳                                                  ¶
+ $ npm test -- auth                                        ¶
+                                                           ¶
+ ⠋ Running...                                              ¶
+                                                           ¶
+ ◌ Running · 12.4s                                         ¶
 --- styled ---
 
-{b}{bashMode}❯ Bash{/} {text}⟳{/}{/b}                                                    
-$ npm test -- auth                                          
-                                                            
-⠋ Running...                                                
-{sgr:90}{/}                                                            
-{dim}◌ Running{/}{text} · 12.4s{/}                                           
+ {b}{bashMode}❯ Bash{/} {text}⟳{/}{/b}                                                  
+ $ npm test -- auth                                        
+                                                           
+ ⠋ Running...                                              
+ {sgr:90}{/}                                                          
+ {dim}◌ Running{/}{text} · 12.4s{/}                                         
 
 === inline · w60 · special/compaction ===
 ● Compaction · 10K→4K¶
@@ -397,29 +404,29 @@ $ npm test -- auth
 
 === inline · w60 · user-bash/complete ===
 ¶
-● ! npm test -- auth¶
-  ⎿  ✓ 12 passed¶
+ ● ! npm test -- auth¶
+   ⎿  ✓ 12 passed¶
 --- styled ---
 
-{success}●{/} {b}{bashMode}!{/}{/b} {text}npm test -- auth{/}
-  {dim}⎿{/}  ✓ 12 passed
+ {success}●{/} {b}{bashMode}!{/}{/b} {text}npm test -- auth{/}
+   {dim}⎿{/}  ✓ 12 passed
 
 === inline · w60 · user-bash/error ===
 ¶
-● ! npm test -- auth¶
-  ⎿  ✕ rejects expired tokens¶
-     (exit 1)¶
+ ● ! npm test -- auth¶
+   ⎿  ✕ rejects expired tokens¶
+      (exit 1)¶
 --- styled ---
 
-{error}●{/} {b}{bashMode}!{/}{/b} {text}npm test -- auth{/}
-  {dim}⎿{/}  ✕ rejects expired tokens
-     (exit 1)
+ {error}●{/} {b}{bashMode}!{/}{/b} {text}npm test -- auth{/}
+   {dim}⎿{/}  ✕ rejects expired tokens
+      (exit 1)
 
 === inline · w60 · user-bash/running ===
 ¶
-● ! npm test -- auth¶
-  ⎿  ⠋ Running...¶
+ ● ! npm test -- auth¶
+   ⎿  ⠋ Running...¶
 --- styled ---
 
-{accent}●{/} {b}{bashMode}!{/}{/b} {text}npm test -- auth{/}
-  {dim}⎿{/}  ⠋ Running...
+ {accent}●{/} {b}{bashMode}!{/}{/b} {text}npm test -- auth{/}
+   {dim}⎿{/}  ⠋ Running...

@@ -95,7 +95,8 @@ for (const toolName of ["todo_write", "todo_update", "todo_read", "web_fetch"]) 
 					assert.match(rendered, /╰/);
 					assert.match(rendered, /row-0/);
 					assert.equal(rendered.includes("row-11"), expanded, "expansion must still reveal the full output");
-					assert.equal(contentBox.paddingX, 0);
+					// The box keeps Pi's side padding, so it lines up with the messages and the working row.
+					assert.equal(contentBox.paddingX, 1);
 					assert.equal(contentBox.paddingY, 0);
 					assert.equal(background("output"), "output", "boxed rendering must still remove Pi's background slab");
 				}

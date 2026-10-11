@@ -148,7 +148,8 @@ test("a collapsed thinking run still toggles on click through its marker", () =>
 	const children = (component as unknown as { contentContainer: { children: unknown[] } }).contentContainer.children;
 	const thinking = children.find((child) => plainLine((child as { render(w: number): string[] }).render(40).join("")).includes("Thought"));
 	assert.ok(thinking, "the thinking run renders behind its marker");
-	assert.match(plainLine((thinking as { render(w: number): string[] }).render(40).join("")), /^● Thought/);
+	// The marker sits on Pi's one-column gutter, where its working row and tool output start.
+	assert.match(plainLine((thinking as { render(w: number): string[] }).render(40).join("")), /^ ● Thought/);
 	const result = (thinking as { handleMouse(event: unknown): unknown }).handleMouse({
 		type: "click",
 		button: "left",

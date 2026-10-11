@@ -66,6 +66,8 @@ interface Ownership {
 
 const ownership = new WeakMap<object, Map<string, Ownership>>();
 const activeInstallations = new WeakMap<object, Map<number, StatusLineInstallation>>();
+/** Side gutter of the status row: the column Pi pads its own rows by. */
+const STATUS_GUTTER = 1;
 
 function ownerMap(host: object): Map<string, Ownership> {
 	let map = ownership.get(host);
@@ -184,7 +186,11 @@ export function installStatusLine(options: StatusLineInstallOptions): StatusLine
 		const key = `${width}|${themeVersion}|${JSON.stringify(effective)}`;
 		const cached = lineCache.get(secondary);
 		if (cached && cached.key === key) return cached.lines;
-		const result = renderStatus(config.statusLine.layout, effective, width, {
+		// Pi pads its rows one column from each edge (messages, tool output, the
+		// working row, the editor prompt); the status row keeps the same gutter.
+		const gutter = width > STATUS_GUTTER * 2 + 1 ? STATUS_GUTTER : 0;
+		const rowWidth = width - gutter * 2;
+		const result = renderStatus(config.statusLine.layout, effective, rowWidth, {
 			separator,
 			segments,
 			theme: resolved,
@@ -198,7 +204,8 @@ export function installStatusLine(options: StatusLineInstallOptions): StatusLine
 		// Truncate rather than drop an overlong row: a row that vanishes and returns
 		// changes the dock height, and a height change makes Pi repaint far more than
 		// the row itself.
-		const truncated = lines.map((line) => fitAnsiWidth(line, width));
+		const lead = " ".repeat(gutter);
+		const truncated = lines.map((line) => `${lead}${fitAnsiWidth(line, rowWidth)}`);
 		const rendered =
 			!secondary && truncated.length > 0 && config.statusLine.bottomMargin > 0
 				? // Blank rows below the primary row keep the status line off the terminal edge.

@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here.
 
+## [1.0.22] - 2026-10-11
+
+### Fixed
+
+- **Tables in extension messages: borders took the code color.** With the Titanium themes, a table cell ending in inline code painted the `│` after it, the padding, and the row's right edge in the code color. This showed up in extension messages such as pi-teams results, and in expanded compaction, skill, and branch blocks.
+  - Cause: Titanium leaves `customMessageText` empty, which means the terminal's own text color. Pi's Markdown strips the default text style's escape from the end of each inline run, and for an empty color that escape is the same `\x1b[39m` that closes inline code, so the code color stayed open to the end of the row.
+  - These blocks no longer pass a default text style when that color is the terminal's own, so inline code keeps its closing escape. Text renders in the same color as before.
+  - A colored `customMessageText` is handled exactly as before.
+- Messages you type go through Pi's own component, which the theme does not draw. A table cell ending in inline code there still colors its border under Titanium.
+
 ## [1.0.21] - 2026-10-11
 
 ### Fixed

@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented here.
 
+## [1.0.24] - 2026-10-12
+
+### Fixed
+
+- **Inline chrome: your messages didn't line up with the answers.** With `messages.assistantMarker` on (the `claude-code` preset), an answer starts with `●` on Pi's gutter and its text begins two columns later. Pi draws your message itself, with the text on the gutter, so your text started two columns left of the answer's.
+  - Your messages now start with the prompt's `❯` in the marker column, as in Claude Code, and their text and wrapped lines start in the same column as the answer's.
+  - Pi's band, colors, and prompt zone are kept. The glyph is the editor's prompt glyph: `❯`, `>` in ASCII mode, or your `theme.glyphs.prompt`.
+  - Without the assistant marker, your messages are untouched.
+  - The theme decorates this surface only when it recognizes Pi's user message component, the same check every other decorated surface goes through. It recognizes Pi 0.85 and Pi 1.1, including the bundled build.
+
+### Changed
+
+- The welcome card's `!!` tip reads `bash, not sent to model`, the way Pi's usage guide describes it. It used to read `bash, no context`, taken from Pi's startup hint, which could be read as a note about context files such as `AGENTS.md`. `!!command` runs a command and shows its output without sending it to the model, while `!command` includes the output in the conversation. The gallery images show the new wording.
+
 ## [1.0.23] - 2026-10-11
 
 ### Changed

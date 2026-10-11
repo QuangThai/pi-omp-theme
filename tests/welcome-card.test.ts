@@ -61,6 +61,8 @@ test("both columns open and close with a blank row, and the title shares the tip
 	}
 	assert.match(column(body[1] ?? "", 0), /Welcome back!/);
 	assert.match(column(body[1] ?? "", 1), /^ {2}Tips {3}\/ {2}commands/);
+	// `!!` runs a command without sending its output to the model (Pi's usage guide).
+	assert.match(column(body[1] ?? "", 1), /!! {2}bash, not sent to model/);
 });
 
 test("a rule inset from the divider and the frame separates the right column's sections", () => {

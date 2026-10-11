@@ -34,7 +34,7 @@
     "themes": [
       "./themes"
     ],
-    "image": "https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/gallery-preview.png?v=gallery-4"
+    "image": "https://raw.githubusercontent.com/QuangThai/pi-omp-theme/main/media/gallery-preview.png?v=gallery-5"
   },
   "files": [
     "dist/**/*.ts",

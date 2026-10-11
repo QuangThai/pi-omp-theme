@@ -66,11 +66,15 @@ const MAX_PROVIDER_NAME = 16;
  * (`interactive-mode.js`: `rawKeyHint("/", "for commands")` and the two bash
  * forms). omp's card also lists `#` and `$`; Pi has neither, and showing them
  * would teach a shortcut that does nothing.
+ *
+ * `!!` is worded the way Pi's usage guide puts it ("run a command without
+ * sending its output to the model"), not as its hint's "(no context)", which
+ * reads like a note about context files such as AGENTS.md.
  */
 const TIPS: readonly (readonly [string, string])[] = [
 	["/", "commands"],
 	["!", "bash"],
-	["!!", "bash, no context"],
+	["!!", "bash, not sent to model"],
 ];
 
 function centre(text: string, width: number): string {
@@ -105,8 +109,8 @@ function rule(theme: ResolvedTheme, width: number): string {
 }
 
 /**
- * `Tips   /  commands    !  bash    !!  bash, no context` on one row; tips that
- * do not fit the column are left off rather than wrapped.
+ * `Tips   /  commands    !  bash    !!  bash, not sent to model` on one row;
+ * tips that do not fit the column are left off rather than wrapped.
  */
 function tipsRow(theme: ResolvedTheme, width: number): string {
 	const label = "Tips";

@@ -2,7 +2,8 @@
 // its text two columns later. Pi draws the user's message itself as a
 // full-width band with the text on the gutter, so the prompt takes Claude Code's
 // layout: the band starts in the marker column, the editor's `❯` fills its
-// first cell, and both texts start in the same column.
+// first cell, both texts start in the same column, and the band covers only the
+// text rows.
 
 import assert from "node:assert/strict";
 import { before, test } from "node:test";
@@ -116,10 +117,12 @@ test("wrapped prompt rows hang under the text, and the band keeps the gutter cle
 		assert.ok(text.length > 1, "the prompt wraps at 40 columns");
 		for (const line of text.slice(1)) assert.match(stripAnsi(line), /^ {3}\S/);
 		assert.equal(text.filter((line) => stripAnsi(line).includes("❯")).length, 1, "one marker per prompt");
+		// Pi pads the band with a blank row above and below; Claude Code's band
+		// covers only the text, and Pi's spacers already separate the message.
+		assert.equal(lines.length, text.length, "no blank band rows above or below the text");
 		for (const line of lines) {
 			assert.equal(visibleWidth(line), 40, JSON.stringify(stripAnsi(line)));
-			// Every row, the blank band rows above and below included, is painted from
-			// column 1 to column 38; columns 0 and 39 stay plain.
+			// Every row is painted from column 1 to column 38; columns 0 and 39 stay plain.
 			const row = withoutZone(line);
 			assert.match(row, /^ \x1b\[48;/, "the band starts in the marker column");
 			assert.ok(row.endsWith(`${BAND_END} `), "and stops one column short of the edge");
@@ -148,10 +151,39 @@ test("a prompt that opens with a link carries the marker on the link's row", () 
 		markers,
 	);
 	const lines = (component.children[0] as Rendered).render(60);
-	assert.match(stripAnsi(lines[1] ?? ""), /^ ❯ https:\/\/github\.com\/owner\/pi-teams please/);
-	assert.match(stripAnsi(lines[2] ?? ""), /^ {3}and report back/);
-	assert.ok(lines[1]?.includes("\x1b]8;;https://github.com/owner/pi-teams\x1b\\"), "the link stays clickable");
+	assert.equal(lines.length, 2);
+	assert.match(stripAnsi(lines[0] ?? ""), /^ ❯ https:\/\/github\.com\/owner\/pi-teams please/);
+	assert.match(stripAnsi(lines[1] ?? ""), /^ {3}and report back/);
+	assert.ok(lines[0]?.includes("\x1b]8;;https://github.com/owner/pi-teams\x1b\\"), "the link stays clickable");
 	for (const line of lines) assert.equal(visibleWidth(line), 60);
+});
+
+test("a blank row between paragraphs stays inside the band", () => {
+	const component = { outputPad: 1, children: [] as unknown[] };
+	decorateUserMessageRebuild(
+		function (this: typeof component) {
+			this.children = [
+				{
+					render: (width: number) => [
+						bandRow(width, ""),
+						bandRow(width, "first paragraph"),
+						bandRow(width, ""),
+						bandRow(width, "second paragraph"),
+						bandRow(width, ""),
+					],
+				},
+			];
+		},
+		component,
+		[],
+		markers,
+	);
+	const lines = (component.children[0] as Rendered).render(60);
+	assert.deepEqual(
+		lines.map((line) => stripAnsi(line).trimEnd()),
+		[" ❯ first paragraph", "", "   second paragraph"],
+	);
+	assert.match(lines[1] ?? "", /^ \x1b\[48;/, "the gap between paragraphs keeps the band");
 });
 
 test("an answer that opens with a link keeps its gutter prefix on that row", () => {

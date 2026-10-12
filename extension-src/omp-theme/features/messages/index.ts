@@ -370,9 +370,11 @@ export function decorateMessageUpdate(
  * a band Box around a Markdown (Pi 0.85). With markers on, an answer's `●`
  * sits on Pi's gutter and its text two columns later. The prompt takes the
  * Claude Code layout: the band starts in the marker column (the gutter stays
- * clear on both sides), the editor's `❯` fills its first cell, and the text
- * starts in the same column as the answer's. Pi's band colour and OSC 133
- * zone are kept.
+ * clear on both sides), the editor's `❯` fills its first cell, the text starts
+ * in the same column as the answer's, and the band covers only the text rows.
+ * Pi's blank band rows above and below the text go: Pi already puts a spacer
+ * before the message and before whatever follows it. Pi's band colour and
+ * OSC 133 zone are kept.
  */
 export function decorateUserMessageRebuild(
 	original: unknown,
@@ -398,9 +400,10 @@ const LEADING_SGR = /^(?:\x1b\[[0-9;:]*m)*/;
  * the text, and the right padding. Rendered `lead + markerWidth + 1` columns
  * narrower, each row loses its left padding to the marker and a space (spaces
  * on every row but the first with text), so they stay inside the background,
- * and gains `lead` plain columns on each side outside it. If a row does not
- * have that shape the whole block keeps Pi's own rendering: a partly marked
- * block would mix widths.
+ * and gains `lead` plain columns on each side outside it. The blank rows before
+ * the first text row and after the last are Pi's vertical padding and are
+ * dropped. If a row does not have that shape the whole block keeps Pi's own
+ * rendering: a partly marked block would mix widths.
  */
 function promptMarkedChild(child: MarkableChild, marker: string, lead: number): MarkableChild {
 	const shift = Math.max(1, visibleWidth(marker)) + 1;
@@ -411,17 +414,20 @@ function promptMarkedChild(child: MarkableChild, marker: string, lead: number): 
 			if (inner <= lead * 2 + 1) return child.render(width);
 			const styled = messageStyle.theme ? messageStyle.theme.fg("dim", marker) : marker;
 			const rows = child.render(inner);
-			let marked = false;
+			let first = -1;
+			let last = -1;
 			const decorated: string[] = [];
 			for (const row of rows) {
 				const head = LEADING_SGR.exec(row)?.[0] ?? "";
 				const body = row.slice(head.length);
 				if (!body.startsWith(gutter)) return child.render(width);
-				const text = !marked && contentText(body).trim() !== "";
-				if (text) marked = true;
-				decorated.push(`${gutter}${head}${text ? `${styled} ` : " ".repeat(shift)}${body.slice(lead)}${gutter}`);
+				const text = contentText(body).trim() !== "";
+				const marks = text && first < 0;
+				if (marks) first = decorated.length;
+				if (text) last = decorated.length;
+				decorated.push(`${gutter}${head}${marks ? `${styled} ` : " ".repeat(shift)}${body.slice(lead)}${gutter}`);
 			}
-			return decorated;
+			return first < 0 ? decorated : decorated.slice(first, last + 1);
 		},
 		invalidate() {
 			child.invalidate?.();

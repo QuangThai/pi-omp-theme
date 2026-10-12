@@ -2,6 +2,28 @@
 
 All notable changes to this project are documented here.
 
+## [1.0.26] - 2026-10-12
+
+### Changed
+
+- **Your messages' band covers only their text, as in Claude Code.** This applies with `messages.assistantMarker` on (the `claude-code` preset).
+  - Before: Pi's band had a full blank row above and below the text but nothing to the left of the `❯`, so the marker looked cramped against the band's edge. Claude Code's band is just the text rows, with the `❯` in the same cell.
+  - Pi's blank band rows above and below your text are gone. A blank row between paragraphs stays inside the band.
+  - Pi's own spacing still leaves one blank row above and below each message.
+  - The `❯`, the band's left edge, and the text columns stay where 1.0.25 put them.
+
+### Fixed
+
+- **Your first message would have sat on the welcome card's bottom edge.**
+  - Pi normally puts blank rows around its own startup header. A quiet startup (`quietStartup: true`) leaves them out, and Pi adds no blank row before the first message in an empty chat.
+  - Since 1.0.23 dropped the card's bottom padding, the band's blank top row was all that separated the card from your first message, whether new or restored on resume.
+  - When the card is Pi's header, it now keeps one blank row below it.
+  - Side effects:
+    - With a verbose startup (`quietStartup: false` or `--verbose`), Pi adds its own blank row too. That leaves two blank rows between the card and Pi's resource list, as above the card. An extension can't tell which kind of startup ran.
+    - Pi 0.85 at startup shows two blank rows between the card and the editor instead of one. Pi 1.1 keeps the editor at the bottom of the screen, so nothing visible changes there.
+    - In the `default` preset, your first message's band starts one row lower.
+  - When the card sits above the editor as a widget, it is unchanged; Pi's own spacer already separates it.
+
 ## [1.0.25] - 2026-10-12
 
 ### Fixed

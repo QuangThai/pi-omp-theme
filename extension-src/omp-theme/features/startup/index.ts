@@ -344,8 +344,8 @@ const STARTUP_INDENT = " ";
 /** Blank rows above the block, separating it from the terminal top. */
 const STARTUP_PADDING_TOP = 1;
 /**
- * Blank rows below the block. Pi spaces each transcript block one row from
- * the one before, so the header adds none of its own.
+ * Blank rows below the block. Mounted as Pi's header the component adds the
+ * one row Pi leaves out before the first message (`StartupComponent.render`).
  */
 const STARTUP_PADDING_BOTTOM = 0;
 
@@ -433,6 +433,7 @@ class StartupComponent implements Component {
 	private config: NormalizedPiOmpThemeConfig;
 	private readonly theme: ActiveTheme;
 	private readonly overlay: boolean;
+	private readonly header: boolean;
 	private readonly tui: PresentationTui;
 	private readonly requestRender: () => void;
 	private painted: { width: number; lines: string[] } | undefined;
@@ -442,6 +443,7 @@ class StartupComponent implements Component {
 		config: NormalizedPiOmpThemeConfig,
 		snapshot: StartupSnapshot,
 		overlay: boolean,
+		header: boolean,
 		tui: PresentationTui,
 		requestRender: () => void,
 	) {
@@ -449,6 +451,7 @@ class StartupComponent implements Component {
 		this.config = config;
 		this.snapshot = snapshot;
 		this.overlay = overlay;
+		this.header = header;
 		this.tui = tui;
 		this.requestRender = requestRender;
 	}
@@ -474,7 +477,13 @@ class StartupComponent implements Component {
 		notePresentationTui(this.tui);
 		const painted = this.painted;
 		if (!this.overlay && painted && painted.width === width && topRowScrolledAway()) return painted.lines;
-		const lines = styledLines(this.theme, this.config, this.snapshot, this.overlay, width);
+		const card = styledLines(this.theme, this.config, this.snapshot, this.overlay, width);
+		// Pi puts its own startup header between spacers, but a quiet startup
+		// leaves the header slot bare and Pi puts no spacer before the first
+		// message of an empty chat, so that message would sit on the card's
+		// bottom edge. As Pi's header the card keeps one blank row below it. A
+		// verbose startup adds Pi's spacer as well; extensions can't tell which ran.
+		const lines = this.header && card.length > 0 ? [...card, ""] : card;
 		this.painted = { width, lines };
 		return lines;
 	}
@@ -514,8 +523,8 @@ export function installStartup(options: StartupInstallOptions): StartupInstallat
 	let overlayDone: ((value: undefined) => void) | undefined;
 	const components: StartupComponent[] = [];
 	const timeoutMs = options.timeoutMs;
-	const component = (theme: unknown, isOverlay: boolean, tui: PresentationTui) => {
-		const result = new StartupComponent(activeThemeFromPi(theme), config, snapshot, isOverlay, tui, () => {
+	const component = (theme: unknown, isOverlay: boolean, tui: PresentationTui, isHeader = false) => {
+		const result = new StartupComponent(activeThemeFromPi(theme), config, snapshot, isOverlay, isHeader, tui, () => {
 			tui.requestRender?.();
 			options.requestRender?.();
 		});
@@ -549,6 +558,8 @@ export function installStartup(options: StartupInstallOptions): StartupInstallat
 	};
 	const mountCompact = (): boolean => {
 		const factory = (tui: unknown, theme: unknown) => component(theme, false, tui as { requestRender?: () => void });
+		const headerFactory = (tui: unknown, theme: unknown) =>
+			component(theme, false, tui as { requestRender?: () => void }, true);
 		// Pi's public `setHeader` is the intended startup-header surface ("shown at
 		// startup, above chat"). Prefer it so the startup renders at the top of the
 		// terminal rather than inside the editor area. The injected ownership
@@ -561,8 +572,8 @@ export function installStartup(options: StartupInstallOptions): StartupInstallat
 				currentHeader = host.getHeaderFactory?.();
 			});
 		const headerAvailable = host.setHeader !== undefined && (!observable || currentHeader === undefined);
-		if (headerAvailable && safeCall(() => host.setHeader?.(factory))) {
-			installedHeaderFactory = factory;
+		if (headerAvailable && safeCall(() => host.setHeader?.(headerFactory))) {
+			installedHeaderFactory = headerFactory;
 			headerInstalled = true;
 			map.set("header", token);
 			return true;

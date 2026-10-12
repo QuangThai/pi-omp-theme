@@ -79,6 +79,29 @@ test("the header key covers every snapshot field the card paints", () => {
 	}
 });
 
+test("as Pi's header the card keeps one blank row below it; as a widget it adds none", () => {
+	// Pi puts no spacer before the first message of an empty chat, and a quiet
+	// startup puts none after the header either. The widget slot sits under
+	// Pi's own spacer, right above the editor.
+	type Factory = (tui: unknown, theme: unknown) => { render(width: number): string[] };
+	let header: Factory | undefined;
+	let widget: Factory | undefined;
+	const mount = (host: StartupHost) =>
+		installStartup({ host, config, snapshot: { ...baseSnapshot, resources }, generation: 1 });
+	const asHeader = mount({ mode: "tui", hasUI: true, setHeader: (factory) => (header = factory as Factory) });
+	const asWidget = mount({ mode: "tui", hasUI: true, setWidget: (_key, factory) => (widget = factory as Factory) });
+	assert.ok(header && widget);
+	const tui = { requestRender() {} };
+	const headerRows = header(tui, uncolored).render(120);
+	const widgetRows = widget(tui, uncolored).render(120);
+	assert.equal(headerRows.at(-1), "", "the header ends with a blank row");
+	assert.deepEqual(headerRows.slice(0, -1), widgetRows, "and is otherwise the same card");
+	assert.match(widgetRows.at(-1) ?? "", /╰─+╯/, "the widget ends on the card's bottom edge");
+	assert.deepEqual(header(tui, uncolored).render(0), [], "a card with no rows adds no blank row");
+	asHeader?.dispose();
+	asWidget?.dispose();
+});
+
 test("status-only snapshot updates never invalidate the mounted header", () => {
 	let headerRenders = 0;
 	let headerFactory: ((tui: unknown, theme: unknown) => { render(width: number): string[] }) | undefined;

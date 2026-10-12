@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented here.
 
+## [1.0.25] - 2026-10-12
+
+### Fixed
+
+- **A message that opened with a link had its `❯` on the second row.**
+  - Cause: the theme's text check read an OSC escape sequence as running to the next BEL, but Pi closes its OSC 8 hyperlinks with ST (`ESC \`). The link swallowed the rest of its row, the row read as blank, and the marker went to the next row.
+  - The same misread kept the `messages.assistantPrefix` gutter off an answer that opens with a link. This predates 1.0.24; the new marker made it visible.
+  - OSC sequences now end at BEL or ST, as they already did elsewhere in the theme.
+- **The prompt's band didn't line up with the answers' `●`.** In 1.0.24 Pi's band still ran edge to edge, with the `❯` one column inside it. Claude Code's band starts in the marker column, and now so does this one:
+  - The band starts under the answers' `●` and stops one column short of the right edge.
+  - The `❯` fills the band's first cell, and the text starts in the same column as the answers' text.
+  - Pi's blank band rows above and below the text are kept.
+
 ## [1.0.24] - 2026-10-12
 
 ### Fixed

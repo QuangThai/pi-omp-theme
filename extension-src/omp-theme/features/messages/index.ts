@@ -130,8 +130,16 @@ function contentText(line: string): string {
 		}
 		const next = line[index + 1];
 		if (next === "]") {
+			// An OSC ends at BEL or at ST (ESC \). Pi closes its OSC 8 hyperlinks with
+			// ST; reading on to a BEL that never comes swallowed the rest of the line.
 			index += 2;
-			while (index < line.length && line.charCodeAt(index) !== 7) index++;
+			while (index < line.length && line.charCodeAt(index) !== 7) {
+				if (line.charCodeAt(index) === 27 && line[index + 1] === "\\") {
+					index++;
+					break;
+				}
+				index++;
+			}
 			continue;
 		}
 		if (next === "[") {
@@ -357,12 +365,14 @@ export function decorateMessageUpdate(
 }
 
 /**
- * Pi's user message is one child that paints the band and pads the text
- * `outputPad` columns in: a Markdown with its own background (Pi 1.x) or a
- * band Box around a Markdown (Pi 0.85). With markers on, the assistant's text
- * starts two columns further, after its `●`, so the prompt gets the editor's
- * `❯` in the marker column and its text lines up with the answer below it, as
- * in Claude Code. Pi's band, colours, and OSC 133 zone are kept.
+ * Pi's user message is one child that paints a full-width band and pads the
+ * text `outputPad` columns in: a Markdown with its own background (Pi 1.x) or
+ * a band Box around a Markdown (Pi 0.85). With markers on, an answer's `●`
+ * sits on Pi's gutter and its text two columns later. The prompt takes the
+ * Claude Code layout: the band starts in the marker column (the gutter stays
+ * clear on both sides), the editor's `❯` fills its first cell, and the text
+ * starts in the same column as the answer's. Pi's band colour and OSC 133
+ * zone are kept.
  */
 export function decorateUserMessageRebuild(
 	original: unknown,
@@ -384,27 +394,34 @@ export function decorateUserMessageRebuild(
 const LEADING_SGR = /^(?:\x1b\[[0-9;:]*m)*/;
 
 /**
- * The band rendered `markerWidth + 1` columns narrower, then widened again
- * right after its left padding: the marker and a space on the first text row,
- * spaces on every other row. The inserted cells sit inside the band's
- * background, so the band still spans the full width.
+ * Pi renders each band row as its background escape, `lead` spaces of padding,
+ * the text, and the right padding. Rendered `lead + markerWidth + 1` columns
+ * narrower, each row loses its left padding to the marker and a space (spaces
+ * on every row but the first with text), so they stay inside the background,
+ * and gains `lead` plain columns on each side outside it. If a row does not
+ * have that shape the whole block keeps Pi's own rendering: a partly marked
+ * block would mix widths.
  */
 function promptMarkedChild(child: MarkableChild, marker: string, lead: number): MarkableChild {
 	const shift = Math.max(1, visibleWidth(marker)) + 1;
-	const padding = " ".repeat(lead);
+	const gutter = " ".repeat(lead);
 	return {
 		render(width: number): string[] {
-			if (width <= lead * 2 + shift + 1) return child.render(width);
+			const inner = width - lead - shift;
+			if (inner <= lead * 2 + 1) return child.render(width);
 			const styled = messageStyle.theme ? messageStyle.theme.fg("dim", marker) : marker;
+			const rows = child.render(inner);
 			let marked = false;
-			return child.render(width - shift).map((line) => {
-				const head = LEADING_SGR.exec(line)?.[0] ?? "";
-				const body = line.slice(head.length);
-				if (!body.startsWith(padding)) return line;
+			const decorated: string[] = [];
+			for (const row of rows) {
+				const head = LEADING_SGR.exec(row)?.[0] ?? "";
+				const body = row.slice(head.length);
+				if (!body.startsWith(gutter)) return child.render(width);
 				const text = !marked && contentText(body).trim() !== "";
 				if (text) marked = true;
-				return `${head}${padding}${text ? `${styled} ` : " ".repeat(shift)}${body.slice(lead)}`;
-			});
+				decorated.push(`${gutter}${head}${text ? `${styled} ` : " ".repeat(shift)}${body.slice(lead)}${gutter}`);
+			}
+			return decorated;
 		},
 		invalidate() {
 			child.invalidate?.();
